@@ -1,0 +1,814 @@
+<!DOCTYPE chapter>
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-db" xml:lang="ru">
+    <info>
+        <title>Создание базы данных для примеров</title>
+    </info>
+
+    <para>Перед описанием процесса создания приложений на различных языках программирования нам
+        необходимо подготовить базу данных, которую мы будем использовать во всех последующих
+        примерах.</para>
+    <para>Наше приложение будет работать с базой данных модель, которой представлена на рисунке
+        ниже. <figure>
+            <title>Модель базы данных</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/db_schema.png" width="680"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Модель базы данных.</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
+    </para>
+
+    <important>
+        <para>Эта модель является просто примером. Ваша предметная область может быть сложнее, или
+            полностью другой. Модель, используемая в этой статье, максимально упрощена для того,
+            чтобы не загромождать описание работы с компонентами описанием создания и модификации
+            модели данных.</para>
+    </important>
+
+    <para>Для создания базы данных из скрипта я буду использовать родной инструмент
+            <application>isql</application>. Вы можете использовать любой другой инструмент
+        администрирования, например <application>FlameRobin</application>, <application>SQLLY
+            Studio</application>, <application>IBExpert</application> и др. </para>
+
+    <para>Запустим <application>isql</application>, после появления приглашения ко вводу введём
+        следующий скрипт
+        <programlisting language="sql">
+CREATE DATABASE 'localhost:D:\fbdata\2.5\examples.fdb'
+USER 'SYSDBA' PASSWORD 'masterkey'
+PAGE_SIZE 8192 DEFAULT CHARACTER SET UTF8;            
+        </programlisting>
+    </para>
+
+    <para>Вы можете создать базу данных от имени любого пользователя необязательно SYSDBA.
+        Пользователь, от имени которого создаётся база данных, становится владельцем БД и обладает
+        полным доступом ко всем объектам метаданных. </para>
+
+    <para>Современные версии Firebird поддерживают следующие размеры страниц 4096, 8192 и 16384.
+        Размер страницы 8192 подходит в большинстве случаев.</para>
+
+    <para>Необязательное предложение DEFAULT CHARACTER SET задаёт набор символов по умолчанию для
+        строковых типов данных. Наборы символов применяются для типов CHAR, VARCHAR и BLOB. Для
+        работы с символами кириллицы вы можете использовать различные однобайтовые кодировки
+        WIN1251, ISO8859_5, CYRL, DOS866 или универсальную многобайтовую кодировку UTF8.</para>
+
+    <para>В настоящее время все современные языки программирования поддерживают работу с UTF8,
+        поэтому выбираем эту кодировку.</para>
+
+    <para>Теперь можно выйти из сеанса <application>isql</application>, для этого наберите команду
+        <programlisting language="sql">
+EXIT;            
+        </programlisting>
+    </para>
+
+    <para>При вводе базы данных в эксплуатацию удобней работать с ней с использованием алиасов,
+        кроме того это "повышает безопасность" вашей базы данных в том смысле что путь к первичному
+        файлу базы данных не виден в строке подключения.</para>
+
+    <para>В Firebird 2.5 алиас БД задаётся в файле <filename>aliases.conf</filename> следующим
+        образом
+        <programlisting>
+examples = D:\fbdata\2.5\examples.fdb            
+        </programlisting>
+    </para>
+    <para>В Firebird 3.0 алиас БД задаётся в файле <filename>databases.conf</filename>. Кроме
+        задания алиаса БД вы можете также задать некоторые параметры уровня базы данных, например,
+        размер страничного кеша и объём оперативной памяти под сортировку
+        <programlisting>
+examples = D:\fbdata\3.0\examples.fdb
+{
+	DefaultDbCachePages = 16K
+	TempCacheLimit = 512M
+}           
+        </programlisting>
+    </para>
+    <para>Теперь составим скрипт для создания базы данных.</para>
+    <para>Сначала определим некоторые домены, которые будем использовать в определении
+        столбцов.</para>
+    <para>
+        <programlisting language="sql">
+CREATE DOMAIN D_BOOLEAN AS
+SMALLINT
+CHECK (VALUE IN (0, 1));
+
+COMMENT ON DOMAIN D_BOOLEAN IS 
+'Boolean type. 0 - FALSE, 1- TRUE';
+
+CREATE DOMAIN D_MONEY AS
+NUMERIC(15,2);
+
+CREATE DOMAIN D_ZIPCODE AS
+CHAR(10) CHARACTER SET UTF8
+CHECK (TRIM(TRAILING FROM VALUE) SIMILAR TO '[0-9]+');
+
+COMMENT ON DOMAIN D_ZIPCODE IS 
+'Zip code';
+            </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 есть нативный тип BOOLEAN, но поскольку этот тип появился недавно, то
+            он может не поддерживаться в некоторых драйверах. Кроме того, мы будем строить наши
+            приложения так, чтобы они могли работать одновременно с Firebird 2.5 и Firebird
+            3.0.</para>
+    </note>
+    <para>Теперь перейдём к таблицам. Первой таблицей будет таблица заказчиков (CUSTOMER). Для неё
+        как и остальных таблиц создадим последовательность (генератор) и соответствующий триггер для
+        реализации автоинкрементных столбцов.</para>
+    <para>
+        <programlisting language="sql">
+CREATE GENERATOR GEN_CUSTOMER_ID;
+
+CREATE TABLE CUSTOMER (
+    CUSTOMER_ID  INTEGER NOT NULL,
+    NAME         VARCHAR(60) NOT NULL,
+    ADDRESS      VARCHAR(250),
+    ZIPCODE      D_ZIPCODE,
+    PHONE        VARCHAR(14),
+    CONSTRAINT PK_CUSTOMER PRIMARY KEY (CUSTOMER_ID)
+);
+
+SET TERM ^ ;
+
+CREATE OR ALTER TRIGGER CUSTOMER_BI FOR CUSTOMER
+ACTIVE BEFORE INSERT POSITION 0
+AS
+BEGIN
+  IF (NEW.CUSTOMER_ID IS NULL) THEN
+    NEW.CUSTOMER_ID = NEXT VALUE FOR GEN_CUSTOMER_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON TABLE CUSTOMER IS 
+'Customers';
+
+COMMENT ON COLUMN CUSTOMER.CUSTOMER_ID IS 
+'Customer Id';
+
+COMMENT ON COLUMN CUSTOMER.NAME IS 
+'Name';
+
+COMMENT ON COLUMN CUSTOMER.ADDRESS IS 
+'Address';
+
+COMMENT ON COLUMN CUSTOMER.ZIPCODE IS 
+'Zip Code';
+
+COMMENT ON COLUMN CUSTOMER.PHONE IS 
+'Phone';     
+            </programlisting>
+    </para>
+    <note>
+        <para><itemizedlist>
+                <listitem>
+                    <para>В Firebird 3.0 вы можете использовать IDENTITY столбцы в качестве
+                        автоинкрементных полей. В этом случае скрипт создания таблицы будет
+                        выглядеть следующим образом:
+                        <programlisting language="sql">
+CREATE TABLE CUSTOMER (
+    CUSTOMER_ID  INTEGER GENERATED BY DEFAULT AS IDENTITY,
+    NAME         VARCHAR(60) NOT NULL,
+    ADDRESS      VARCHAR(250),
+    ZIPCODE      D_ZIPCODE,
+    PHONE        VARCHAR(14),
+    CONSTRAINT PK_CUSTOMER PRIMARY KEY (CUSTOMER_ID)
+);                
+            </programlisting>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>В Firebird 3.0 для использования последовательности (генератора)
+                        необходима привилегия USAGE, поэтому в скрипт необходимо добавить следующую
+                        строчку:
+                        <programlisting language="sql">
+GRANT USAGE ON SEQUENCE GEN_CUSTOMER_ID TO TRIGGER CUSTOMER_BI;               
+            </programlisting>
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </note>
+    <para>Теперь составим скрипт для создание таблицы товаров (PRODUCT).
+        <programlisting language="sql">
+CREATE GENERATOR GEN_PRODUCT_ID;
+
+CREATE TABLE PRODUCT (
+    PRODUCT_ID   INTEGER NOT NULL,
+    NAME         VARCHAR(100) NOT NULL,
+    PRICE        D_MONEY NOT NULL,
+    DESCRIPTION  BLOB SUB_TYPE 1 SEGMENT SIZE 80,
+    CONSTRAINT PK_PRODUCT PRIMARY KEY (PRODUCT_ID)
+);
+
+SET TERM ^ ;
+
+CREATE OR ALTER TRIGGER PRODUCT_BI FOR PRODUCT
+ACTIVE BEFORE INSERT POSITION 0
+AS
+BEGIN
+  IF (NEW.PRODUCT_ID IS NULL) THEN
+    NEW.PRODUCT_ID = NEXT VALUE FOR GEN_PRODUCT_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON TABLE PRODUCT IS 
+'Goods';
+
+COMMENT ON COLUMN PRODUCT.PRODUCT_ID IS 
+'Product Id';
+
+COMMENT ON COLUMN PRODUCT.NAME IS 
+'Name';
+
+COMMENT ON COLUMN PRODUCT.PRICE IS 
+'Price';
+
+COMMENT ON COLUMN PRODUCT.DESCRIPTION IS 
+'Description';              
+            </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 необходимо добавить в скрипт команду для выдачи привилегии USAGE на
+            последовательность (генератор)
+            <programlisting language="sql">
+GRANT USAGE ON SEQUENCE GEN_PRODUCT_ID TO TRIGGER PRODUCT_BI;               
+            </programlisting>
+        </para>
+    </note>
+    <para>Скрипт создания таблицы INVOICE (счёт-фактуры) выглядит так:
+        <programlisting language="sql">
+CREATE GENERATOR GEN_INVOICE_ID;
+
+CREATE TABLE INVOICE (
+    INVOICE_ID    INTEGER NOT NULL,
+    CUSTOMER_ID   INTEGER NOT NULL,
+    INVOICE_DATE  TIMESTAMP,
+    TOTAL_SALE    D_MONEY,
+    PAID          D_BOOLEAN DEFAULT 0 NOT NULL,
+    CONSTRAINT PK_INVOICE PRIMARY KEY (INVOICE_ID)
+);
+
+ALTER TABLE INVOICE ADD CONSTRAINT FK_INVOCE_CUSTOMER 
+FOREIGN KEY (CUSTOMER_ID) REFERENCES CUSTOMER (CUSTOMER_ID);
+
+CREATE INDEX INVOICE_IDX_DATE ON INVOICE (INVOICE_DATE);
+
+SET TERM ^ ;
+
+CREATE OR ALTER TRIGGER INVOICE_BI FOR INVOICE
+ACTIVE BEFORE INSERT POSITION 0
+AS
+BEGIN
+  IF (NEW.INVOICE_ID IS NULL) THEN
+    NEW.INVOICE_ID = GEN_ID(GEN_INVOICE_ID,1);
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON TABLE INVOICE IS 
+'Invoices';
+
+COMMENT ON COLUMN INVOICE.INVOICE_ID IS 
+'Invoice number';
+
+COMMENT ON COLUMN INVOICE.CUSTOMER_ID IS 
+'Customer Id';
+
+COMMENT ON COLUMN INVOICE.INVOICE_DATE IS 
+'The date of issuance invoices';
+
+COMMENT ON COLUMN INVOICE.TOTAL_SALE IS 
+'Total sum';
+
+COMMENT ON COLUMN INVOICE.PAID IS 
+'Payed';            
+        </programlisting>
+    </para>
+    <para>Для поля INVOICE_DATE создан индекс, поскольку мы будем фильтровать счёт-фактуры по дате,
+        так чтобы они попадали в рабочий период.</para>
+    <note>
+        <para>В Firebird 3.0 необходимо добавить в скрипт команду для выдачи привилегии USAGE на
+            последовательность (генератор)
+            <programlisting language="sql">
+GRANT USAGE ON SEQUENCE GEN_INVOICE_ID TO TRIGGER INVOICE_BI;         
+            </programlisting>
+        </para>
+    </note>
+    <para>Скрипт создания таблицы INVOICE_LINE выглядит следующим образом:
+        <programlisting language="sql">
+CREATE GENERATOR GEN_INVOICE_LINE_ID;
+
+CREATE TABLE INVOICE_LINE (
+    INVOICE_LINE_ID  INTEGER NOT NULL,
+    INVOICE_ID       INTEGER NOT NULL,
+    PRODUCT_ID       INTEGER NOT NULL,
+    QUANTITY         NUMERIC(15,0) NOT NULL,
+    SALE_PRICE       D_MONEY NOT NULL,
+    CONSTRAINT PK_INVOICE_LINE PRIMARY KEY (INVOICE_LINE_ID)
+);
+
+ALTER TABLE INVOICE_LINE ADD CONSTRAINT FK_INVOICE_LINE_INVOICE 
+FOREIGN KEY (INVOICE_ID) REFERENCES INVOICE (INVOICE_ID);
+
+ALTER TABLE INVOICE_LINE ADD CONSTRAINT FK_INVOICE_LINE_PRODUCT 
+FOREIGN KEY (PRODUCT_ID) REFERENCES PRODUCT (PRODUCT_ID);
+
+
+SET TERM ^ ;
+
+CREATE OR ALTER TRIGGER INVOICE_LINE_BI FOR INVOICE_LINE
+ACTIVE BEFORE INSERT POSITION 0
+AS
+BEGIN
+  IF (NEW.INVOICE_LINE_ID IS NULL) THEN
+    NEW.INVOICE_LINE_ID = NEXT VALUE FOR GEN_INVOICE_LINE_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON TABLE INVOICE_LINE IS 
+'Invoice lines';
+
+COMMENT ON COLUMN INVOICE_LINE.INVOICE_LINE_ID IS 
+'Invoice line Id';
+
+COMMENT ON COLUMN INVOICE_LINE.INVOICE_ID IS 
+'Invoice number';
+
+COMMENT ON COLUMN INVOICE_LINE.PRODUCT_ID IS 
+'Product Id';
+
+COMMENT ON COLUMN INVOICE_LINE.QUANTITY IS 
+'Quantity';
+
+COMMENT ON COLUMN INVOICE_LINE.SALE_PRICE IS 
+'Price';            
+        </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 необходимо добавить в скрипт команду для выдачи привилегии USAGE на
+            последовательность (генератор)
+            <programlisting language="sql">
+GRANT USAGE ON SEQUENCE GEN_INVOICE_LINE_ID TO TRIGGER INVOICE_LINE_BI;        
+            </programlisting>
+        </para>
+    </note>
+    <para>Часть бизнес логики будет реализовано с помощью хранимых процедур.</para>
+    <para>Процедура добавления новой счёт-фактуры довольно простая и выглядит следующим образом:
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_ADD_INVOICE (
+    INVOICE_ID INTEGER,
+    CUSTOMER_ID INTEGER,
+    INVOICE_DATE TIMESTAMP = CURRENT_TIMESTAMP)
+AS
+BEGIN
+  INSERT INTO INVOICE (
+    INVOICE_ID,
+    CUSTOMER_ID,
+    INVOICE_DATE,
+    TOTAL_SALE,
+    PAID
+  )
+  VALUES (
+    :INVOICE_ID,
+    :CUSTOMER_ID,
+    :INVOICE_DATE,
+    0,
+    0
+  );
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_ADD_INVOICE IS
+'Adding Invoice';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE.INVOICE_ID IS
+'Invoice number';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE.CUSTOMER_ID IS
+'Customer Id';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE.INVOICE_DATE IS
+'Date';
+
+GRANT INSERT ON INVOICE TO PROCEDURE SP_ADD_INVOICE;            
+        </programlisting>
+    </para>
+    <para>Процедура изменения счёт-фактуры уже немного сложнее. Добавим в неё следующее условие,
+        если счёт-фактура оплачена, то её редактирование запрещено. Создадим исключение, которое
+        будет возбуждаться когда счёт фактура оплачена.
+        <programlisting language="sql">
+CREATE EXCEPTION E_INVOICE_ALREADY_PAYED 'Change is impossible, invoice paid.';           
+        </programlisting>
+    </para>
+    <para>Сама хранимая процедура будет выглядеть следующем образом:
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_EDIT_INVOICE (
+    INVOICE_ID INTEGER,
+    CUSTOMER_ID INTEGER,
+    INVOICE_DATE TIMESTAMP)
+AS
+BEGIN
+  IF (EXISTS(SELECT *
+             FROM INVOICE
+             WHERE INVOICE_ID = :INVOICE_ID
+               AND PAID = 1)) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  UPDATE INVOICE
+  SET CUSTOMER_ID = :CUSTOMER_ID,
+      INVOICE_DATE = :INVOICE_DATE
+  WHERE INVOICE_ID = :INVOICE_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_EDIT_INVOICE IS
+'Editing invoice';
+
+COMMENT ON PARAMETER SP_EDIT_INVOICE.INVOICE_ID IS
+'Invoice number';
+
+COMMENT ON PARAMETER SP_EDIT_INVOICE.CUSTOMER_ID IS
+'Customer Id';
+
+COMMENT ON PARAMETER SP_EDIT_INVOICE.INVOICE_DATE IS
+'Date';
+
+GRANT SELECT,UPDATE ON INVOICE TO PROCEDURE SP_EDIT_INVOICE;            
+        </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 для исключений требуется привилегия USAGE, поэтому необходимо добавить
+            в скрипт следующую строку
+            <programlisting language="sql">
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_EDIT_INVOICE;                
+            </programlisting>
+        </para>
+    </note>
+    <para>Для удаления счёт-фактуры будем использовать процедуру SP_DELETE_INVOICE. В этой процедуре
+        будем поверять не оплачена ли счёт-фактура, и если она оплачена бросать исключение.
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_DELETE_INVOICE (
+    INVOICE_ID INTEGER)
+AS
+BEGIN
+  IF (EXISTS(SELECT * FROM INVOICE
+             WHERE INVOICE_ID = :INVOICE_ID
+               AND PAID = 1)) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  DELETE FROM INVOICE WHERE INVOICE_ID = :INVOICE_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_DELETE_INVOICE IS
+'Deleting invoices';
+
+GRANT SELECT,DELETE ON INVOICE TO PROCEDURE SP_DELETE_INVOICE;            
+        </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 для исключений требуется привилегия USAGE, поэтому необходимо добавить
+            в скрипт следующую строку
+            <programlisting language="sql">
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_DELETE_INVOICE;               
+            </programlisting>
+        </para>
+    </note>
+    <para>Добавим ещё одну процедуру для оплаты счёт фактуры.
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_PAY_FOR_INOVICE (
+    INVOICE_ID INTEGER)
+AS
+BEGIN
+  IF (EXISTS(SELECT *
+             FROM INVOICE
+             WHERE INVOICE_ID = :INVOICE_ID
+               AND PAID = 1)) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  UPDATE INVOICE
+  SET PAID = 1
+  WHERE INVOICE_ID = :INVOICE_ID;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_PAY_FOR_INOVICE IS
+'Payment of invoices';
+
+COMMENT ON PARAMETER SP_PAY_FOR_INOVICE.INVOICE_ID IS
+'Invoice number';
+
+GRANT SELECT,UPDATE ON INVOICE TO PROCEDURE SP_PAY_FOR_INOVICE;            
+            </programlisting>
+    </para>
+    <note>
+        <para>В Firebird 3.0 для исключений требуется привилегия USAGE, поэтому необходимо добавить
+            в скрипт следующую строку
+            <programlisting language="sql">
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_PAY_FOR_INOVICE;               
+            </programlisting>
+        </para>
+    </note>
+    <para>Теперь создадим процедуры для управления позициями счёт-фактуры. Эти процедуры будут
+        проверять не оплачена ли счёт фактура и запрещать любые манипуляции над строками оплаченных
+        счёт фактур. Кроме того, процедуры будут корректировать сумму счёт-фактуры в зависимости от
+        количества выписанного товара и его стоимости.</para>
+    <para>Процедура добавления позиции счёт фактуры выглядит так
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_ADD_INVOICE_LINE (
+    INVOICE_ID INTEGER,
+    PRODUCT_ID INTEGER,
+    QUANTITY INTEGER)
+AS
+DECLARE sale_price D_MONEY;
+DECLARE paid       D_BOOLEAN;
+BEGIN
+  SELECT
+      paid
+  FROM
+      invoice
+  WHERE
+        invoice_id = :invoice_id
+  INTO :paid;
+
+  -- It does not allow you to edit already paid invoice.
+  IF (paid = 1) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  SELECT
+      price
+  FROM
+      product
+  WHERE
+        product_id = :product_id
+  INTO :sale_price;
+
+  INSERT INTO invoice_line (invoice_line_id,
+                            invoice_id,
+                            product_id,
+                            quantity,
+                            sale_price)
+  VALUES (NEXT VALUE FOR gen_invoice_line_id,
+          :invoice_id,
+          :product_id,
+          :quantity,
+          :sale_price);
+
+  -- Increase the amount of the account.
+  UPDATE invoice
+  SET total_sale = COALESCE(total_sale, 0) + :sale_price * :quantity
+  WHERE invoice_id = :invoice_id;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_ADD_INVOICE_LINE IS
+'Adding line invoices';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE_LINE.INVOICE_ID IS
+'Invoice number';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE_LINE.PRODUCT_ID IS
+'Product Id';
+
+COMMENT ON PARAMETER SP_ADD_INVOICE_LINE.QUANTITY IS
+'Quantity';
+
+
+GRANT SELECT,UPDATE ON INVOICE TO PROCEDURE SP_ADD_INVOICE_LINE;
+GRANT SELECT ON PRODUCT TO PROCEDURE SP_ADD_INVOICE_LINE;
+GRANT INSERT ON INVOICE_LINE TO PROCEDURE SP_ADD_INVOICE_LINE;  
+
+-- только для Firebird 3.0 и выше
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_ADD_INVOICE_LINE;
+GRANT USAGE ON SEQUENCE GEN_INVOICE_LINE_ID TO PROCEDURE SP_ADD_INVOICE_LINE;
+            </programlisting>
+    </para>
+    <para>Процедура редактирования позиции счёт-фактуры выглядит следующим образом:
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_EDIT_INVOICE_LINE (
+    INVOICE_LINE_ID INTEGER,
+    QUANTITY INTEGER)
+AS
+DECLARE invoice_id INT;
+DECLARE price      D_MONEY;
+DECLARE paid      D_BOOLEAN; 
+BEGIN
+  SELECT
+      product.price,
+      invoice.invoice_id,
+      invoice.paid
+  FROM
+      invoice_line
+      JOIN invoice ON invoice.invoice_id = invoice_line.invoice_id
+      JOIN product ON product.product_id = invoice_line.product_id
+  WHERE
+        invoice_line.invoice_line_id = :invoice_line_id
+  INTO :price,
+       :invoice_id,
+       :paid;
+
+  -- It does not allow you to edit already paid invoice.
+  IF (paid = 1) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  -- Update price and quantity.
+  UPDATE invoice_line
+  SET sale_price = :price,
+      quantity = :quantity
+  WHERE invoice_line_id = :invoice_line_id;
+
+  -- Now update the amount of the account.
+  MERGE INTO invoice
+  USING (SELECT
+             invoice_id,
+             SUM(sale_price * quantity) AS total_sale
+         FROM invoice_line
+         WHERE invoice_id = :invoice_id
+         GROUP BY invoice_id) L
+  ON invoice.invoice_id = L.invoice_id
+  WHEN MATCHED THEN
+      UPDATE SET total_sale = L.total_sale;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_EDIT_INVOICE_LINE IS
+'Editing invoice line';
+
+COMMENT ON PARAMETER SP_EDIT_INVOICE_LINE.INVOICE_LINE_ID IS
+'Invoice line id';
+
+COMMENT ON PARAMETER SP_EDIT_INVOICE_LINE.QUANTITY IS
+'Quantity';
+
+GRANT SELECT,UPDATE ON INVOICE_LINE TO PROCEDURE SP_EDIT_INVOICE_LINE;
+GRANT SELECT,UPDATE ON INVOICE TO PROCEDURE SP_EDIT_INVOICE_LINE;
+GRANT SELECT ON PRODUCT TO PROCEDURE SP_EDIT_INVOICE_LINE;    
+
+-- только для Firebird 3.0 и выше
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_EDIT_INVOICE_LINE;
+        </programlisting>
+    </para>
+    <para>Процедура удаления позиции счёт-фактуры выглядит следующим образом:
+        <programlisting language="sql">
+SET TERM ^ ;
+
+CREATE OR ALTER PROCEDURE SP_DELETE_INVOICE_LINE (
+    INVOICE_LINE_ID INTEGER)
+AS
+DECLARE invoice_id INT;
+DECLARE price      D_MONEY;
+DECLARE quantity   INT;
+BEGIN
+  IF (EXISTS(SELECT *
+             FROM invoice_line
+                 JOIN invoice ON invoice.invoice_id = invoice_line.invoice_id
+             WHERE invoice.paid = 1
+               AND invoice_line.invoice_line_id = :invoice_line_id)) THEN
+    EXCEPTION E_INVOICE_ALREADY_PAYED;
+
+  DELETE FROM invoice_line
+  WHERE invoice_line.invoice_line_id = :invoice_line_id
+  RETURNING invoice_id, quantity, sale_price
+  INTO invoice_id, quantity, price;
+
+  -- Reduce the amount of the account.
+  UPDATE invoice
+  SET total_sale = total_sale - :quantity * :price
+  WHERE invoice_id = :invoice_id;
+END
+^
+
+SET TERM ; ^
+
+COMMENT ON PROCEDURE SP_DELETE_INVOICE_LINE IS
+'Deleting invoce line';
+
+COMMENT ON PARAMETER SP_DELETE_INVOICE_LINE.INVOICE_LINE_ID IS
+'Код строки счёт-фактуры';
+
+
+GRANT SELECT,DELETE ON INVOICE_LINE TO PROCEDURE SP_DELETE_INVOICE_LINE;
+GRANT SELECT,UPDATE ON INVOICE TO PROCEDURE SP_DELETE_INVOICE_LINE;   
+
+-- только в Firebird 3.0 и выше
+GRANT USAGE ON EXCEPTION E_INVOICE_ALREADY_PAYED TO PROCEDURE SP_DELETE_INVOICE_LINE;
+        </programlisting>
+    </para>
+
+    <para>Теперь необходимо создать роли и выдать необходимые привилегии. Создадим две роли MANAGER
+        и SUPERUSER. Первая будет обладать ограниченным набором привилегий, а вторая практически
+        всеми возможностями системы.
+        <programlisting language="sql">
+CREATE ROLE MANAGER;
+CREATE ROLE SUPERUSER;
+        </programlisting>
+    </para>
+    <para>Роль MANAGER имеет возможность читать любую таблицу и управлять счёт-фактурами через
+        соответствующие процедуры:
+        <programlisting language="sql">
+GRANT SELECT ON CUSTOMER TO MANAGER;
+GRANT SELECT ON INVOICE TO MANAGER;
+GRANT SELECT ON INVOICE_LINE TO MANAGER;
+GRANT SELECT ON PRODUCT TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_ADD_INVOICE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_ADD_INVOICE_LINE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_DELETE_INVOICE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_DELETE_INVOICE_LINE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_EDIT_INVOICE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_EDIT_INVOICE_LINE TO MANAGER;
+GRANT EXECUTE ON PROCEDURE SP_PAY_FOR_INOVICE TO MANAGER;
+GRANT USAGE ON SEQUENCE GEN_INVOICE_ID TO MANAGER;            
+        </programlisting>
+    </para>
+    <para>Роль SUPERUSER имеет возможность читать любую таблицу. редактировать справочники и вносить
+        изменения в счёт-фактуры через соответствующие процедуры:
+        <programlisting language="sql">
+GRANT SELECT, INSERT, UPDATE, DELETE ON CUSTOMER TO SUPERUSER;
+GRANT SELECT ON INVOICE TO SUPERUSER;
+GRANT SELECT ON INVOICE_LINE TO SUPERUSER;
+GRANT SELECT, INSERT, UPDATE, DELETE ON PRODUCT TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_ADD_INVOICE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_ADD_INVOICE_LINE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_DELETE_INVOICE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_DELETE_INVOICE_LINE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_EDIT_INVOICE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_EDIT_INVOICE_LINE TO SUPERUSER;
+GRANT EXECUTE ON PROCEDURE SP_PAY_FOR_INOVICE TO SUPERUSER;
+GRANT USAGE ON SEQUENCE GEN_CUSTOMER_ID TO SUPERUSER;
+GRANT USAGE ON SEQUENCE GEN_INVOICE_ID TO SUPERUSER;
+GRANT USAGE ON SEQUENCE GEN_PRODUCT_ID TO SUPERUSER;           
+        </programlisting>
+    </para>
+    <para>Теперь создадим пользователей и назначим им роли:
+        <programlisting language="sql">
+CREATE USER IVAN PASSWORD 'z12a';
+CREATE USER ANNA PASSWORD 'lh67';
+
+GRANT MANAGER TO ANNA;
+GRANT MANAGER TO IVAN WITH ADMIN OPTION;
+GRANT SUPERUSER TO IVAN;            
+        </programlisting>
+    </para>
+    <note>
+        <para>Пользователь IVAN может передавать роль MANAGER другим пользователям.</para>
+    </note>
+    <para>Теперь сохраним наш скрипт в файле <filename>examples.sql</filename>. Вы можете скачать
+        готовые файлы скриптов по ссылкам <link xmlns:xlink="http://www.w3.org/1999/xlink"
+            xlink:href="https://github.com/sim1984/example-db_2_5/archive/1.0.zip"
+            >https://github.com/sim1984/example-db_2_5/archive/1.0.zip</link> и <link
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xlink:href="https://github.com/sim1984/example-db_3_0/archive/1.0.zip"
+            >https://github.com/sim1984/example-db_3_0/archive/1.0.zip</link>
+    </para>
+    <para>Выполним наш скрипт в созданной ранее базе данных:
+        <programlisting>
+isql -user sysdba -password masterkey "localhost:examples" -i "d:\examples-db\examples.sql"            
+        </programlisting>
+    </para>
+    <para>Теперь когда база данных создана вы можете наполнить её тестовыми данными. Сделать это
+        можно с помощью различных инструментов. Каким образом наполнить базу данных тестовыми
+        данными мы не будем рассказывать. Вы можете сделать это самостоятельно.</para>
+    <section>
+        <title>Заключение</title>
+        <para>Вы можете скачать готовые базы данных по ссылкам <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/sim1984/example-db_2_5/releases/download/1.0/examples.fdb"
+                >https://github.com/sim1984/example-db_2_5/releases/download/1.0/examples.fdb</link>
+            и <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/sim1984/example-db_3_0/releases/download/1.0/examples.fdb"
+                >https://github.com/sim1984/example-db_3_0/releases/download/1.0/examples.fdb</link>.
+        </para>
+    </section>
+</chapter>

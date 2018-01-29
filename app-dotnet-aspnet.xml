@@ -1,0 +1,3130 @@
+<!DOCTYPE chapter>  
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-dotnet-aspnet"
+    xml:lang="ru">
+    <info>
+        <title>Создание Web приложений с использованием Entity Framework</title>
+    </info>
+
+    <para>В данной главе будет описан процесс создания Web приложений для СУБД Firebird с
+        использованием Entity Framework и среды Visual Studio 2015.</para>
+
+    <para>В данной главе обсуждаются особенности создания именно Web приложений, базовые принципы
+        работы с Entity Framework и Firebird описаны в предыдущей главе <link
+            linkend="app-dotnet-winform">Создание приложений с использованием Entity
+            Framework</link>.</para>
+    <section>
+        <title>.NET Frameworks</title>
+
+        <para>Платформа .NET предоставляет два основных фреймворка для создания web приложений:
+            ASP.NET Web Forms и ASP.NET MVC. Я предпочитаю использовать паттерн MVC, поэтому в
+            дальнейшем будет описываться именно эта технология.</para>
+    </section>
+
+    <section>
+        <title>ASP.NET MVC Platform</title>
+
+        <para>Платформа <emphasis role="bold">ASP.NET MVC</emphasis> представляет собой фреймворк
+            для создания сайтов и веб-приложений с помощью реализации паттерна MVC.</para>
+        <para>Концепция паттерна (шаблона) MVC (model-view-controller) предполагает разделение
+            приложения на три компонента:<itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Контроллер</emphasis> (controller). Контроллеры
+                        осуществляют взаимодействие с пользователем, работу с моделью, а также выбор
+                        представления, отображающего пользовательский интерфейс. В приложении MVC
+                        представления только отображают данные, а контроллер обрабатывает вводимые
+                        данные и отвечает на действия пользователя. Например, контроллер может
+                        обрабатывать строковые значения запроса и передавать их в модель, которая
+                        может использовать эти значения для отправки запроса в базу данных.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Представление</emphasis> (view) — это собственно
+                        визуальная часть или пользовательский интерфейс приложения. Пользовательский
+                        интерфейс обычно создаётся на основе данных модели.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Модель</emphasis> (model). Объекты моделей являются
+                        частями приложения, реализующими логику для работы данными приложения.
+                        Объекты моделей часто получают и сохраняют состояние модели в базе
+                        данных.</para>
+                </listitem>
+            </itemizedlist></para>
+
+        <section>
+            <title>Взаимодействие Model-View-Controller</title>
+
+            <para>Общую схему взаимодействия этих компонентов можно представить следующим образом: <figure>
+                    <title>Структура MVC паттерна</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvc.png"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Структура MVC паттерна</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+
+            <para>Шаблон MVC позволяет создавать приложения, различные аспекты которых (логика
+                ввода, бизнес-логика и логика интерфейса) разделены, но достаточно тесно
+                взаимодействуют друг с другом. Эта схема указывает расположение каждого вида логики
+                в приложении. Пользовательский интерфейс располагается в представлении. Логика ввода
+                располагается в контроллере. Бизнес-логика находится в модели. Это разделение
+                позволяет работать со сложными структурами при создании приложения, так как
+                обеспечивает одновременную реализацию только одного аспекта. Например, разработчик
+                может сконцентрироваться на создании представления отдельно от бизнес-логики.</para>
+            <para>Более полную информацию о технологии ASP.NET MVC вы можете найти на сайте <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.asp.net/mvc/overview">сообщества ASP.NET</link> .</para>
+        </section>
+    </section>
+
+    <section>
+        <title>Программный стек</title>
+
+        <para>Помимо библиотек для работы с Firebird, Entity Framework и MVC.NET нам потребуется
+            множество JavaScript библиотек для поддержки отзывчивого интерфейса, таких как jquery,
+            jquery-ui, Bootstrap, jqGrid. В этом примере мы постарались приблизить интерфейс
+            веб-приложения к настольным приложениям, активно применяя грибы для отображения и
+            модальные окна для ввода данных.</para>
+        <section>
+            <title>Подготовка Visual Studio 2015 для работы с Firebird</title>
+
+            <para>Для работы Visual Studio с СУБД Firebird вам придётся проделать несколько
+                дополнительных шагов, которые подробно были описаны в предыдущей главе "Создание
+                приложений с использованием Entity Framework" в разделе <link
+                    linkend="app-dotnet-vsprepare">Подготовка Visual Studio 2015 для работы с
+                    Firebird</link>. </para>
+        </section>
+    </section>
+
+    <section>
+        <title>Создание проекта</title>
+
+        <para>Посмотрим как создаётся каркас MVC.NET приложения с помощью мастеров Visual
+            Studio.</para>
+
+        <para>Итак, откроем Visual Studio 2015 <guimenu>Файл->Создать->Проект</guimenu> и создадим
+            новый проект. Назовём новый проект FBMVCExample.</para>
+
+        <figure>
+            <title>Создание проекта</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/mvcnet-createproject.png" width="680"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Создание проекта</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
+
+        <figure>
+            <title>Создание MVC.NET проекта</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/mvcnet-createaspnet.png" width="680"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Создание MVC.NET проекта</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
+
+        <para>Изменим способ проверки подлинности. В данный момент создадим веб приложение без
+            проверки подлинности. К этому вопросу мы вернёмся чуть позже. <figure>
+                <title>Выбор способа проверки подлинности</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/mvcnet-auth.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Выбор способа проверки подлинности</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <section>
+            <title>Структура проекта</title>
+
+            <para>После этого будет создан проект, который практически не обладает никакой
+                функциональностью, хотя уже имеет базовую структуру. <table>
+                    <?dbfo keep-together='auto'?>
+                    <title>Структура папок MVC.NET проекта</title>
+
+                    <tgroup cols="2">
+                        <colspec colwidth="2*" align="left"/>
+                        <colspec colwidth="4*" align="left"/>
+                        <thead>
+                            <row valign="middle">
+                                <entry align="center">Папка или файл</entry>
+                                <entry align="center">Описание</entry>
+                            </row>
+                        </thead>
+                        <tbody>
+                            <row valign="middle">
+                                <entry><filename>/App_Data</filename></entry>
+                                <entry><para>В эту папку помещаются закрытые данные веб приложения,
+                                        такие как XML-файлы или файлы базы данных.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/App_Start</filename></entry>
+                                <entry><para>Эта папка содержит ряд основных настроек конфигурации
+                                        для проекта, в том числе определение маршрутов и
+                                        фильтров.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Content</filename></entry>
+                                <entry><para>Сюда помещается статическое содержимое, такое как
+                                        CSS-файлы и изображения. Это является необязательным
+                                        соглашением. Вы можете хранить файлы стилей в любом
+                                        подходящем месте.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Controllers</filename></entry>
+                                <entry><para>Сюда помещаются классы контроллеров. Это необязательное
+                                        соглашение. Вы можете классы контроллеров где
+                                    угодно.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Models</filename></entry>
+                                <entry><para>Сюда помещаются классы моделей представлений и моделей
+                                        предметной области, хотя все кроме простейших приложений
+                                        выигрывают от определения модели предметной области в
+                                        отдельном проекте. Это необязательное соглашение. Вы можете
+                                        размещать классы моделей в любом удобном
+                                    месте.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Scripts</filename></entry>
+                                <entry><para>Эта папка предназначена для хранения библиотек
+                                        JavaScript, используемых в приложении. По умолчанию Visual
+                                        Studio добавляет библиотеки jQuery и несколько других
+                                        популярных JavaScript-библиотек. Это необязательное
+                                        соглашение.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Views</filename></entry>
+                                <entry><para>В этой папке хранятся представления и частичные
+                                        представления, обычно сгруппированные вместе в папках с
+                                        именами контроллеров, с которыми они связаны.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Views/Shared</filename></entry>
+                                <entry><para>В этой папке хранятся компоновки и представления, не
+                                        являющиеся специфичными для какого-либо
+                                    контроллера.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Views/Web.config</filename></entry>
+                                <entry><para>Это конфигурационный файл. В нем содержится
+                                        конфигурационная информация, которая обеспечивает обработку
+                                        представлений с помощью ASP.NET и предотвращает их
+                                        обслуживание веб-сервером IIS, а также пространства имён, по
+                                        умолчанию импортируемые в представления.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Global.asax</filename></entry>
+                                <entry><para>Это глобальный класс приложения ASP.NET. В файле его
+                                        кода (<filename>Global.asax.cs</filename>) регистрируется
+                                        конфигурация маршрутов, а также предоставляется любой код,
+                                        который должен выполняться при запуске или завершении
+                                        приложения либо в случае возникновения необработанного
+                                        исключения.</para></entry>
+                            </row>
+                            <row valign="middle">
+                                <entry><filename>/Web.config</filename></entry>
+                                <entry><para>Конфигурационный файл для приложения.</para></entry>
+                            </row>
+                        </tbody>
+                    </tgroup>
+                </table>
+            </para>
+        </section>
+
+        <section>
+            <title>Добавление отсутствующих пакетов</title>
+
+            <para>Теперь добавим необходимые пакеты с помощью менеджера пакетов NuGet. Нам
+                потребуются установить недостающие пакеты:<itemizedlist spacing="compact">
+                    <listitem>
+                        <para>FirebirdSql.Data.FirebirdClient</para>
+                    </listitem>
+                    <listitem>
+                        <para>EntityFramework (автоматически добавлен мастером)</para>
+                    </listitem>
+                    <listitem>
+                        <para>EntityFramework.Firebird</para>
+                    </listitem>
+                    <listitem>
+                        <para>Bootstrap (автоматически добавлен мастером)</para>
+                    </listitem>
+                    <listitem>
+                        <para>jQuery (автоматически добавлен мастером)</para>
+                    </listitem>
+                    <listitem>
+                        <para>jQuery.UI.Combined</para>
+                    </listitem>
+                    <listitem>
+                        <para>Respond (автоматически добавлен мастером)</para>
+                    </listitem>
+                    <listitem>
+                        <para>Newtonsoft.Json</para>
+                    </listitem>
+                    <listitem>
+                        <para>Moderninzr (автоматически добавлен мастером)</para>
+                    </listitem>
+                    <listitem>
+                        <para>Trirand.jqGrid</para>
+                    </listitem>
+                </itemizedlist></para>
+            <note>
+                <para>Не все пакеты, предоставляемые NuGet, являются библиотеками последних версий.
+                    Особенно это касается JavaScript библиотек. Вы можете подключать последние
+                    версии JavaScript библиотек, используя CDN или просто скачать их, заменив
+                    библиотеки, предоставленные NuGet.</para>
+            </note>
+            <para>Для этого необходимо щёлкнуть правой клавишей мыши по имени проекта в обозревателе
+                решений и в выпадающем меню выбрать пункт «Управление пакетами NuGet». <figure>
+                    <title>Контекстное меню обозревателя решений</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-nugetmenu.png"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Контекстное меню обозревателя решений</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+            <para>В появившемся менеджере пакетов произвести поиск и установку необходимых пакетов. <figure>
+                    <title>Менеджер пакетов NuGet</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-nuget.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Менеджер пакетов NuGet</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+        </section>
+    </section>
+
+    <section>
+        <title>Создание EDM модели</title>
+
+        <para>Если у вас уже есть Windows Forms приложение, которое использует Entity Framework, то
+            вы просто можете перенести кассы моделей в папку <filename>Models</filename>. В
+            противном случае вам необходимо будет создать их с нуля. Подробно процесс создания EDM
+            модели описан в предыдущей главе «Создание приложений с использованием Entity Framework»
+            (см. раздел «<link linkend="app-dotnet-createedm">Создание EDM модели</link>»).</para>
+
+        <para>Существует одно небольшое отличие. В процессе работы мастера создания модели у вас
+            спросят, как хранить строку подключения. <figure>
+                <title>Сохранение строки подключения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-save-connectionstring.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Сохранение строки подключения.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+        <para>Поскольку мы создаём веб приложение, где все пользователи будут работать с базой
+            данных под одной и той же учётной записью, то смело выбираем «Да». В качестве имени
+            пользователя может быть указан любой пользователь с достаточными привилегиями.
+            Желательно не использовать пользователя SYSDBA, поскольку он обладает повышенными
+            привилегиями, которые не требуются для функционирования веб приложения. Вы всегда можете
+            это изменить в готовом приложении, просто отредактировав строку подключения в файле
+            конфигурации приложения
+            <filename><replaceable>AppName</replaceable>.exe.conf</filename>. Строка подключения
+            будет сохранена в секции connectionStrings примерно в таком виде <programlisting language="javascript">
+<![CDATA[
+<add name="DbModel" 
+     connectionString="character set=UTF8; data source=localhost; 
+                       initial catalog=examples; port number=3050; 
+                       user id=sysdba; dialect=3; isolationlevel=Snapshot; 
+                       pooling=True; password=masterkey;" 
+     providerName="FirebirdSql.Data.FirebirdClient" />
+]]>                
+            </programlisting>
+        </para>
+    </section>
+    <section>
+        <title>Создание пользовательского интерфейса справочников</title>
+
+        <section>
+            <title>Создание контроллера заказчиков</title>
+
+            <para>Итак, создадим наш первый контроллер. Он будет служить для отображения и ввода
+                данных о поставщиках. <figure>
+                    <title>Меню добавления контроллера</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-menu-addcontroller.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Меню добавления контроллера.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Добавление контроллера</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-addcontroller-wizard1.png" width="680"
+                            />
+                        </imageobject>
+                        <textobject>
+                            <phrase>Добавление контроллера.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Мастер создания контроллера</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-addcontroller-wizard2.png" width="680"
+                            />
+                        </imageobject>
+                        <textobject>
+                            <phrase>Мастер создания контроллера.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+            <para>После этих действий будет создан контроллер
+                    <classname>CustomerController</classname> и 5 представлений: <orderedlist>
+                    <listitem>
+                        <para>для отображения списка поставщиков</para>
+                    </listitem>
+                    <listitem>
+                        <para>детализации поставщика</para>
+                    </listitem>
+                    <listitem>
+                        <para>форма для добавления поставщика</para>
+                    </listitem>
+                    <listitem>
+                        <para>форма для редактирования поставщика</para>
+                    </listitem>
+                    <listitem>
+                        <para>форма для удаления поставщика</para>
+                    </listitem>
+                </orderedlist>
+            </para>
+            <para>Поскольку мы будем активно применять технологию Ajax и библиотеку jqGrid, то нам
+                будет достаточно всего одного представления для отображения списка поставщиков в
+                виде таблицы, остальные действия будут выполняться с помощью jqGrid.</para>
+            <section>
+                <title>Уменьшение накладных расходов</title>
+
+                <para>При разработке web-приложений необходимо понимать как уменьшить накладные
+                    расходы, свзяанные с передачей данных по глобальной сети и подключениями к базе
+                    данных. Существуют методы которые могут нам в этом.</para>
+
+                <section>
+                    <title>Ограничение объёма возвращаемых данных</title>
+
+
+                    <para>Список поставщиков может оказаться довольно большим. В отличие от
+                        настольных приложений в Web приложениях обычно не принято возвращать весь
+                        большой список, потому что это может сильно замедлить загрузку страницы.
+                        Вместо этого обычно используют постраничное разбиение данных, или
+                        динамическую дозагрузку данных, когда при прокрутке пользователь достигает
+                        конца страницы (или грида). В нашем примере мы воспользуемся первым
+                        вариантом.</para>
+                </section>
+
+                <section>
+                    <title>Уменьшение количества подключений к базе данных</title>
+
+                    <para>Ещё одной особенностью при создании веб приложений является то, что в них
+                        отсутствует постоянное соединение с базой данных. Это обусловлено тем, что
+                        сам скрипт формирования страницы «живёт» не дольше чем время для
+                        формирования ответа на запрос пользователя. Само по себе соединение с базой
+                        данных — это довольно дорогой ресурс, поэтому его надо экономить. Конечно,
+                        для уменьшения времени установления соединения с базой данных придумали пул
+                        соединений, но всё равно желательно, чтобы соединение с базой данных
+                        происходило только тогда когда это действительно необходимо. </para>
+                </section>
+
+                <section>
+                    <title>Современные браузеры помогут нам</title>
+
+                    <para>Одним из способов снижения количества взаимодействий с базой данных
+                        является перенос проверки правильности введённых данных на сторону браузера.
+                        К счастью современные HTML5 и JavaScript библиотеки могут это делать.
+                        Например, вы можете проверять обязательность поля на форме ввода, или
+                        максимальную длину строковых полей.</para>
+                </section>
+            </section>
+        </section>
+
+        <section>
+            <title>Адаптация контроллера для работы с jqGrid</title>
+
+            <para>Итак давайте изменим контроллер <classname>CustomerController</classname> для того
+                чтобы он работал с jqGrid. В тексте контроллера сделаны поясняющие комментарии. <programlisting language="csharp">
+<![CDATA[
+public class CustomerController : Controller
+{
+    private DbModel db = new DbModel();
+
+    // Отображение представления
+    public ActionResult Index()
+    {
+        return View();
+    }
+
+    // Получение данных в виде JSON для грида
+    public ActionResult GetData(int? rows, int? page, string sidx, string sord, 
+        string searchField, string searchString, string searchOper)
+    {
+        // получаем номер страницы, количество отображаемых данных
+        int pageNo = page ?? 1;
+        int limit = rows ?? 20;
+        // вычисляем смещение
+        int offset = (pageNo - 1) * limit;
+
+        // строим запрос для получения поставщиков
+        var customersQuery =
+            from customer in db.CUSTOMERS             
+            select new
+            {
+                CUSTOMER_ID = customer.CUSTOMER_ID,
+                NAME = customer.NAME,
+                ADDRESS = customer.ADDRESS,
+                ZIPCODE = customer.ZIPCODE,
+                PHONE = customer.PHONE
+            };
+        // добавлением в запрос условия поиска, если он производится
+        if (searchField != null)
+        {
+            switch (searchOper)
+            {
+                case "eq":
+                    customersQuery = customersQuery.Where(
+                        c => c.NAME == searchString);
+                    break;
+                case "bw":
+                    customersQuery = customersQuery.Where(
+                        c => c.NAME.StartsWith(searchString));
+                    break;
+                case "cn":
+                    customersQuery = customersQuery.Where(
+                        c => c.NAME.Contains(searchString));
+                    break;
+            }
+        }
+        // получаем общее количество поставщиков
+        int totalRows = customersQuery.Count();
+        // добавляем сортировку
+        switch (sord) {
+            case "asc":
+                customersQuery = customersQuery.OrderBy(
+                    customer => customer.NAME);
+                break;
+            case "desc":
+                customersQuery = customersQuery.OrderByDescending(
+                    customer => customer.NAME);
+                break;
+        }
+
+        // получаем список поставщиков
+        var customers = customersQuery
+             .Skip(offset)
+             .Take(limit)
+             .ToList();
+
+        // вычисляем общее количество страниц
+        int totalPages = totalRows / limit + 1;
+
+        // создаём результат для jqGrid
+        var result = new
+        {
+            page = pageNo,
+            total = totalPages,
+            records = totalRows,
+            rows = customers
+        };
+        // преобразуем результат в JSON
+        return Json(result, JsonRequestBehavior.AllowGet);
+    }
+
+    // Добавление нового поставщика
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Create(
+      [Bind(Include = "NAME,ADDRESS,ZIPCODE,PHONE")] CUSTOMER customer)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            // получаем новый идентификатор с помощью генератора
+            customer.CUSTOMER_ID = db.NextValueFor("GEN_CUSTOMER_ID");
+            // добавляем модель в список
+            db.CUSTOMERS.Add(customer);
+            // сохраняем модель
+            db.SaveChanges();
+            // возвращаем успех в формате JSON
+            return Json(true);
+        }
+        else {
+            // соединяем ошибки модели в одну строку
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+        }
+    }
+
+    // Редактирование поставщика
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Edit(
+      [Bind(Include = "CUSTOMER_ID,NAME,ADDRESS,ZIPCODE,PHONE")] CUSTOMER customer)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            // помечаем модель как изменённую
+            db.Entry(customer).State = EntityState.Modified;
+            // сохраняем модель
+            db.SaveChanges();
+            // возвращаем успех в формате JSON
+            return Json(true);
+         }
+         else {
+            // соединяем ошибки модели в одну строку
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+         }
+    }
+
+    // Удаление поставщика
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Delete(int id)
+    {
+        // ищем поставщика по идентификатору
+        CUSTOMER customer = db.CUSTOMERS.Find(id);
+        // удаляем поставщика
+        db.CUSTOMERS.Remove(customer);
+        // сохраняем модель
+        db.SaveChanges();
+        // возвращаем успех в формате JSON
+        return Json(true);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            db.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+
+            <para>Метод <methodname>Index</methodname> служит для отображения представления
+                    <filename>Views/Cusomter/Index.cshtml</filename>. Само представление будет
+                представлено чуть позже. В общем, это представление представляет собой шаблон html
+                страницы с разметкой и JavaScript для инициализации jqGrid. Сами данные будут
+                получены в асинхронном режиме в формате JSON с помощью технологии Ajax. В
+                зависимости от выбранной сортировки, номера страницы и параметров поиска формируется
+                HTTP запрос, который будет обработан действием <methodname>GetData</methodname>.
+                Параметры http запроса отображаются на входные аргументы метода
+                    <methodname>GetData</methodname>. В соответствии с этими параметры мы формируем
+                LINQ запрос, и отправляем полученный результат в формате JSON.</para>
+
+            <note>
+                <para>Для разбора параметров запроса формируемого jqGrid и упрощения построения
+                    модели существуют различные библиотеки. Мы не использовали их в наших примерах,
+                    и поэтому код может быть несколько громоздким. Однако вы всегда можете улучшить
+                    его.</para>
+            </note>
+
+            <para>Метод <methodname>Create</methodname> предназначен для добавления новой записи о
+                поставщике. Параметры HTTP запроса с типом POST (у метода указан атрибут [HttpPost])
+                будут отображены на модель <classname>Cusotmer</classname>. Обратите внимание на
+                строку
+                <programlisting language="csharp">
+[Bind(Include = "NAME,ADDRESS,ZIPCODE,PHONE")] CUSTOMER customer                
+                </programlisting>
+                Здесь Bind указывает, какие параметры HTTP запроса отображать на свойства модели. </para>
+
+            <section>
+                <title>Аттрибут ValidateAntiforgeryToken</title>
+
+                <para>Обратите внимание на атрибут <emphasis role="bold"
+                        >ValidateAntiforgeryToken</emphasis>, он предназначен для противодействия
+                    подделке межсайтовых запросов, производя верификацию токенов при обращении к
+                    методу действия. Наличие этого атрибута требует чтобы в HTTP запросе
+                    присутствовал дополнительный параметр
+                        <property>__RequestVerificationToken</property>. Этот параметр автоматически
+                    добавляется в каждую форму в которой указан хелпер
+                        <function>@Html.AntiForgeryToken()</function>. Однако библиотека jqGrid
+                    использует динамически формируемые Ajax запросы, а не заранее созданные веб
+                    формы. Давайте исправим это. Для этого изменим обобщённое представлении
+                        <filename>Views/Shared/_Layout.cshtml</filename> следующим образом <programlisting language="javascript">
+<![CDATA[
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title – приложение ASP.NET</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jquery-ui")
+
+    <link href="~/Content/jquery.jqGrid/ui.jqgrid.css" 
+          rel="stylesheet" type="text/css" />
+    <link href="~/Content/jquery.jqGrid/ui.jqgrid-bootstrap.css" 
+          rel="stylesheet" type="text/css" />
+    <link href="~/Content/jquery.jqGrid/ui.jqgrid-bootstrap-ui.css" 
+          rel="stylesheet" type="text/css" />
+
+    <script src="~/Scripts/jquery.jqGrid.min.js" type="text/javascript"></script>
+    <script src="~/Scripts/i18n/grid.locale-ru.js" type="text/javascript"></script>
+</head>
+<body>
+    @Html.AntiForgeryToken()
+    <script>
+      // получение AntiForgery токена
+      function GetAntiForgeryToken() {
+        var tokenField = 
+          $("input[type='hidden'][name$='RequestVerificationToken']");
+        if (tokenField.length == 0) {
+            return null;
+        } else {
+            return {
+                name: tokenField[0].name,
+                value: tokenField[0].value
+            };
+        }
+      }
+
+      // добавляем префильтр на все ajax запросы
+      // он будет добавлять к любому POST ajax запросу
+      // AntiForgery токен
+      $.ajaxPrefilter(
+          function (options, localOptions, jqXHR) {
+              if (options.type !== "GET") {
+                  var token = GetAntiForgeryToken();
+                  if (token !== null) {
+                      if (options.data.indexOf("X-Requested-With") === -1) {
+                          options.data = "X-Requested-With=XMLHttpRequest" 
+                              + ((options.data === "") ? "" : "&" + options.data);
+                      }
+                      options.data = options.data + "&" + token.name + '=' 
+                                   + token.value;
+                  }
+              }
+          }
+      );
+      // инициализируем общие свойства модуля jqGrid
+      $.jgrid.defaults.width = 780;
+      $.jgrid.defaults.responsive = true;
+      $.jgrid.defaults.styleUI = 'Bootstrap';
+    </script>
+    <!-- Навигационное меню -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" 
+                        data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">                    
+                    <li>@Html.ActionLink("Поставщики", "Index", "Customer")</li>
+                    <li>@Html.ActionLink("Товары", "Index", "Product")</li>
+                    <li>@Html.ActionLink("Накладные", "Index", "Invoice")</li>                                       
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year – приложение ASP.NET</p>
+        </footer>
+    </div>
+    
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+]]>                    
+                </programlisting>
+                </para>
+            </section>
+        </section>
+
+        <section>
+            <title>Бандлы</title>
+
+            <para>Бандлы предназначены для упрощения подключения JavaScript скриптов и файлов
+                стилей. С помощью хелпера Styles.Render подключаются бандлы стилей, а с помощью
+                хелпера Scripts.Render — бандлы скриптов.</para>
+
+            <para>Регистрация бандлов осуществляется в файле <filename>BundleConfig.cs</filename>,
+                который находится в папке <filename>App_Start</filename>:
+                <programlisting language="csharp">
+public static void RegisterBundles(BundleCollection bundles)
+{
+    bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
+
+    bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
+                        "~/Scripts/jquery.validate*"));
+
+    bundles.Add(new ScriptBundle("~/bundles/jquery-ui").Include(
+                        "~/Scripts/jquery-ui-{version}.js"));
+
+    bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
+                        "~/Scripts/modernizr-*"));
+
+    bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.js",
+                      "~/Scripts/respond.js"));
+
+    bundles.Add(new StyleBundle("~/Content/css").Include(
+                      "~/Content/jquery-ui.min.css",
+                      "~/Content/themes/ui-darkness/jquery-ui.min.css",
+                      "~/Content/themes/ui-darkness/theme.css",
+                      "~/Content/bootstrap.min.css",                     
+                      "~/Content/Site.css"
+                ));
+}                   
+                </programlisting>
+            </para>
+            <para> Здесь метод <methodname>RegisterBundles</methodname> добавляет все создаваемые
+                бандлы в коллекцию bundles. Объявление бандла выглядит следующим образом:
+                <programlisting language="csharp">
+new ScriptBundle("~/bundles/jquery").Include("~/Scripts/jquery-{version}.js")
+                    </programlisting>
+            </para>
+            <para>В конструктор <function>ScriptBundle</function> передаётся виртуальный путь
+                бандла. А с помощью метода <function>Include</function> в данный бандл включаются
+                конкретные файлы скриптов.</para>
+            <para>В выражении <code>"~/Scripts/jquery-{version}.js"</code> параметр
+                    <varname>{version}</varname> является заменителем для любого символьного
+                обозначения версии скрипта. Это очень удобно, поскольку через некоторое время мы
+                можем поменять версию библиотеки, но при этом в коде нам ничего не придётся менять,
+                так как система уже автоматически примет новую версию.</para>
+            <para>Выражение <code>"~/Scripts/jquery.validate*"</code> с помощью знака звёздочки
+                заменяет остальную часть строки. Например, это выражение подключит в бандл сразу два
+                файла: <filename>jquery.validate.js</filename> и
+                    <filename>jquery.validate.unobtrusive.js</filename> (и их минимизированные
+                версии), так как их названия начинаются с <code>jquery.validate*</code>.</para>
+            <para>То же самое касается и создания бандлов стилей, только в этом случае используется
+                класс <classname>StyleBundle</classname>.</para>
+            <para>Во время отладки желательно иметь полные версии скриптов и стилей, а при
+                развёртывании приложения – минифицированные. Бандлы позволяют решить эту задачу.
+                Когда приложение находится в режиме отладки, то файле
+                    <filename>web.config</filename> параметр &lt;compilation debug="true"&gt;. При
+                изменении этого параметра на значение <literal>false</literal> (режим компиляции
+                Release) вместо полных версий JavaScript модулей и файлов CSS стилей будут
+                использоваться минифицированные.</para>
+        </section>
+
+        <section>
+            <title>Представления</title>
+
+            <para>Из всех автоматически созданных представлений для контроллера
+                    <classname>Customer</classname> нам потребуется только один
+                    <filename>View/Customer/Index.cshtml</filename>, остальные можно удалить из этой
+                папки.</para>
+
+            <para>
+                <programlisting language="javascript">
+<![CDATA[
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Customers</h2>
+
+<table id="jqg"></table>
+<div id="jqg-pager"></div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        var dbGrid = $("#jqg").jqGrid({
+            url: '@Url.Action("GetData")', // url для получения данных
+            datatype: "json", // формат получения данных 
+            mtype: "GET",     // тип http запроса
+            // описание модели
+            colModel: [
+                {
+                    label: 'Id',          // подпись
+                    name: 'CUSTOMER_ID',  // имя поля
+                    key: true,            // признак ключевого поля
+                    hidden: true          // скрыт 
+                },
+                {
+                    label: 'Name',
+                    name: 'NAME',
+                    width: 250,           // ширина
+                    sortable: true,       // разрешена сортировка
+                    editable: true,       // разрешено редактирование
+                    edittype: "text",     // тип поля в редакторе
+                    search: true,         // разрешён поиск
+                    searchoptions: {
+                        sopt: ['eq', 'bw', 'cn'] // разрешённые операторы поиска
+                    },
+                    // размер и максимальная длина для поля ввода
+                    editoptions: { size: 30, maxlength: 60 }, 
+                    // говорит о том, что поле обязательное
+                    editrules: { required: true } 
+                },
+                {
+                    label: 'Address',
+                    name: 'ADDRESS',
+                    width: 300,
+                    sortable: false,    // запрещаем сортировку
+                    editable: true,     // редактируемое
+                    search: false,      // запрещаем поиск
+                    edittype: "textarea",
+                    editoptions: { maxlength: 250, cols: 30, rows: 4 }
+                },
+                {
+                    label: 'Zip Code',
+                    name: 'ZIPCODE',
+                    width: 30,
+                    sortable: false,
+                    editable: true,
+                    search: false,
+                    edittype: "text",
+                    editoptions: { size: 30, maxlength: 10 },
+                },
+                {
+                    label: 'Phone',
+                    name: 'PHONE',
+                    width: 80,
+                    sortable: false,
+                    editable: true,
+                    search: false,
+                    edittype: "text",
+                    editoptions: { size: 30, maxlength: 14 },
+                }
+            ],
+            rowNum: 500, // число отображаемых строк
+            loadonce: false, // загрузка только один раз
+            sortname: 'NAME', // сортировка по умолчанию по столбцу NAME
+            sortorder: "asc", // порядок сортировки
+            width: window.innerWidth - 80, // ширина грида
+            height: 500,      // высота грида
+            viewrecords: true, // отображать количество записей
+            caption: "Customers", // подпись к гриду
+            pager: 'jqg-pager'  // элемент для отображения навигации
+        });
+
+        dbGrid.jqGrid('navGrid', '#jqg-pager', {
+            search: true,  // поиск
+            add: true,     // добавление
+            edit: true,    // редактирование
+            del: true,     // удаление
+            view: true,    // просмотр записи
+            refresh: true, // обновление
+            // подписи кнопок
+            searchtext: "Поиск",
+            addtext: "Добавить",
+            edittext: "Изменить",
+            deltext: "Удалить",
+            viewtext: "Смотреть",
+            viewtitle: "Выбранная запись",
+            refreshtext: "Обновить"
+        },
+        update("edit"), // обновление
+        update("add"), // добавление    
+        update("del") // удаление
+        );
+
+        // функция возвращающая настройки редактора
+        function update(act) {
+            return {
+                closeAfterAdd: true, // закрыть после добавления
+                closeAfterEdit: true, // закрыть после редактирования
+                width: 400,           // ширина редактора
+                reloadAfterSubmit: true, // обновление
+                drag: true,              // перетаскиваемый
+                // обработчик отправки формы редактирования/удаления/добавления
+                onclickSubmit: function (params, postdata) {
+                    // получаем идентификатор строки
+                    var selectedRow = dbGrid.getGridParam("selrow");
+                    // устанавливаем url в зависимости от операции
+                    switch (act) {
+                        case "add":
+                            params.url = '@Url.Action("Create")';
+                            break;
+
+                        case "edit":
+                            params.url = '@Url.Action("Edit")';
+                            postdata.CUSTOMER_ID = selectedRow;
+                            break;
+
+                        case "del":
+                            params.url = '@Url.Action("Delete")';
+                            postdata.CUSTOMER_ID = selectedRow;
+                            break;
+                    }
+                },
+                // обработчик результатов обработки форм (операций)
+                afterSubmit: function (response, postdata) {
+                    var responseData = response.responseJSON;
+                    // проверяем результат на наличие сообщений об ошибках
+                    if (responseData.hasOwnProperty("error")) {
+                        if (responseData.error.length) {
+                            return [false, responseData.error];
+                        }
+                    }
+                    else {
+                        // обновление грида
+                        $(this).jqGrid(
+                            'setGridParam',
+                            {
+                                datatype: 'json'
+                            }
+                        ).trigger('reloadGrid');
+                    }
+                    return [true, "", 0];
+                }
+            };
+        };
+
+    });
+</script>
+]]>                        
+                    </programlisting>
+            </para>
+
+            <para>Как видите всё представление состоит из заголовка, таблицы jqg и блока jqg-pager
+                для отображения панели навигации, остальное занимает скрипт по инициализации грида,
+                панели навигации и диалога редактирования. Для правильного отображения грида,
+                размещения элементов ввода в форме редактирования, настройки валидации форм ввода,
+                настройки возможностей сортировки и поиска важно правильно настроить свойства
+                модели. Эта настройка довольно нетривиальна и содержит множество параметров. Я
+                постарался описать используемые параметры в комментариях. Полное описание параметров
+                модели вы можете найти в документации по библиотеки jqGrid в разделе <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki:colmodel_options"
+                    >ColModel API</link>.</para>
+            <para>Обратите внимание, что для параметров редактирования и удаления нам пришлось
+                добавить в параметры запроса идентификатор заказчика <programlisting language="javascript">
+<![CDATA[
+    case "edit":
+        params.url = '@Url.Action("Edit")';
+        postdata.CUSTOMER_ID = selectedRow;
+        break;
+
+    case "del":
+        params.url = '@Url.Action("Delete")';
+        postdata.CUSTOMER_ID = selectedRow;
+        break;
+]]>                        
+                    </programlisting> Это сделано потому, что jqGrid
+                автоматически не добавляет в форму ввода скрытые колонки грида, хотя, на мой взгляд,
+                это было бы логично, хотя бы для ключевых полей. </para>
+            <para>Работающая страница справочника поставщиков будет выглядеть следующим образом: <figure>
+                    <title>Справочник заказчиков</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-customers-screen.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Справочник заказчиков.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Редактирование заказчика</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/mvcnet-customers-edit-screen.png" width="680"
+                            />
+                        </imageobject>
+                        <textobject>
+                            <phrase>Редактирование заказчика.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+            <para>Контроллер и представление для справочника товаров делаются по аналогии. Здесь мы
+                не будем описывать их подробно, вы можете написать их самостоятельно или найти в
+                исходных кодах, которые прилагаются к данной статье.</para>
+        </section>
+    </section>
+    <section>
+        <title>Создание пользовательского интерфейса журналов</title>
+
+        <para>В нашем приложении будет один журнал «Счёт-фактуры». В отличие от справочников журналы
+            содержат довольно большое количество записей и являются часто пополняемыми.</para>
+        <para>Счёт-фактура – состоит из заголовка, где описываются общие атрибуты (номер, дата,
+            заказчик …), и строк счёт-фактуры со списком товаром, их количеством, стоимостью и т.д.
+            Для экономии пространства страницы мы сделаем детализирующий грид скрытым. Он будет
+            отображён лишь при клике по иконке со знаком «+», таким образом, у нас получается, что
+            детализирующий грид вложен в главный. </para>
+
+        <section>
+            <title>Контроллер для счёт-фактур</title>
+
+            <para>Контроллер журнала счёт фактуры должен уметь отдавать данные как по шапкам
+                счёт-фактуры, так и по её позициям. То же самое касается методов для добавления,
+                редактирования и удаления. <programlisting language="csharp">
+<![CDATA[
+[Authorize(Roles = "manager")]
+public class InvoiceController : Controller
+{
+    private DbModel db = new DbModel();
+
+    // Отображение представления
+    public ActionResult Index()
+    {
+        return View();
+    }
+
+    // Получение данных в виде JSON для главного грида
+    public ActionResult GetData(int? rows, int? page, string sidx, string sord,
+        string searchField, string searchString, string searchOper)
+    {
+        // получаем номер страницы, количество отображаемых данных
+        int pageNo = page ?? 1;
+        int limit = rows ?? 20;
+        // вычисляем смещение
+        int offset = (pageNo - 1) * limit;
+
+        // строим запрос для получения счёт-фактур
+        var invoicesQuery =
+            from invoice in db.INVOICES
+            where (invoice.INVOICE_DATE >= AppVariables.StartDate) &&
+                  (invoice.INVOICE_DATE <= AppVariables.FinishDate)
+            select new
+            {
+                INVOICE_ID = invoice.INVOICE_ID,
+                CUSTOMER_ID = invoice.CUSTOMER_ID,
+                CUSTOMER_NAME = invoice.CUSTOMER.NAME,
+                INVOICE_DATE = invoice.INVOICE_DATE,
+                TOTAL_SALE = invoice.TOTAL_SALE,
+                PAID = invoice.PAID
+            };
+
+        // добавлением в запрос условия поиска, если он производится
+        // для разных полей доступны разные операторы
+        // сравнения при поиске
+        if (searchField == "CUSTOMER_NAME")
+        {
+             switch (searchOper)
+             {
+                 case "eq": // equal
+                     invoicesQuery = invoicesQuery.Where(
+                        c => c.CUSTOMER_NAME == searchString);
+                     break;
+                 case "bw": // starting with
+                     invoicesQuery = invoicesQuery.Where(
+                        c => c.CUSTOMER_NAME.StartsWith(searchString));
+                     break;
+                 case "cn": // containing
+                     invoicesQuery = invoicesQuery.Where(
+                        c => c.CUSTOMER_NAME.Contains(searchString));
+                     break;
+             }
+        }
+        if (searchField == "INVOICE_DATE")
+        {
+            var dateValue = DateTime.Parse(searchString);
+            switch (searchOper)
+            {
+                case "eq": // =
+                    invoicesQuery = invoicesQuery.Where(
+                        c => c.INVOICE_DATE == dateValue);
+                    break;
+                case "lt": // <
+                    invoicesQuery = invoicesQuery.Where(
+                        c => c.INVOICE_DATE < dateValue);
+                    break;
+                case "le": // <=
+                    invoicesQuery = invoicesQuery.Where(
+                        c => c.INVOICE_DATE <= dateValue);
+                    break;
+                case "gt": // >
+                    invoicesQuery = invoicesQuery.Where(
+                        c => c.INVOICE_DATE > dateValue);
+                    break;
+                case "ge": // >=
+                    invoicesQuery = invoicesQuery.Where(
+                        c => c.INVOICE_DATE >= dateValue);
+                    break;
+
+            }
+        }
+        if (searchField == "PAID")
+        {
+            int iVal = (searchString == "on") ? 1 : 0;
+            invoicesQuery = invoicesQuery.Where(c => c.PAID == iVal);
+        }
+
+        // получаем общее количество счёт-фактур
+        int totalRows = invoicesQuery.Count();
+
+        // добавляем сортировку
+        switch (sord)
+        {
+            case "asc":
+                invoicesQuery = invoicesQuery.OrderBy(
+                    invoice => invoice.INVOICE_DATE);
+                break;
+            case "desc":
+                invoicesQuery = invoicesQuery.OrderByDescending(
+                    invoice => invoice.INVOICE_DATE);
+                break;
+        }
+
+        // получаем список счёт-фактур
+        var invoices = invoicesQuery
+             .Skip(offset)
+             .Take(limit)
+             .ToList();
+
+        // вычисляем общее количество страниц
+        int totalPages = totalRows / limit + 1;
+
+        // создаём результат для jqGrid
+        var result = new
+        {
+            page = pageNo,
+            total = totalPages,
+            records = totalRows,
+            rows = invoices
+        };
+
+        // преобразуем результат в JSON
+        return Json(result, JsonRequestBehavior.AllowGet);
+    }
+
+    // Получение данных в виде JSON для детализирующего грида
+    public ActionResult GetDetailData(int? invoice_id)
+    {
+        // строим запрос для получения позиций счёт-фактуры
+        // отфильтрованный по коду счёт-фактуры
+        var lines =
+            from line in db.INVOICE_LINES
+            where line.INVOICE_ID == invoice_id
+            select new
+            {
+                INVOICE_LINE_ID = line.INVOICE_LINE_ID,
+                INVOICE_ID = line.INVOICE_ID,
+                PRODUCT_ID = line.PRODUCT_ID,
+                Product = line.PRODUCT.NAME,
+                Quantity = line.QUANTITY,
+                Price = line.SALE_PRICE,
+                Total = line.QUANTITY * line.SALE_PRICE
+            };
+
+        // получаем список позиций 
+        var invoices = lines
+             .ToList();
+
+        // создаём результат для jqGrid
+        var result = new
+        {
+            rows = invoices
+        };
+
+        // преобразуем результат в JSON
+        return Json(result, JsonRequestBehavior.AllowGet);
+    }
+
+
+    // Добавление новой шапки счёт-фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Create(
+       [Bind(Include = "CUSTOMER_ID,INVOICE_DATE")] INVOICE invoice)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                var INVOICE_ID = new FbParameter("INVOICE_ID", FbDbType.Integer);
+                var CUSTOMER_ID = new FbParameter("CUSTOMER_ID", FbDbType.Integer);
+                var INVOICE_DATE = new FbParameter("INVOICE_DATE", 
+                                           FbDbType.TimeStamp);
+                // инициализируем параметры значениями
+                INVOICE_ID.Value = db.NextValueFor("GEN_INVOICE_ID");
+                CUSTOMER_ID.Value = invoice.CUSTOMER_ID;
+                INVOICE_DATE.Value = invoice.INVOICE_DATE;
+                // выполняем ХП
+                db.Database.ExecuteSqlCommand(
+    "EXECUTE PROCEDURE SP_ADD_INVOICE(@INVOICE_ID, @CUSTOMER_ID, @INVOICE_DATE)",
+                    INVOICE_ID,
+                    CUSTOMER_ID,
+                    INVOICE_DATE);
+                    // возвращаем успех в формате JSON
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                // возвращаем ошибку в формате JSON
+                return Json(new { error = ex.Message });
+            }
+
+        }
+        else {
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+        }
+    }
+
+
+    // Редактирование шапки счёт-фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Edit(
+       [Bind(Include = "INVOICE_ID,CUSTOMER_ID,INVOICE_DATE")] INVOICE invoice)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                var INVOICE_ID = new FbParameter("INVOICE_ID", FbDbType.Integer);
+                var CUSTOMER_ID = new FbParameter("CUSTOMER_ID", FbDbType.Integer);
+                var INVOICE_DATE = new FbParameter("INVOICE_DATE", 
+                                                   FbDbType.TimeStamp);
+                // инициализируем параметры значениями
+                INVOICE_ID.Value = invoice.INVOICE_ID;
+                CUSTOMER_ID.Value = invoice.CUSTOMER_ID;
+                INVOICE_DATE.Value = invoice.INVOICE_DATE;
+                // выполняем ХП
+                db.Database.ExecuteSqlCommand(
+    "EXECUTE PROCEDURE SP_EDIT_INVOICE(@INVOICE_ID, @CUSTOMER_ID, @INVOICE_DATE)",
+                    INVOICE_ID,
+                    CUSTOMER_ID,
+                    INVOICE_DATE);
+                // возвращаем успех в формате JSON
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                // возвращаем ошибку в формате JSON
+                return Json(new { error = ex.Message });
+            }
+        }
+        else {
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+        }
+    }
+
+
+    // Удаление шапки счёт-фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Delete(int id)
+    {
+        try
+        {
+            var INVOICE_ID = new FbParameter("INVOICE_ID", FbDbType.Integer);
+            // инициализируем параметры значениями
+            INVOICE_ID.Value = id;
+            // выполняем ХП
+            db.Database.ExecuteSqlCommand(
+                "EXECUTE PROCEDURE SP_DELETE_INVOICE(@INVOICE_ID)",
+                INVOICE_ID);
+            // возвращаем успех в формате JSON
+            return Json(true);
+        }
+        catch (Exception ex)
+        {
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = ex.Message });
+        }
+    }
+
+    // Оплата счёт фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Pay(int id)
+    {
+        try
+        {
+            var INVOICE_ID = new FbParameter("INVOICE_ID", FbDbType.Integer);
+            // инициализируем параметры значениями
+            INVOICE_ID.Value = id;
+            // выполняем ХП
+            db.Database.ExecuteSqlCommand(
+                "EXECUTE PROCEDURE SP_PAY_FOR_INOVICE(@INVOICE_ID)",
+                INVOICE_ID);
+            // возвращаем успех в формате JSON
+            return Json(true);
+        }
+        catch (Exception ex)
+        {
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = ex.Message });
+        }
+    }
+
+    // Добавление позиции счёт фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult CreateDetail(
+       [Bind(Include = "INVOICE_ID,PRODUCT_ID,QUANTITY")] INVOICE_LINE invoiceLine)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                var INVOICE_ID = new FbParameter("INVOICE_ID", FbDbType.Integer);
+                var PRODUCT_ID = new FbParameter("PRODUCT_ID", FbDbType.Integer);
+                var QUANTITY = new FbParameter("QUANTITY", FbDbType.Integer);
+                // инициализируем параметры значениями
+                INVOICE_ID.Value = invoiceLine.INVOICE_ID;
+                PRODUCT_ID.Value = invoiceLine.PRODUCT_ID;
+                QUANTITY.Value = invoiceLine.QUANTITY;
+                // выполняем ХП
+                db.Database.ExecuteSqlCommand(
+    "EXECUTE PROCEDURE SP_ADD_INVOICE_LINE(@INVOICE_ID, @PRODUCT_ID, @QUANTITY)",
+                    INVOICE_ID,
+                    PRODUCT_ID,
+                    QUANTITY);
+                // возвращаем успех в формате JSON
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                // возвращаем ошибку в формате JSON
+                return Json(new { error = ex.Message });
+            }
+        }
+        else {
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+        }
+    }
+
+    // редактирование позиции счёт фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult EditDetail(
+      [Bind(Include = "INVOICE_LINE_ID,INVOICE_ID,PRODUCT_ID,QUANTITY")] 
+      INVOICE_LINE invoiceLine)
+    {
+        // проверяем правильность модели
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                // Создание параметров
+                var INVOICE_LINE_ID = new FbParameter("INVOICE_LINE_ID", 
+                                             FbDbType.Integer);
+                var QUANTITY = new FbParameter("QUANTITY", FbDbType.Integer);
+                // инициализируем параметры значениями
+                INVOICE_LINE_ID.Value = invoiceLine.INVOICE_LINE_ID;
+                QUANTITY.Value = invoiceLine.QUANTITY;
+                // выполняем ХП
+                db.Database.ExecuteSqlCommand(
+    "EXECUTE PROCEDURE SP_EDIT_INVOICE_LINE(@INVOICE_LINE_ID, @QUANTITY)",
+                    INVOICE_LINE_ID,
+                    QUANTITY);
+                // возвращаем успех в формате JSON
+                return Json(true);
+            }
+            catch (Exception ex)
+            {
+                // возвращаем ошибку в формате JSON
+                return Json(new { error = ex.Message });
+            }
+        }
+        else {
+            string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = messages });
+        }
+    }
+
+    // Удаление позиции счёт фактуры
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult DeleteDetail(int id)
+    {
+        try
+        {
+            // Создание параметров
+            var INVOICE_LINE_ID = new FbParameter("INVOICE_LINE_ID", 
+                                          FbDbType.Integer);
+            // инициализируем параметры значениями
+            INVOICE_LINE_ID.Value = id;
+            // выполняем ХП
+            db.Database.ExecuteSqlCommand(
+                 "EXECUTE PROCEDURE SP_DELETE_INVOICE_LINE(@INVOICE_LINE_ID)",
+                 INVOICE_LINE_ID);
+            // возвращаем успех в формате JSON
+            return Json(true);
+        }
+        catch (Exception ex)
+        {
+            // возвращаем ошибку в формате JSON
+            return Json(new { error = ex.Message });
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            db.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>В методе <classname>GetDetailData</classname> для получения списка позиций
+                счёт-фактуры нет кода для постраничной навигации. Дело в том, что у конкретной
+                счёт-фактуры не очень много позиций для того чтобы применять к ним постраничную
+                навигацию. Это упрощает код, и делает его быстрее.</para>
+            <para>На этот раз все действия по модификации данных выполняются в хранимых процедурах,
+                однако вы можете выполнить те же действия с помощью Entity Framework. Тексты
+                хранимых процедур вы можете посмотреть в скрипте создания БД.</para>
+        </section>
+        <section>
+            <title>Представления для счёт-фактур</title>
+
+            <para>Как и для контроллера Customer нам потребуется только одно представление
+                    <filename>View/Invoice/Index.cshtml</filename>, остальные можно удалить из этой
+                папки. Сама разметка представления очень проста, а вот JavaScript кода довольно
+                много. Будем описывать js код по частям. <programlisting language="javascript">
+<![CDATA[
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Invoices</h2>
+
+<table id="jqg"></table>
+<div id="jpager"></div>
+
+<script type="text/javascript">
+
+    /**
+     * Код для работы с jqGrid
+     */
+</script>
+]]>                    
+                </programlisting>
+            </para>
+            <para>Для начала рассмотрим код для работы с главным гридом. По сути, в нём необходимо
+                только прописать свойства модели (типы и размеры полей, параметры поиска,
+                сортировки, видимости и т.д.). <programlisting language="javascript">
+<![CDATA[
+// Грид с инвойсами
+var dbGrid = $("#jqg").jqGrid({
+    url: '@Url.Action("GetData")', // url для получения данных
+    datatype: "json", // формат получения данных
+    mtype: "GET",     // тип http запроса
+    // описание модели
+    colModel: [
+        {
+            label: 'Id',         // подпись
+            name: 'INVOICE_ID',  // имя поля
+            key: true,           // признак ключевого поля   
+            hidden: true         // скрыт 
+        },
+        {
+            label: 'CUSTOMER_ID', // подпись
+            name: 'CUSTOMER_ID',  // имя поля
+            hidden: true,         // скрыт 
+            editrules: { edithidden: true, required: true }, // скрытое и требуемое
+            editable: true,       // редактируемое
+            edittype:'custom',    // собственный тип
+            editoptions: {
+                custom_element: function (value, options) {
+                     // добавляем скрытый input
+                     return $("<input>")
+                             .attr('type', 'hidden')
+                             .attr('rowid', options.rowId)
+                             .addClass("FormElement")
+                             .addClass("form-control")
+                             .val(value)
+                             .get(0);
+                }
+            }
+        },
+        {
+            label: 'Date',
+            name: 'INVOICE_DATE',
+            width: 60,             // ширина
+            sortable: true,        // позволять сортировку
+            editable: true,        // редактируемое
+            search: true,          // разрешён поиск
+            edittype: "text",      // тип поля ввода
+            align: "right",        // выравнено по правому краю
+            formatter: 'date',     // отформатировано как дата
+            sorttype: 'date',      // сортируем как дату
+            formatoptions: {       // формат даты
+                srcformat: 'd.m.Y H:i:s',
+                newformat: 'd.m.Y H:i:s'
+            },
+            editoptions: {
+                // инициализация элемента формы для редактирования
+                dataInit: function (element) {
+                    // создаём datepicker
+                    $(element).datepicker({
+                        id: 'invoiceDate_datePicker',
+                        dateFormat: 'dd.mm.yy',
+                        minDate: new Date(2000, 0, 1),
+                        maxDate: new Date(2030, 0, 1)
+                    });
+                }
+            },
+            searchoptions: {
+                // инициализация элемента формы для поиска
+                dataInit: function (element) {
+                    // создаём datepicker
+                    $(element).datepicker({
+                        id: 'invoiceDate_datePicker',
+                        dateFormat: 'dd.mm.yy',
+                        minDate: new Date(2000, 0, 1),
+                        maxDate: new Date(2030, 0, 1)
+                    });
+                },
+                searchoptions: { // типы поиска
+                    sopt: ['eq', 'lt', 'le', 'gt', 'ge']
+                },
+            }
+        },
+        {
+            label: 'Customer',
+            name: 'CUSTOMER_NAME',
+            width: 250,
+            editable: true,
+            edittype: "text",
+            editoptions: {
+                size: 50,
+                maxlength: 60,
+                readonly: true    // только чтение
+            },
+            editrules: { required: true },
+            search: true,
+            searchoptions: {
+                        sopt: ['eq', 'bw', 'cn']
+            },
+        },
+        {
+            label: 'Amount',
+            name: 'TOTAL_SALE',
+            width: 60,
+            sortable: false,
+            editable: false,
+            search: false,
+            align: "right",
+            formatter: 'currency', // форматировать как валюту
+            sorttype: 'number',
+            searchrules: {
+                 "required": true,
+                 "number": true,
+                 "minValue": 0
+            }
+        },
+        {
+            label: 'Paid',
+            name: 'PAID',
+            width: 30,
+            sortable: false,
+            editable: true,
+            search: true,
+            searchoptions: {
+                sopt: ['eq']
+            },
+            edittype: "checkbox", // галочка
+            formatter: "checkbox",
+            stype: "checkbox",
+            align: "center",
+            editoptions: {
+                value: "1",
+                offval: "0"
+            }
+        }
+    ],
+    rowNum: 500, // число отображаемых строк
+    loadonce: false, // загрузка только один раз
+    sortname: 'INVOICE_DATE', // сортировка по умолчанию по столбцу NAME
+    sortorder: "desc", // порядок сортировки
+    width: window.innerWidth - 80, // ширина грида
+    height: 500, // высота грида
+    viewrecords: true, // отображать количество записей
+    caption: "Invoices", // подпись к гриду
+    pager: '#jpager', // элемент для отображения постраничной навигации
+    subGrid: true, // показывать вложенный грид
+    // javascript функция для отображения родительского грида
+    subGridRowExpanded: showChildGrid, 
+    subGridOptions: { // опции вложенного грида
+         // загружать данные только один раз
+         reloadOnExpand: false,
+         // загружать строки подгрида только при щелчке по иконке "+"
+         selectOnExpand: true
+    },
+});
+
+// отображение панели навигации
+dbGrid.jqGrid('navGrid', '#jpager',
+    {
+         search: true,  // поиск
+         add: true,     // добавление
+         edit: true,    // редактирование
+         del: true,     // удаление
+         view: false,    // просмотр записи
+         refresh: true, // обновление
+
+         searchtext: "Поиск",
+         addtext: "Добавить",
+         edittext: "Изменить",
+         deltext: "Удалить",
+         viewtext: "Смотреть",
+         viewtitle: "Выбранная запись",
+         refreshtext: "Обновить"
+    },
+    update("edit"), // обновление
+    update("add"), // добавление
+    update("del") // удаление
+);
+]]>                    
+                </programlisting>
+            </para>
+            <para>Добавим в главный грид ещё «пользовательскую» одну кнопку для оплаты счёт-фактуры. <programlisting language="javascript">
+<![CDATA[
+// добавление кнопки для оплаты счёт фактуры
+dbGrid.navButtonAdd('#jpager',
+    {
+        buttonicon: "glyphicon-usd",
+        title: "Оплатить",
+        caption: "Оплатить",
+        position: "last",
+        onClickButton: function () {
+            // получаем идентификатор текущей записи
+            var id = dbGrid.getGridParam("selrow");
+            if (id) {
+                var url = '@Url.Action("Pay")';
+                $.ajax({
+                     url: url,
+                     type: 'POST',
+                     data: { id: id },
+                     success: function (data) {
+                         // проверяем, не произошла ли ошибка
+                         if (data.hasOwnProperty("error")) {
+                             alertDialog('Ошибка', data.error);
+                         }
+                         else {
+                             // обновление грида
+                             $("#jqg").jqGrid(
+                                 'setGridParam',
+                                 {
+                                     datatype: 'json'
+                                 }
+                             ).trigger('reloadGrid');
+                         }
+                     }
+                });
+            }
+        }
+    });
+]]>                  
+                </programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Диалоги редактирования счёт-фактуры</title>
+
+            <para>В отличие от справочников диалоги редактирования для журналов намного сложнее.
+                Зачастую они используют выбор из других справочников. Поэтому такие диалоги
+                редактирования не получится построить стандартными способами jqGrid, однако в этой
+                библиотеки существует возможность построение диалогов по шаблону, которой мы и
+                воспользуемся.</para>
+            <para>Для выбора заказчика сделаем поле только для чтения и разместим справа от него
+                кнопку для вызова формы с гридом для отображения списка заказчиков. <programlisting language="javascript">
+<![CDATA[
+// возвращает свойства для создания диалогов редактирования
+function update(act) {
+    // шаблон диалога редактирования
+    var template = "<div style='margin-left:15px;' id='dlgEditInvoice'>";
+    template += "<div>{CUSTOMER_ID} </div>";
+    template += "<div> Date: </div><div>{INVOICE_DATE} </div>";
+    // поле ввода заказчика с кнопкой
+    template += "<div> Customer <sup>*</sup>:</div>";
+    template += "<div>";
+    template += "<div style='float: left;'>{CUSTOMER_NAME}</div> ";
+    template += "<a style='margin-left: 0.2em;' class='btn'";
+    template += " onclick='showCustomerWindow(); return false;'>";
+    template += "<span class='glyphicon glyphicon-folder-open'></span>";
+    template += " Выбрать</a> ";
+    template += "<div style='clear: both;'></div>";
+    template += "</div>";
+    template += "<div> {PAID} Paid </div>";
+    template += "<hr style='width: 100%;'/>";
+    template += "<div> {sData} {cData}  </div>";
+    template += "</div>";
+
+    return {
+        top: $(".container.body-content").position().top + 150,
+        left: $(".container.body-content").position().left + 150,
+        modal: true,
+        drag: true,
+        closeOnEscape: true,
+        closeAfterAdd: true, // закрыть после добавления
+        closeAfterEdit: true, // закрыть после редактирования
+        reloadAfterSubmit: true, // обновление
+        template: (act != "del") ? template : null,
+        onclickSubmit: function (params, postdata) {
+                    // получаем идентификатор строки
+                    var selectedRow = dbGrid.getGridParam("selrow");
+                    switch (act) {
+                        case "add":
+                            params.url = '@Url.Action("Create")';
+                            // получаем идентификатор заказчика для текущей строки
+                            postdata.CUSTOMER_ID = 
+                                $('#dlgEditInvoice input[name=CUSTOMER_ID]').val();
+                            break;
+
+                        case "edit":
+                            params.url = '@Url.Action("Edit")';
+                            postdata.INVOICE_ID = selectedRow;
+                            // получаем идентификатор заказчика для текущей строки
+                            postdata.CUSTOMER_ID = 
+                                $('#dlgEditInvoice input[name=CUSTOMER_ID]').val();
+                            break;
+
+                        case "del":
+                            params.url = '@Url.Action("Delete")';
+                            postdata.INVOICE_ID = selectedRow;
+                            break;
+                    }
+                },
+                afterSubmit: function (response, postdata) {
+                    var responseData = response.responseJSON;
+                    // проверяем результат на наличие сообщений об ошибках
+                    if (responseData.hasOwnProperty("error")) {
+                        if (responseData.error.length) {
+                            return [false, responseData.error];
+                        }
+                    }
+                    else {
+                        // обновление грида
+                        $(this).jqGrid(
+                            'setGridParam',
+                            {
+                                datatype: 'json'
+                            }
+                        ).trigger('reloadGrid');
+                    }
+                    return [true, "", 0];
+                }
+        };
+    };
+}    
+]]>                    
+                </programlisting>
+            </para>
+            <para>Теперь напишем функцию для открытия справочника заказчиков. В этой функции мы
+                будем создавать диалог с помощью библиотеки Bootstrap, в котором будет размещён грид
+                для выбора заказчика. По сути, это тот же самый грид, который мы использовали выше,
+                но размещённый внутри диалогового окна. При нажатии кнопки «OK» идентификатор
+                заказчика и его имя будут записаны в элементы ввода родительского диалога для
+                редактирования счёт-фактуры. <programlisting language="javascript">
+<![CDATA[
+/**
+  * Отображение окна для выбора справочника заказчиков
+  */
+function showCustomerWindow() {
+    // основной блок диалога
+    var dlg = $('<div>')
+        .attr('id', 'dlgChooseCustomer')
+        .attr('aria-hidden', 'true')
+        .attr('role', 'dialog')
+        .attr('data-backdrop', 'static')
+        .css("z-index", '2000')
+        .addClass('modal')
+        .appendTo($('body'));
+
+    // блок с содержимым диалога
+    var dlgContent = $("<div>")
+        .addClass("modal-content")
+        .css('width', '730px')
+        .appendTo($('<div>')
+        .addClass('modal-dialog')
+        .appendTo(dlg));
+
+    // блок с шапкой диалога
+    var dlgHeader = $('<div>').addClass("modal-header").appendTo(dlgContent);
+    // кнопка "X" для закрытия
+    $("<button>")
+        .addClass("close")
+        .attr('type', 'button')
+        .attr('aria-hidden', 'true')
+        .attr('data-dismiss', 'modal')
+        .html("&times;")
+        .appendTo(dlgHeader);
+    // подпись
+    $("<h5>").addClass("modal-title").html("Выбор заказчика").appendTo(dlgHeader);
+
+    // тело диалога
+    var dlgBody = $('<div>')
+        .addClass("modal-body")
+        .appendTo(dlgContent);
+
+    // подвал диалога
+    var dlgFooter = $('<div>').addClass("modal-footer").appendTo(dlgContent);
+    // Кнопка "OK"
+    $("<button>")
+        .attr('type', 'button')
+        .addClass('btn')
+        .html('OK')
+        .on('click', function () {
+            var rowId = $("#jqgCustomer").jqGrid("getGridParam", "selrow");
+            var row = $("#jqgCustomer").jqGrid("getRowData", rowId);
+            // сохраняем идентификатор и имя заказчика
+            // в элементы ввода родительской формы
+            $('#dlgEditInvoice input[name=CUSTOMER_ID]').val(rowId);
+            $('#dlgEditInvoice input[name=CUSTOMER_NAME]').val(row["NAME"]);
+            dlg.modal('hide');
+        })
+        .appendTo(dlgFooter);
+    // Кнопка "Cancel"
+    $("<button>")
+        .attr('type', 'button')
+        .addClass('btn')
+        .html('Cancel')
+        .on('click', function () { dlg.modal('hide'); })
+        .appendTo(dlgFooter);
+    // добавляем таблицу для отображения заказчиков в тело диалога
+    $('<table>')
+        .attr('id', 'jqgCustomer')
+        .appendTo(dlgBody);
+    // добавляем панель навигации
+    $('<div>')
+        .attr('id', 'jqgCustomerPager')
+        .appendTo(dlgBody);
+
+    dlg.on('hidden.bs.modal', function () {
+        dlg.remove();
+    });
+
+    // отображаем диалог
+    dlg.modal();
+
+    // создание и инициализация jqGrid
+    var dbGrid = $("#jqgCustomer").jqGrid({
+        url: '@Url.Action("GetData", "Customer")', // url для получения данных
+        mtype: "GET", // тип http запроса 
+        datatype: "json", // формат получения данных 
+        page: 1,
+        width: '100%',
+        // описание модели
+        colModel: [
+            {
+                 label: 'Id',          // подпись
+                 name: 'CUSTOMER_ID',  // имя поля
+                 key: true,            // признак ключевого поля
+                 hidden: true          // скрытое 
+            },
+            {
+                 label: 'Name',
+                 name: 'NAME',
+                 width: 250,           // ширина
+                 sortable: true,       // разрешена сортировка
+                 editable: true,       // разрешено редактирование
+                 edittype: "text",     // тип поля в редакторе
+                 search: true,         // разрешён поиск
+                 searchoptions: {
+                     sopt: ['eq', 'bw', 'cn'] // разрешённые операторы поиска
+                 },
+                 // размер и максимальная длина для поля ввода
+                 editoptions: { size: 30, maxlength: 60 },
+                 // говорит о том что поле обязательное
+                 editrules: { required: true }
+            },
+            {
+                 label: 'Address',
+                 name: 'ADDRESS',
+                 width: 300,
+                 sortable: false,      // запрещаем сортировку
+                 editable: true,       // редактируемое
+                 search: false,        // запрещаем поиск
+                 edittype: "textarea",
+                 editoptions: { maxlength: 250, cols: 30, rows: 4 }
+            },
+            {
+                 label: 'Zip Code',
+                 name: 'ZIPCODE',
+                 width: 60,
+                 sortable: false,
+                 editable: true,
+                 search: false,
+                 edittype: "text",
+                 editoptions: { size: 30, maxlength: 10 },
+            },
+            {
+                 label: 'Phone',
+                 name: 'PHONE',
+                 width: 85,
+                 sortable: false,
+                 editable: true,
+                 search: false,
+                 edittype: "text",
+                 editoptions: { size: 30, maxlength: 14 },
+            }
+        ],
+        loadonce: false,
+        pager: '#jqgCustomerPager',
+        rowNum: 500, // число отображаемых строк
+        sortname: 'NAME', // сортировка по умолчанию по столбцу NAME
+        sortorder: "asc", // порядок сортировки
+        height: 500
+    });
+
+    dbGrid.jqGrid('navGrid', '#jqgCustomerPager',
+        {
+            search: true,  // поиск
+            add: false,     // добавление
+            edit: false,    // редактирование
+            del: false,     // удаление
+            view: false,    // просмотр записи
+            refresh: true, // обновление
+
+            searchtext: "Поиск",
+            viewtext: "Смотреть",
+            viewtitle: "Выбранная запись",
+            refreshtext: "Обновить"
+        }
+    );
+}
+]]>                        
+                    </programlisting>
+            </para>
+            <para>Для этого журнала нам осталось написать функцию
+                <function>showChildGrid</function>, которая позволяет просматривать и редактировать
+                информацию о позициях накладной. Эта функция будет динамически создавать грид с
+                позициями счёт-фактуры при нажатии на кнопку «+» (для раскрытия деталей). Для
+                загрузки данных о позиции нам будет необходимо передавать первичный ключ выбранной
+                шапки счёт фактуры. <programlisting language="javascript">
+<![CDATA[
+// обработчик события раскрытия родительского грида
+// принимает два параметра идентификатор родительской записи
+// и первичный ключ записи
+function showChildGrid(parentRowID, parentRowKey) {
+    var childGridID = parentRowID + "_table";
+    var childGridPagerID = parentRowID + "_pager";
+
+    // отправляем первичный ключ родительской записи
+    // чтобы отфильтровать записи позиций накладной
+    var childGridURL = '@Url.Action("GetDetailData")';
+    childGridURL = childGridURL + "?invoice_id=" 
+                 + encodeURIComponent(parentRowKey)
+
+    // добавляем HTML элементы для отображения таблицы и постраничной навигации
+    // как дочерние для выбранной строки в мастер гриде
+    $('<table>')
+        .attr('id', childGridID)
+        .appendTo($('#' + parentRowID));
+    $('<div>')
+        .attr('id', childGridPagerID)
+        .addClass('scroll')
+        .appendTo($('#' + parentRowID));
+
+    // создаём и инициализируем дочерний грид
+    var detailGrid = $("#" + childGridID).jqGrid({
+        url: childGridURL,
+        mtype: "GET",
+        datatype: "json",
+        page: 1,
+        colModel: [
+            {
+                 label: 'Invoice Line ID',
+                 name: 'INVOICE_LINE_ID',
+                 key: true,
+                 hidden: true
+            },
+            {
+                 label: 'Invoice ID',
+                 name: 'INVOICE_ID',
+                 hidden: true,
+                 editrules: { edithidden: true, required: true },
+                 editable: true,
+                 edittype: 'custom',
+                 editoptions: {
+                     custom_element: function (value, options) {
+                          // создаём скрытый эелемент ввода
+                          return $("<input>")
+                                .attr('type', 'hidden')
+                                .attr('rowid', options.rowId)
+                                .addClass("FormElement")
+                                .addClass("form-control")
+                                .val(parentRowKey)
+                                .get(0);
+                     }
+                 }
+            },
+            {
+                 label: 'Product ID',
+                 name: 'PRODUCT_ID',
+                 hidden: true,
+                 editrules: { edithidden: true, required: true },
+                 editable: true,
+                 edittype: 'custom',
+                 editoptions: {
+                     custom_element: function (value, options) {
+                         // создаём скрытый элемент ввода
+                         return $("<input>")
+                              .attr('type', 'hidden')
+                              .attr('rowid', options.rowId)
+                              .addClass("FormElement")
+                              .addClass("form-control")
+                              .val(value)
+                              .get(0);
+                     }
+                 }
+            },
+            {
+                 label: 'Product',
+                 name: 'Product',
+                 width: 300,
+                 editable: true,
+                 edittype: "text",
+                 editoptions: {
+                     size: 50,
+                     maxlength: 60,
+                     readonly: true
+                 },
+                 editrules: { required: true }
+            },
+            {
+                 label: 'Price',
+                 name: 'Price',
+                 formatter: 'currency',
+                 editable: true,
+                 editoptions: {
+                     readonly: true
+                 },
+                 align: "right",
+                 width: 100
+            },
+            {
+                 label: 'Quantity',
+                 name: 'Quantity',
+                 align: "right",
+                 width: 100,
+                 editable: true,
+                 editrules: { required: true, number: true, minValue: 1 },
+                 editoptions: {
+                   dataEvents: [
+                     {
+                        type: 'change',
+                        fn: function (e) {
+                          var quantity = $(this).val() - 0;
+                          var price = 
+                            $('#dlgEditInvoiceLine input[name=Price]').val() - 0;
+                $('#dlgEditInvoiceLine input[name=Total]').val(quantity * price);
+                        }
+                     }
+                   ],
+                   defaultValue: 1
+                 }
+            },
+            {
+                 label: 'Total',
+                 name: 'Total',
+                 formatter: 'currency',
+                 align: "right",
+                 width: 100,
+                 editable: true,
+                 editoptions: {
+                     readonly: true
+                 }
+            }
+        ],
+        loadonce: false,
+        width: '100%',
+        height: '100%',
+        pager: "#" + childGridPagerID
+    });
+
+    // отображение панели инструментов
+    $("#" + childGridID).jqGrid('navGrid', '#' + childGridPagerID,
+        {
+            search: false,  // поиск
+            add: true,     // добавление
+            edit: true,    // редактирование
+            del: true,     // удаление
+            refresh: true // обновление
+        },
+        updateDetail("edit"), // обновление
+        updateDetail("add"), // добавление
+        updateDetail("del") // удаление
+    );
+
+    // функция возвращающая настройки для диалога редактирования
+    function updateDetail(act) {
+        // шаблон диалога редактирования
+        var template = "<div style='margin-left:15px;' id='dlgEditInvoiceLine'>";
+        template += "<div>{INVOICE_ID} </div>";
+        template += "<div>{PRODUCT_ID} </div>";
+        // поле ввода товара с кнопкой
+        template += "<div> Product <sup>*</sup>:</div>";
+        template += "<div>";
+        template += "<div style='float: left;'>{Product}</div> ";        
+        template += "<a style='margin-left: 0.2em;' class='btn' ";
+        template += "onclick='showProductWindow(); return false;'>";
+        template += "<span class='glyphicon glyphicon-folder-open'></span>";
+        template += " Выбрать</a> ";
+        template += "<div style='clear: both;'></div>";
+        template += "</div>";
+        template += "<div> Quantity: </div><div>{Quantity} </div>";
+        template += "<div> Price: </div><div>{Price} </div>";
+        template += "<div> Total: </div><div>{Total} </div>";
+        template += "<hr style='width: 100%;'/>";
+        template += "<div> {sData} {cData}  </div>";
+        template += "</div>";
+
+        return {
+            top: $(".container.body-content").position().top + 150,
+            left: $(".container.body-content").position().left + 150,
+            modal: true,
+            drag: true,
+            closeOnEscape: true,
+            closeAfterAdd: true, // закрыть после добавления
+            closeAfterEdit: true, // закрыть после редактирования
+            reloadAfterSubmit: true, // обновление
+            template: (act != "del") ? template : null,
+            onclickSubmit: function (params, postdata) {
+                 var selectedRow = detailGrid.getGridParam("selrow");
+                 switch (act) {
+                     case "add":
+                         params.url = '@Url.Action("CreateDetail")';
+                         // получаем идентификатор счёт-фактуры
+                         postdata.INVOICE_ID = 
+                            $('#dlgEditInvoiceLine input[name=INVOICE_ID]').val();
+                         // получаем идентификатор товара для текущей записи
+                         postdata.PRODUCT_ID = 
+                            $('#dlgEditInvoiceLine input[name=PRODUCT_ID]').val();
+                         break;
+
+                     case "edit":
+                         params.url = '@Url.Action("EditDetail")';
+                         // получаем идентификатор текущей записи
+                         postdata.INVOICE_LINE_ID = selectedRow;
+                         break;
+
+                     case "del":
+                         params.url = '@Url.Action("DeleteDetail")';
+                         // получаем идентификатор текущей записи
+                         postdata.INVOICE_LINE_ID = selectedRow;
+                         break;
+                 }
+            },
+            afterSubmit: function (response, postdata) {
+                var responseData = response.responseJSON;
+                // проверяем результат на наличие сообщений об ошибках
+                if (responseData.hasOwnProperty("error")) {
+                    if (responseData.error.length) {
+                        return [false, responseData.error];
+                    }
+                }
+                else {
+                    // обновление грида
+                    $(this).jqGrid(
+                       'setGridParam',
+                       {
+                           datatype: 'json'
+                       }
+                    ).trigger('reloadGrid');
+                }
+                return [true, "", 0];
+            }
+        };
+    };
+}    
+]]>                   
+                </programlisting>
+            </para>
+            <para>Вот теперь создание журнала счёт-фактур закончено. Здесь мы не рассмотрели функцию
+                    <function>showProductWindow</function>, которая предназначена для выбора товара
+                из справочника при заполнении позиций счёт-фактуры. Эта функция полностью аналогична
+                ранее описанной функции <function>showCustomerWindow</function>, предназначенной для
+                выбора из справочника заказчиков.</para>
+            <para>Внимательный читатель мог заметить, что функции для отображения выбора из
+                справочника и отображения справочника почти идентичные. Это можно улучшить выносив
+                эти функции в отдельные файлы скриптов с расширением js. Попробуйте сделать это
+                самостоятельно.</para>
+        </section>
+    </section>
+    <section>
+        <title>Аутентификация и авторизация</title>
+
+        <para>Технология ASP.NET имеет мощный механизм для организации авторизации и аутентификации
+            в .NET приложениях под названием ASP.NET Identity. Инфраструктура OWIN и AspNet Identity
+            позволяют производить как стандартную авторизацию, так и авторизацию через внешние
+            сервисы с помощью аккаунтов в Google, Twitter, Facebook и т.д. Описание технологии
+            ASP.NET Identity является достаточно объёмным и выходит за рамки данной статьи. Вы
+            можете почитать об этой технологии на сайте <link
+                xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://www.asp.net/identity"
+                >http://www.asp.net/identity</link>.</para>
+        <para> А в нашем приложении мы будем использовать чуть более простую модель, основанную на
+            аутентификации форм. Для включения аутентификации форм необходимо сделать изменения в
+            файле конфигурации <filename>web.config</filename>. Находим секцию
+            <!--CDATA[<system.web>]--> и внутри этой секции поместим следующую подсекцию: <programlisting language="javascript">
+<![CDATA[
+<authentication mode="Forms">
+  <forms name="cookies" timeout="2880" loginUrl="~/Account/Login" 
+         defaultUrl="~/Invoice/Index"/>
+</authentication>
+]]>                    
+                </programlisting>
+        </para>
+        <para>Установив <code>mode="Forms"</code>, мы тем самым подключаем аутентификацию форм.
+            Далее мы задаём ряд параметров. Нам доступен следующий список параметров:<itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">coockieless</emphasis>: определяет, применяются ли
+                        куки-наборы и как они используются. Может принимать следующие значения:
+                            <emphasis role="bold">UseCookies</emphasis>(определяет, что куки-наборы
+                        будут использоваться всегда вне зависимости от устройства), <emphasis
+                            role="bold">UseUri</emphasis> (куки-наборы никогда не используются),
+                            <emphasis role="bold">AutoDetect</emphasis> (если устройство
+                        поддерживает куки-наборы, то они используются, в противном случае они не
+                        применяются, при этом проводится тестирование, определяющее, включена ли
+                        поддержка), <emphasis role="bold">UseDeviceProfile</emphasis> (если
+                        устройство поддерживает куки-наборы, то они используются, в противном случае
+                        они не применяются, в отличие от предыдущего случая тестирование не
+                        проводится. Используется по умолчанию).</para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <emphasis role="bold">defaultUrl</emphasis>: определяет путь, по которому
+                        осуществляется переход после авторизации</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">domain</emphasis>: определяет куки-наборы для всего
+                        домена. Благодаря этому мы можем использовать одни и те же куки-наборы для
+                        главного домена и его субдоменов. По умолчанию имеет значение в качестве
+                        пустой строки</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">loginUrl</emphasis>: адрес для аутентификации
+                        пользователя. Значение по умолчанию — "~/Account/Login"</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">name</emphasis>: задаёт имя для куки-набора.
+                        Значение по умолчанию — ".ASPXAUTH"</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">path</emphasis>: задаёт путь для куки-наборов.
+                        Значение по умолчанию — "/"</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">requireSSL</emphasis>: определяет, требуется ли
+                        SSL-соединение для передачи куки-наборов. Значение по умолчанию false</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">timeout</emphasis>: определяет срок действия куков в
+                        минутах</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>В нашем приложении мы будем хранить данные аутентификации в той же базе данных, что и
+            другие данные, поэтому настройка дополнительной строки подключения нам не
+            потребуется.</para>
+
+        <section>
+            <title>Инфраструктура для аутентификации</title>
+
+            <para>Теперь надо создать всю необходимую инфраструктуру для аутентификации — модели,
+                контроллеры и представления. Создадим модель <classname>WebUser</classname>, которая
+                будет описывать пользователя: <programlisting language="csharp">
+<![CDATA[
+[Table("Firebird.WEBUSER")]
+public partial class WEBUSER
+{
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", 
+       "CA2214:DoNotCallOverridableMethodsInConstructors")]
+    public WEBUSER()
+    {
+        WEBUSERINROLES = new HashSet<WEBUSERINROLE>();
+    }
+
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public int WEBUSER_ID { get; set; }
+
+    [Required]
+    [StringLength(63)]
+    public string EMAIL { get; set; }
+
+    [Required]
+    [StringLength(63)]
+    public string PASSWD { get; set; }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", 
+       "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public virtual ICollection<WEBUSERINROLE> WEBUSERINROLES { get; set; }
+}
+]]>    
+</programlisting>
+            </para>
+            <para>Добавим ещё две модели: одну для описания ролей <classname>WEBROLE</classname>, и
+                одну для связи ролей с пользователями <classname>WEBUSERINROLE</classname>. <programlisting language="csharp">
+<![CDATA[
+    [Table("Firebird.WEBROLE")]
+    public partial class WEBROLE
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public int WEBROLE_ID { get; set; }
+
+        [Required]
+        [StringLength(63)]
+        public string NAME { get; set; }
+
+    }
+
+    [Table("Firebird.WEBUSERINROLE")]
+    public partial class WEBUSERINROLE
+    {
+
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public int ID { get; set; }
+
+        [Required]
+        public int WEBUSER_ID { get; set; }
+
+        [Required]
+        public int WEBROLE_ID { get; set; }
+
+        public virtual WEBUSER WEBUSER { get; set; }
+
+        public virtual WEBROLE WEBROLE { get; set; }
+    }
+]]>    
+</programlisting>
+            </para>
+            <para>В классе <classname>DbModel</classname> с помощью Fluent API укажем связи между
+                    <classname>WEBUSER</classname> и <classname>WEBUSERINROLE</classname>. <programlisting language="csharp">
+<![CDATA[
+…
+        public virtual DbSet<WEBUSER> WEBUSERS { get; set; }
+        public virtual DbSet<WEBROLE> WEBROLES { get; set; }
+        public virtual DbSet<WEBUSERINROLE> WEBUSERINROLES { get; set; }
+…
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WEBUSER>()
+                .HasMany(e => e.WEBUSERINROLES)
+                .WithRequired(e => e.WEBUSER)
+                .WillCascadeOnDelete(false);
+
+…
+        }
+…
+]]>    
+</programlisting>
+            </para>
+            <para>Поскольку мы используем технологию Database First, то таблицы в БД могут быть
+                созданы автоматически, но я предпочитаю сам контролировать этот процесс, поэтому
+                приведу здесь скрипт создания дополнительных таблиц. <programlisting language="sql">
+<![CDATA[
+RECREATE TABLE WEBUSER (
+  WEBUSER_ID INT NOT NULL,
+  EMAIL VARCHAR(63) NOT NULL,
+  PASSWD VARCHAR(63) NOT NULL,
+  CONSTRAINT PK_WEBUSER PRIMARY KEY(WEBUSER_ID),
+  CONSTRAINT UNQ_WEBUSER UNIQUE(EMAIL)
+);
+
+RECREATE TABLE WEBROLE (
+  WEBROLE_ID INT NOT NULL,
+  NAME VARCHAR(63) NOT NULL,
+  CONSTRAINT PK_WEBROLE PRIMARY KEY(WEBROLE_ID),
+  CONSTRAINT UNQ_WEBROLE UNIQUE(NAME)
+);
+
+RECREATE TABLE WEBUSERINROLE (
+  ID INT NOT NULL,
+  WEBUSER_ID INT NOT NULL,
+  WEBROLE_ID INT NOT NULL,
+  CONSTRAINT PK_WEBUSERINROLE PRIMARY KEY(ID)
+);
+
+
+ALTER TABLE WEBUSERINROLE
+ADD CONSTRAINT FK_WEBUSERINROLE_USER FOREIGN KEY (WEBUSER_ID) REFERENCES WEBUSER (WEBUSER_ID);
+
+ALTER TABLE WEBUSERINROLE
+ADD CONSTRAINT FK_WEBUSERINROLE_ROLE FOREIGN KEY (WEBROLE_ID) REFERENCES WEBROLE (WEBROLE_ID);
+
+
+RECREATE SEQUENCE SEQ_WEBUSER;
+RECREATE SEQUENCE SEQ_WEBROLE;
+RECREATE SEQUENCE SEQ_WEBUSERINROLE;
+
+SET TERM ^;
+
+RECREATE TRIGGER TBI_WEBUSER
+FOR WEBUSER
+ACTIVE BEFORE INSERT
+AS
+BEGIN
+  IF (NEW.WEBUSER_ID IS NULL) THEN
+    NEW.WEBUSER_ID = NEXT VALUE FOR SEQ_WEBUSER;
+END^
+
+RECREATE TRIGGER TBI_WEBROLE
+FOR WEBROLE
+ACTIVE BEFORE INSERT
+AS
+BEGIN
+  IF (NEW.WEBROLE_ID IS NULL) THEN
+    NEW.WEBROLE_ID = NEXT VALUE FOR SEQ_WEBROLE;
+END^
+
+RECREATE TRIGGER TBI_WEBUSERINROLE
+FOR WEBUSERINROLE
+ACTIVE BEFORE INSERT
+AS
+BEGIN
+  IF (NEW.ID IS NULL) THEN
+    NEW.ID = NEXT VALUE FOR SEQ_WEBUSERINROLE;
+END^
+
+SET TERM ;^
+]]>    
+</programlisting>
+            </para>
+            <para>Добавим два пользователя и две роли для проверки. <programlisting language="sql">
+<![CDATA[
+INSERT INTO WEBUSER (EMAIL, PASSWD) VALUES ('john', '12345');
+INSERT INTO WEBUSER (EMAIL, PASSWD) VALUES ('alex', '123');
+
+COMMIT;
+
+INSERT INTO WEBROLE (NAME) VALUES ('admin');
+INSERT INTO WEBROLE (NAME) VALUES ('manager');
+
+COMMIT;
+
+-- Связываем пользователей и роли
+INSERT INTO WEBUSERINROLE(WEBUSER_ID, WEBROLE_ID) VALUES(1, 1);
+INSERT INTO WEBUSERINROLE(WEBUSER_ID, WEBROLE_ID) VALUES(1, 2);
+INSERT INTO WEBUSERINROLE(WEBUSER_ID, WEBROLE_ID) VALUES(2, 2);
+
+COMMIT;
+]]>                
+            </programlisting>
+            </para>
+            <note>
+                <title>Замечание о паролях</title>
+
+                <para>Обычно вместо пароля в открытом виде хранят некий хэш от него, например, по
+                    алгоритму md5. В нашем примере мы немного упростили аутентификацию.</para>
+            </note>
+            <para>При регистрации и логине мы не будем напрямую взаимодействовать с моделью
+                    <classname>WebUser</classname>. Вместо этого мы будем использовать специальные
+                модели, которые также добавим в проект: <programlisting language="csharp">
+<![CDATA[
+namespace FBMVCExample.Models
+{
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
+    using System.Data.Entity.Spatial;
+
+    // Модель для входа в систему
+    public class LoginModel
+    {
+        [Required]
+        public string Name { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+    }
+
+    // Модель для регистрации нового пользователя
+    public class RegisterModel
+    {
+        [Required]
+        public string Name { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Пароли не совпадают")]
+        public string ConfirmPassword { get; set; }
+    }
+}
+]]>                
+            </programlisting>
+            </para>
+            <para>Эти модели будет использоваться соответственно для представлений логина и
+                регистрации. Эти представление для входа будет выглядеть следующим образом: <programlisting language="javascript">
+<![CDATA[
+@model FBMVCExample.Models.LoginModel
+
+@{
+    ViewBag.Title = "Вход";
+}
+
+<h2>Вход</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, 
+                new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name)
+                @Html.ValidationMessageFor(model => model.Name)
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Password, 
+                new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Password)
+                @Html.ValidationMessageFor(model => model.Password)
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Вход" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+]]>                
+            </programlisting>
+            </para>
+            <para>Соответственно, представление для регистрации будет выглядеть так: <programlisting language="javascript">
+<![CDATA[
+@model FBMVCExample.Models.RegisterModel
+
+@{
+    ViewBag.Title = "Регистрация";
+}
+
+<h2>Регистрация</h2>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, 
+                new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name)
+                @Html.ValidationMessageFor(model => model.Name)
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Password, 
+                new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Password)
+                @Html.ValidationMessageFor(model => model.Password)
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ConfirmPassword, 
+                new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.ConfirmPassword)
+                @Html.ValidationMessageFor(model => model.ConfirmPassword)
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Зарегистрировать" 
+                       class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+]]>                
+            </programlisting>
+            </para>
+            <note>
+                <title>Замечание о пользователях</title>
+
+                <para>В данном примере модель, представление и контроллеры для входа и регистрации
+                    пользователей предельно упрощены, т.к. обычно пользователь имеет существенно
+                    больше атрибутов, чем логин и пароль.</para>
+            </note>
+            <para>Теперь добавим новый контроллер <classname>AccountController</classname> со
+                следующим содержанием: <programlisting language="csharp">
+<![CDATA[
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Security;
+using FBMVCExample.Models;
+
+namespace FBMVCExample.Controllers
+{
+    public class AccountController : Controller
+    {
+        public ActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Login(LoginModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                // поиск пользователя в бд
+                WEBUSER user = null;
+                using (DbModel db = new DbModel())
+                {
+                    user = db.WEBUSERS.FirstOrDefault(
+                        u => u.EMAIL == model.Name && 
+                             u.PASSWD == model.Password);
+
+                }
+                // если нашли пользователя с введённым логином и паролем, то 
+                // запоминаем его и делаем переадресацию на стартовую страницу
+                if (user != null)
+                {
+                    FormsAuthentication.SetAuthCookie(model.Name, true);
+                    return RedirectToAction("Index", "Invoice");
+                }
+                else
+                {
+                    ModelState.AddModelError("", 
+                        "Пользователя с таким логином и паролем не существует");
+                }
+            }
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "admin")]
+        public ActionResult Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Register(RegisterModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                WEBUSER user = null;
+                using (DbModel db = new DbModel())
+                {
+                    user = db.WEBUSERS.FirstOrDefault(u => u.EMAIL == model.Name);
+                }
+                if (user == null)
+                {
+                    // создаём нового пользователя
+                    using (DbModel db = new DbModel())
+                    {
+
+                        // получаем новый идентификатор с помощью генератора
+                        int userId = db.NextValueFor("SEQ_WEBUSER");
+                        db.WEBUSERS.Add(new WEBUSER {
+                            WEBUSER_ID = userId,
+                            EMAIL = model.Name,
+                            PASSWD = model.Password
+                        });
+                        db.SaveChanges();
+
+                        user = db.WEBUSERS.Where(u => u.WEBUSER_ID == userId)
+                                          .FirstOrDefault();
+
+                        // находим роль manager
+                        // Эта роль будет ролью по умолчанию, т.е.
+                        // будет выдана автоматически при регистрации
+                        var defaultRole = 
+                            db.WEBROLES
+                              .Where(r => r.NAME == "manager")
+                              .FirstOrDefault();
+
+                        // назначаем вновь добавленному пользователю роль 
+                        // по умолчанию
+                        if (user != null && defaultRole != null)
+                        {
+                            db.WEBUSERINROLES.Add(new WEBUSERINROLE
+                            {
+                                WEBUSER_ID = user.WEBUSER_ID,
+                                WEBROLE_ID = defaultRole.WEBROLE_ID
+                            });
+                            db.SaveChanges();
+                        }
+                    }
+                    // если пользователь удачно добавлен в бд
+                    if (user != null)
+                    {
+                        FormsAuthentication.SetAuthCookie(model.Name, true);
+                        return RedirectToAction("Login", "Account");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", 
+                        "Пользователь с таким логином уже существует");
+                }
+            }
+
+            return View(model);
+        }
+
+        public ActionResult Logoff()
+        {
+            FormsAuthentication.SignOut();
+            return RedirectToAction("Login", "Account");
+        }
+    }
+}
+]]>                
+            </programlisting>
+            </para>
+            <para>Обратите внимание на атрибут <function>[Authorize(Roles = "admin")]</function>. Он
+                обозначает, что действие по регистрации пользователей может производить только
+                пользователь с ролью admin. Этот механизм называется фильтрами авторизации. Он нём
+                будет сказано чуть позже.</para>
+
+            <section>
+                <title>Добавление нового пользователя</title>
+
+                <para>При регистрации мы добавляем нового пользователя в БД, а при логине просто
+                    смотрим, есть ли такой пользователь. И если пользователь найден, то с помощью
+                    аутентификации форм устанавливаем куки
+                    <programlisting language="csharp">
+FormsAuthentication.SetAuthCookie(model.Name, true);                
+            </programlisting>
+                </para>
+                <para>Вся информация о пользователе в Asp.Net MVC хранится в свойстве
+                        <varname>HttpContext.User</varname>, которое представляет реализацию
+                    интерфейса <interfacename>IPrincipal</interfacename>, который определён в
+                    пространстве имён <package>System.Security.Principal</package>.</para>
+                <para>Интерфейс <interfacename>IPrincipal</interfacename> определяет свойство
+                        <varname>Identity</varname>, которое хранит объект интерфейса
+                        <interfacename>IIdentity</interfacename>, который описывает текущего
+                    пользователя.</para>
+                <para>Интерфейс <interfacename>IIdentity</interfacename> содержит следующие свойства:<itemizedlist>
+                        <listitem>
+                            <para><varname>AuthenticationType</varname>: тип аутентификации</para>
+                        </listitem>
+                        <listitem>
+                            <para><varname>IsAuthenticated</varname>: если пользователь
+                                аутентифицирован, то возвращает <literal>true</literal></para>
+                        </listitem>
+                        <listitem>
+                            <para><varname>Name</varname>: имя пользователя в системе</para>
+                        </listitem>
+                    </itemizedlist></para>
+                <para>Для определения аутентифицирован ли пользователь, ASP.NET MVC принимает от
+                    браузера куки, и если пользователь аутентифицирован, у свойства
+                        <varname>IIdentity.IsAuthenticated</varname> устанавливается значение
+                        <literal>true</literal>, а в свойство <varname>Name</varname> получает в
+                    качестве значения имя пользователя.</para>
+                <para>Теперь добавим элементы авторизации. Для этого воспользуемся механизмом
+                    универсальных провайдеров.</para>
+            </section>
+
+            <section>
+                <title>Универсальные провайдеры</title>
+
+                <para>Универсальные провайдеры предоставляют уже готовый функционал авторизации. Но
+                    в то же время эти провайдеры обладают достаточной гибкостью — в частности мы
+                    можем их переопределить по своему усмотрению. При этом нам необязательно
+                    переопределять и использовать все четыре провайдера. Что довольно удобно,
+                    особенно в ситуации, когда нам не нужны все навороты ASP.NET Identity, а
+                    требуется построить очень простенькую систему авторизации.</para>
+                <para>Итак, переопределим провайдер ролей. Для этого добавим через NuGet пакет
+                    Microsoft.AspNet.Providers.</para>
+
+                <section>
+                    <title>Определение провайдера ролей</title>
+
+                    <para>Теперь определим сам провайдер ролей. Для этого сначала добавим в проект
+                        папку <filename>Providers</filename> и затем в него добавим новый класс
+                            <classname>MyRoleProvider</classname>: <programlisting language="csharp">
+<![CDATA[
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using FBMVCExample.Models;
+
+namespace FBMVCExample.Providers
+{
+    public class MyRoleProvider : RoleProvider
+    {
+        /// <summary>
+        /// Возвращает список имён ролей у пользователя
+        /// </summary>
+        /// <param name="username">Имя пользователя</param>
+        /// <returns></returns>
+        public override string[] GetRolesForUser(string username)
+        {
+            string[] roles = new string[] { };
+            using (DbModel db = new DbModel())
+            {
+                // Получаем пользователя
+                WEBUSER user = db.WEBUSERS.FirstOrDefault(
+                    u => u.EMAIL == username);
+                if (user != null)
+                {
+                    // заполняем массив доступных ролей
+                    int i = 0;
+                    roles = new string[user.WEBUSERINROLES.Count];
+                    foreach (var rolesInUser in user.WEBUSERINROLES)
+                    {
+                        roles[i] = rolesInUser.WEBROLE.NAME;
+                        i++;
+                    }
+                }
+            }
+            return roles;
+        }
+
+        /// <summary>
+        /// Создание новой роли
+        /// </summary>
+        /// <param name="roleName">Имя роли</param>
+        public override void CreateRole(string roleName)
+        {
+
+            using (DbModel db = new DbModel())
+            {
+                WEBROLE newRole = new WEBROLE() { NAME = roleName };
+                db.WEBROLES.Add(newRole);
+                db.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Возвращает присутствует ли роль у пользователя
+        /// </summary>
+        /// <param name="username">Имя пользователя</param>
+        /// <param name="roleName">Имя роли</param>
+        /// <returns></returns>
+        public override bool IsUserInRole(string username, string roleName)
+        {
+            bool outputResult = false;
+            using (DbModel db = new DbModel())
+            {
+                var userInRole =
+                    from ur in db.WEBUSERINROLES
+                    where ur.WEBUSER.EMAIL == username && 
+                          ur.WEBROLE.NAME == roleName
+                    select new { id = ur.ID };
+
+                outputResult = userInRole.Count() > 0;
+            }
+            return outputResult;
+        }
+
+        public override void AddUsersToRoles(string[] usernames, 
+            string[] roleNames)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string ApplicationName
+        {
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
+        }
+
+        public override bool DeleteRole(string roleName, 
+            bool throwOnPopulatedRole)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string[] FindUsersInRole(string roleName, 
+            string usernameToMatch)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string[] GetAllRoles()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string[] GetUsersInRole(string roleName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void RemoveUsersFromRoles(string[] usernames, 
+            string[] roleNames)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool RoleExists(string roleName)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+]]>                
+            </programlisting>
+                    </para>
+                    <para>В целях демонстрации переопределено три метода. Первый из них —
+                            <methodname>GetRolesForUser</methodname> позволяет получать набор ролей
+                        для определённого пользователя. Второй метод —
+                            <methodname>CreateRole</methodname> — предполагает создание роли. И
+                        третий метод — <methodname>IsUserInRole</methodname> — определяет, выполняет
+                        ли пользователь определённую роль в системе.</para>
+
+                </section>
+                <section>
+                    <title>Конфигурирование провайдера ролей</title>
+
+                    <para>Чтобы использовать провайдер ролей в приложении, надо добавить его
+                        определение в файл конфигурации. Откроем файл
+                            <filename>web.config</filename> и удалим из него определение
+                        провайдеров, которые были добавлены автоматически при добавлении пакета
+                            <package>Microsoft.AspNet.Providers</package>. И добавим туда вместо
+                        этого в пределах узла system.web добавим наш провайдер: <programlisting language="javascript">
+<![CDATA[
+<system.web>
+    <authentication mode="Forms">
+      <forms name="cookies" timeout="2880" loginUrl="~/Account/Login" 
+             defaultUrl="~/Invoice/Index"/>
+    </authentication>
+    <roleManager enabled="true" defaultProvider="MyRoleProvider">
+      <providers>
+        <add name="MyRoleProvider" 
+             type="FBMVCExample.Providers.MyRoleProvider" />
+      </providers>
+    </roleManager>
+  </system.web>
+]]>                
+            </programlisting>
+                    </para>
+                </section>
+            </section>
+
+            <section>
+                <title>Авторизация доступа к действиям контроллера</title>
+
+                <para>И теперь мы можем разграничить доступ к методам различных контроллеров с
+                    помощью атрибута <varname>Authorize</varname>. Мы уже видели его применение в
+                    контроллере <classname>AccountController</classname>: <programlisting language="csharp">
+<![CDATA[
+[Authorize(Roles = "admin")]
+public ActionResult Register()
+{
+…
+]]>                    
+                </programlisting>
+                </para>
+                <para>Данный фильтр можно применять как на уровне контроллера в целом, так и для
+                    отдельного действия контроллера. Давайте добавим разграничение прав для наших
+                    трёх основных контроллеров <classname>CustomerController</classname>,
+                        <classname>InvoiceController</classname> и
+                        <classname>ProductController</classname>. В нашем случае пользователь с
+                    ролью manager может смотреть и править данные во всех трёх таблицах. Установка
+                    фильтра для контроллера <classname>InvoiceController</classname> будет выглядеть
+                    следующим образом: <programlisting language="csharp">
+<![CDATA[
+[Authorize(Roles = "manager")]
+public class InvoiceController : Controller
+{
+    private DbModel db = new DbModel();
+
+    // Отображение представления
+    public ActionResult Index()
+    {
+        return View();
+    }
+…
+]]>                    
+                </programlisting>
+                </para>
+            </section>
+        </section>
+    </section>
+    <section>
+        <title>Исходные коды</title>
+
+        <para>Вы можете скачать исходные тексты по ссылке <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/sim1984/FBMVCExample"
+                >https://github.com/sim1984/FBMVCExample</link></para>
+    </section>
+</chapter>

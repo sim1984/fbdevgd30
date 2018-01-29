@@ -1,0 +1,1894 @@
+<!DOCTYPE chapter>
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-dotnet-winform"
+    xml:lang="ru">
+    <info>
+        <title>Создание Windows Forms приложений с использованием Entity Framework</title>
+    </info>
+
+    <para>В данной главе будет описан процесс создания приложений для СУБД Firebird с использованием
+        компонентов доступа Entity Framework и среды Visual Studio 2015. </para>
+
+    <para><emphasis role="bold">ADO.NET Entity Framework</emphasis> (EF) — объектно-ориентированная
+        технология доступа к данным, является object-relational mapping (ORM) решением для .NET
+        Framework от Microsoft. Предоставляет возможность взаимодействия с объектами как посредством
+        LINQ в виде LINQ to Entities, так и с использованием Entity SQL.</para>
+
+    <section>
+        <title>Способы взаимодействия с базой данных</title>
+
+        <para>Entity Framework предполагает три возможных способа взаимодействия с базой данных:<itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Database first</emphasis>: Entity Framework создаёт
+                        набор классов, которые отражают модель конкретной базы данных.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Model first</emphasis>: сначала разработчик создаёт
+                        модель базы данных, по которой затем Entity Framework создаёт реальную базу
+                        данных на сервере.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Code first</emphasis>: разработчик создаёт класс
+                        модели данных, которые будут храниться в БД, а затем Entity Framework по
+                        этой модели генерирует базу данных и её таблицы.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>В своём приложении мы будем использовать подход Code First, однако вы без труда
+            сможете использовать и другие подходы.</para>
+        <note>
+            <para>На самом деле у нас уже есть база данных. Поэтому будем просто писать код который
+                бы привёл к созданию нашей БД.</para>
+        </note>
+    </section>
+
+    <section xml:id="app-dotnet-vsprepare">
+        <title>Подготовка Visual Studio 2015 для работы с Firebird</title>
+
+        <para>Для работы с Firebird вам необходимо установить:<itemizedlist>
+                <listitem>
+                    <para><filename>FirebirdSql.Data.FirebirdClient.dll</filename></para>
+                </listitem>
+                <listitem>
+                    <para><filename>EntityFramework.Firebird.dll</filename></para>
+                </listitem>
+                <listitem>
+                    <para>DDEX Provider for Visual Studio</para>
+                </listitem>
+            </itemizedlist></para>
+
+        <para>Установка первых двух не вызывает никаких сложностей. В настоящий момент они
+            распространяются и устанавливаются в проект с помощью NuGet. А вот последняя библиотека,
+            предназначенная для работы мастеров Visual Studio, устанавливается не так легко и может
+            потратить у вас много сил и времени.</para>
+        <para>Добрые люди попытались автоматизировать процесс установки и включить установку всех
+            компонентов в один дистрибутив (<link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="http://sourceforge.net/projects/firebird-4-8-0-ddex-installer/"
+                >http://sourceforge.net/projects/firebird-4-8-0-ddex-installer/</link>). Однако в
+            ряде случаев вам может потребоваться ручная установка всех компонентов. В этом случае
+            вам потребуется скачать:<itemizedlist>
+                <listitem>
+                    <para><filename>FirebirdSql.Data.FirebirdClient-4.10.0.0.msi</filename> (<link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://sourceforge.net/projects/firebird/files/firebird-net-provider/4.10.0.0/FirebirdSql.Data.FirebirdClient-4.10.0.0.msi/download"
+                            >http://sourceforge.net/projects/firebird/files/firebird-net-provider/4.10.0.0/FirebirdSql.Data.FirebirdClient-4.10.0.0.msi/download</link>)
+                    </para>
+                </listitem>
+                <listitem>
+                    <para><filename>EntityFramework.Firebird-4.10.0.0-NET45.7z</filename> (<link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://sourceforge.net/projects/firebird/files/firebird-net-provider/4.10.0.0/EntityFramework.Firebird-4.10.0.0-NET45.7z/download"
+                            >http://sourceforge.net/projects/firebird/files/firebird-net-provider/4.10.0.0/EntityFramework.Firebird-4.10.0.0-NET45.7z/download</link>)
+                    </para>
+                </listitem>
+                <listitem>
+                    <para><filename>DDEXProvider-3.0.2.0.7z</filename> (<link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://sourceforge.net/projects/firebird/files/firebird-net-provider/DDEX%203.0.2/DDEXProvider-3.0.2.0.7z/download"
+                            >http://sourceforge.net/projects/firebird/files/firebird-net-provider/DDEX%203.0.2/DDEXProvider-3.0.2.0.7z/download</link>)
+                    </para>
+                </listitem>
+                <listitem>
+                    <para><filename>DDEXProvider-3.0.2.0-src.7z</filename> (<link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://sourceforge.net/projects/firebird/files/firebird-net-provider/DDEX%203.0.2/DDEXProvider-3.0.2.0-src.7z/download"
+                            >http://sourceforge.net/projects/firebird/files/firebird-net-provider/DDEX%203.0.2/DDEXProvider-3.0.2.0-src.7z/download</link>)
+                    </para>
+                </listitem>
+            </itemizedlist></para>
+
+        <section>
+            <title>Процесс установки</title>
+
+            <section>
+                <title>Шаги</title>
+
+                <para><orderedlist>
+                        <listitem>
+                            <para>Устанавливаем
+                                    <filename>FirebirdSql.Data.FirebirdClient-4.10.0.0.msi</filename></para>
+                        </listitem>
+                        <listitem>
+                            <para>Распаковываем
+                                    <filename>EntityFramework.Firebird-4.10.0.0-NET45.7z</filename>
+                                в папку с установленным клиентом Firebird. У меня это папка
+                                    <filename>c:\Program Files (x86)\FirebirdClient\</filename>
+                            </para>
+                            <important>
+                                <para>Это необходимо делать с правами администратора. Как и другие
+                                    действия с защищёнными директориями.</para>
+                            </important>
+                        </listitem>
+                        <listitem>
+                            <para>Необходимо установить сборки Firebird в GAC. Для удобство
+                                пописываем в <filename>%PATH%</filename> путь до утилиты
+                                    <application>gacutil</application> для .NET Framework 4.5. У
+                                меня этот путь <filename>c:\Program Files (x86)\Microsoft
+                                    SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\</filename></para>
+                        </listitem>
+                        <listitem>
+                            <para>Запускаем командную строку <application>cmd</application> от имени
+                                администратора и переходим в директорию с установленным клиентом.
+                                <programlisting>
+chdir "c:\Program Files (x86)\FirebirdClient"                                
+</programlisting>
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>Теперь проверяем что FirebirdSql.Data.FirebirdClient установлен в
+                                GAC. Для этого набираем команду <programlisting>
+gacutil /l FirebirdSql.Data.FirebirdClient                                
+</programlisting>
+                                <screen>
+Microsoft (R) .NET Global Assembly Cache Utility.  Version 4.0.30319.0
+c Корпорация Майкрософт (Microsoft Corporation). Все права защищены.
+
+В глобальном кэше сборок содержатся следующие сборки:
+  FirebirdSql.Data.FirebirdClient, Version=4.10.0.0, Culture=neutral, PublicKeyToken=3750abcc3150b00c, processorArchitecture=MSIL
+
+Число элементов = 1    
+</screen>
+                            </para>
+                            <para>Если FirebirdSql.Data.FirebirdClient не был установлен в GAC, то
+                                сделаем это с помощью команды
+                                <programlisting>
+gacutil /i FirebirdSql.Data.FirebirdClient.dll                               
+</programlisting>
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>Теперь установим EntityFramework.Firebird в GAC
+                                <programlisting>
+gacutil /i EntityFramework.Firebird.dll                              
+</programlisting>
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>Распаковываем <filename>DDEXProvider-3.0.2.0.7z</filename> в
+                                удобную директорию. Я распаковал её в <filename>c:\Program Files
+                                    (x86)\FirebirdDDEX\</filename></para>
+                        </listitem>
+                        <listitem>
+                            <para>Туда же распаковываем
+                                    <filename>DDEXProvider-3.0.2.0-src.7z</filename> содержимое
+                                поддиректории архива <filename>/reg_files/VS2015</filename></para>
+                            <note>
+                                <para>Забавно, но по какой-то причине этих файлов нет в предыдущем
+                                    архиве со скомпилированными dll библиотеками, но они
+                                    присутствуют в архиве с исходными кодами.</para>
+                            </note>
+                        </listitem>
+                        <listitem>
+                            <para>Открываем файл <filename>FirebirdDDEXProvider64.reg</filename> с
+                                помощью блокнота. Находим строчку, которая содержит
+                                    <filename>%path%</filename> и меняем его на полный путь к файлу
+                                    <filename>FirebirdSql.VisualStudio.DataTools.dll</filename>
+                                <programlisting>
+"CodeBase"="c:\\Program Files (x86)\\FirebirdDDEX\\FirebirdSql.VisualStudio.DataTools.dll"                         
+                        </programlisting>
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>Сохраняем этот файл, запускаем его. На запрос добавить информацию
+                                в реестр нажимаем ДА.</para>
+                        </listitem>
+
+                        <listitem>
+                            <para>Теперь нужно отредактировать файл machine.config, в моем случае он
+                                находится по пути:
+                                    <filename>C:\Windows\Microsoft.NET\Framework\v4.0.30319\Config</filename></para>
+                            <para>Открываем этот файл блокнотом. Находим секцию <programlisting language="javascript">
+<![CDATA[
+<system.data>
+    <DbProviderFactories>
+]]>                            
+                        </programlisting> Добавляем в эту секцию
+                                строчку: <programlisting language="javascript">
+<![CDATA[
+<add name="FirebirdClient Data Provider" 
+     invariant="FirebirdSql.Data.FirebirdClient" 
+     description=".Net Framework Data Provider for Firebird" 
+     type="FirebirdSql.Data.FirebirdClient.FirebirdClientFactory, 
+           FirebirdSql.Data.FirebirdClient, Version=4.10.0.0, Culture=neutral, 
+           PublicKeyToken=3750abcc3150b00c" />
+]]>                            
+                        </programlisting>
+                            </para>
+                            <note>
+                                <para>Всё это действительно для версии 4.10.0.</para>
+                            </note>
+                            <para>То же самое проделаем для <filename>machine.config</filename>,
+                                который находится в
+                                    <filename>c:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\</filename></para>
+
+                            <para>Установка закончена.</para>
+
+
+                        </listitem>
+
+                    </orderedlist></para>
+            </section>
+
+            <section>
+                <title>Проверка установки</title>
+
+                <para>Для проверки, что всё успешно установилось, запускаем Visual Studio 2015.
+                    Находим обозреватель серверов и пытаемся подключиться к одной из существующих
+                    баз данных Firebird.</para>
+
+                <para>
+                    <figure>
+                        <title>Добавление подключения в Visual Studio</title>
+                        <mediaobject>
+                            <imageobject>
+                                <imagedata fileref="images/dotnet-odbc.png" width="680"/>
+                            </imageobject>
+                            <textobject>
+                                <phrase>Добавление подключения в Visual Studio.</phrase>
+                            </textobject>
+                        </mediaobject>
+                    </figure>
+                    <figure>
+                        <title>Выбор провайдера подключения</title>
+                        <mediaobject>
+                            <imageobject>
+                                <imagedata fileref="images/dotnet-select-datasource.png" width="680"
+                                />
+                            </imageobject>
+                            <textobject>
+                                <phrase>Выбор провайдера подключения.</phrase>
+                            </textobject>
+                        </mediaobject>
+                    </figure>
+                    <figure>
+                        <title>Настройка подключения к Firebird</title>
+                        <mediaobject>
+                            <imageobject>
+                                <imagedata fileref="images/dotnet-fbprovider.png" width="680"/>
+                            </imageobject>
+                            <textobject>
+                                <phrase>Настройка подключения к Firebird.</phrase>
+                            </textobject>
+                        </mediaobject>
+                    </figure>
+                    <figure>
+                        <title>Успешное подключение</title>
+                        <mediaobject>
+                            <imageobject>
+                                <imagedata fileref="images/dotnet-connok.png"/>
+                            </imageobject>
+                            <textobject>
+                                <phrase>Успешное подключение.</phrase>
+                            </textobject>
+                        </mediaobject>
+                    </figure>
+                </para>
+            </section>
+        </section>
+
+    </section>
+
+    <section>
+        <title>Создание проекта</title>
+
+        <para>В данной главе мы рассмотрим пример создания Windows Forms приложения. Остальные типы
+            приложений хоть и отличаются, но принципы работы с Firebird через Entity Framework
+            остаются те же.</para>
+
+        <section>
+            <title>Добавление пакетов в проект</title>
+
+            <para>Прежде всего, после создания Windows Forms проекта нам необходимо добавить с
+                помощью менеджера пакетов NuGet следующие пакеты:<itemizedlist spacing="compact">
+                    <listitem>
+                        <para>FirebirdSql.Data.FirebirdClient</para>
+                    </listitem>
+                    <listitem>
+                        <para>EntityFramework</para>
+                    </listitem>
+                    <listitem>
+                        <para>EntityFramework.Firebird</para>
+                    </listitem>
+                </itemizedlist></para>
+
+            <para>Для этого необходимо щёлкнуть правой клавишей мыши по имени проекта в обозревателе
+                решений и в выпадающем меню выбрать пункт «Управление пакетами NuGet». <figure>
+                    <title>Контекстное меню проекта</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/dotnet-vsmenu-nuget.png"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Контекстное меню проекта.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+
+            <para>В появившемся менеджере пакетов произвести поиск и установку необходимых пакетов. <figure>
+                    <title>Контекстное меню проекта</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/dotnet-nuget.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Контекстное меню проекта.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+        </section>
+    </section>
+
+    <section xml:id="app-dotnet-createedm">
+        <title>Создание EDM модели</title>
+
+        <para>В своём приложении мы будем использовать подход Code First.</para>
+
+        <para>Для создания модели EDM необходимо щёлкнуть правой клавишей мыши по имени проекта в
+            обозревателе решений и выбрать пункт меню <guimenu>Добавить -> Создать
+            элемент</guimenu>. <figure>
+                <title>Добавление элемента</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-add-elem.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Добавление элемента.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Далее в мастере добавления нового элемента выбираем пункт «Модель ADO.NET EDM». <figure>
+                <title>Добавление модели ADO.NET EDM</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-add-model.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Добавление модели ADO.NET EDM.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Поскольку у нас уже существует база данных, то будем генерировать EDM модель из базы
+            данных. <figure>
+                <title>Выбор типа модели</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-edm-master.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Выбор типа модели.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Теперь надо выбрать подключение, из которого будет создана модель. Если Такого
+            подключения нет, то его надо создать. <figure>
+                <title>Выбор подключения для модели</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-edm-selectsource.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Выбор подключения для модели.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+            <figure>
+                <title>Параметры подключения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-connection-params.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Параметры подключения.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Кроме основных параметров подключения могут потребоваться также указать ряд
+            дополнительных параметров, например, уровень изолированности транзакций (по умолчанию
+            Read Commited), использование пула подключений и т.д. Поскольку Entity Framework (как
+            впрочем, ADO.NET в целом) использует отсоединённую модель взаимодействия, при которой
+            каждое подключение и транзакция активна очень короткий промежуток времени, то я бы
+            рекомендовал задать режим изолированности Snapshot. <figure>
+                <title>Дополнительные свойства подключения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-connection-properties.png"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Дополнительные свойства подключения.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>В процессе работы мастера создания модели у вас спросят, как хранить строку
+            подключения. <figure>
+                <title>Сохранение строки подключения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-save-connectionstring.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Сохранение строки подключения.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Если вы строите веб приложение или трёхзвенку, где все пользователи будут работать с
+            базой данных под одной и той же учётной записью, то смело выбирайте «Да». Если же ваше
+            приложение должно запрашивать учётные данные для соединения с базой данных выбирайте
+            «Нет». Впрочем, с мастерами гораздо более удобно работать, когда у вас выбран пункт
+            «Да». Вы всегда можете это изменить в готовом приложении, просто отредактировав строку
+            подключения в файле конфигурации приложения
+                    <filename><replaceable>&lt;AppName&gt;</replaceable>.exe.conf</filename>. Строка
+            подключения будет сохранена в секции <emphasis role="bold">connectionStrings</emphasis>
+            примерно в таком виде <programlisting language="javascript">
+<![CDATA[
+<add name="DbModel" 
+     connectionString="character set=UTF8; data source=localhost; 
+                       initial catalog=examples; port number=3050; 
+                       user id=sysdba; dialect=3; isolationlevel=Snapshot; 
+                       pooling=True; password=masterkey;" 
+     providerName="FirebirdSql.Data.FirebirdClient" />
+]]>                    
+                </programlisting>
+        </para>
+        <para>Для того чтобы файл конфигурации перестал хранить конфиденциальную информацию просто
+            удалите из строки подключения <emphasis role="italic"
+            >password=masterkey;</emphasis></para>
+
+        <note>
+            <title>Замечание о работе с Firebird 3.0</title>
+            <para> К сожалению текущий ADO .Net провайдер для Firebird (версия 5.9.0.0) не
+                поддерживает шифрование сетевого трафика (по умолчанию в Firebird 3.0). Поэтому если
+                вы желаете работать с Firebird 3.0, то вам необходимо изменить некоторые настройки в
+                    <filename>firebird.conf</filename> (или в <filename>databases.conf</filename>
+                для конкретной БД), чтобы Firebird работал без использования шифрования сети. Для
+                этого необходимо поменять следующие настройки:
+                <programlisting>
+WireCrypt = Disabled                    
+                </programlisting>
+            </para>
+        </note>
+
+        <para>Далее у вас спросят, какие таблицы и представления должны быть включены модель. <figure>
+                <title>Сохранение строки подключения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-select-edm-tables.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Сохранение строки подключения.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+
+        <para>Базовая EDM готова.</para>
+
+        <section>
+            <title>EDM файлы</title>
+
+            <para>После работы этого мастера у вас должно появиться 5 новых файлов. Один файл модели
+                и четыре файла описывающих каждую из сущностей модели.</para>
+
+            <section>
+                <title>Файл сущности</title>
+
+                <para>Давайте посмотрим один из сгенерированных файлов описывающих сущность INVOICE. <programlisting language="csharp">
+<![CDATA[                
+[Table("Firebird.INVOICE")]
+public partial class INVOICE
+{
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", 
+       "CA2214:DoNotCallOverridableMethodsInConstructors")]
+    public INVOICE()
+    {
+        INVOICE_LINES = new HashSet<INVOICE_LINE>();
+    }
+
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public int INVOICE_ID { get; set; }
+
+    public int CUSTOMER_ID { get; set; }
+
+    public DateTime? INVOICE_DATE { get; set; }
+
+    public decimal? TOTAL_SALE { get; set; }
+
+    public short PAYED { get; set; }
+
+    public virtual CUSTOMER CUSTOMER { get; set; }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", 
+       "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public virtual ICollection<INVOICE_LINE> INVOICE_LINES { get; set; }
+}  
+]]>
+            </programlisting>
+                </para>
+                <para>Класс содержат свойства, которые отображают поля таблицы INVOICE. Каждое из
+                    таких свойств снабжено атрибутами, описывающими ограничения. Подробнее об
+                    различных атрибутах вы можете почитать в документации Майкрософт <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://msdn.microsoft.com/en-us/data/jj591583">Code First Data
+                        Annotations</link>.</para>
+
+                <section>
+                    <title>Навигационные свойства и "Ленивая загрузка"</title>
+                    <para>Кроме того, было сгенерировано ещё два навигационных свойства
+                            <varname>CUSTOMER</varname> и <varname>INVOICE_LINES</varname>. Первое
+                        содержит ссылку на сущность поставщика, второе — коллекцию строк накладных.
+                        Оно было сгенерировано потому, что таблица INVOICE_LINE имеет внешний ключ
+                        на таблицу INVOICE. Конечно, вы можете удалить это свойство из сущности
+                            <classname>INVOICE</classname>, но делать это вовсе не обязательно. Дело
+                        в том, что в данном случае свойства <varname>CUSTOMER</varname> и
+                            <varname>INVOICE_LINES</varname> использует так называемую «ленивую
+                        загрузку». При таком загрузка осуществляется при первом обращении к объекту,
+                        т.е. если связанные данные не нужны, то они не подгружаются. Однако при
+                        первом же обращении к навигационному свойству эти данные автоматически
+                        подгружаются из БД.</para>
+                    <para>При использовании ленивой загрузки надо иметь в виду некоторые моменты при
+                        объявлении классов. Так, классы, использующие ленивую загрузку должны быть
+                        публичными, а их свойства должны иметь модификаторы <emphasis role="bold"
+                            >public</emphasis> и <emphasis role="bold">virtual</emphasis>.</para>
+                </section>
+            </section>
+            <section>
+                <title>Файл DbModel</title>
+
+                <para>Теперь откроем файл <filename>DbModel.cs</filename> описывающий модель в
+                    целом. <programlisting language="csharp">
+<![CDATA[  
+public partial class DbModel : DbContext
+{
+    public DbModel()
+        : base("name=DbModel")
+    {
+    }
+
+    public virtual DbSet<CUSTOMER> CUSTOMERS { get; set; }
+    public virtual DbSet<INVOICE> INVOICES { get; set; }
+    public virtual DbSet<INVOICE_LINE> INVOICE_LINES { get; set; }
+    public virtual DbSet<PRODUCT> PRODUCTS { get; set; }
+
+    protected override void OnModelCreating(DbModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CUSTOMER>()
+            .Property(e => e.ZIPCODE)
+            .IsFixedLength();
+
+        modelBuilder.Entity<CUSTOMER>()
+            .HasMany(e => e.INVOICES)
+            .WithRequired(e => e.CUSTOMER)
+            .WillCascadeOnDelete(false);
+
+        modelBuilder.Entity<PRODUCT>()
+            .HasMany(e => e.INVOICE_LINES)
+            .WithRequired(e => e.PRODUCT)
+            .WillCascadeOnDelete(false);
+
+        modelBuilder.Entity<INVOICE>()
+            .HasMany(e => e.INVOICE_LINES)
+            .WithRequired(e => e.INVOICE)
+            .WillCascadeOnDelete(false);
+
+    }
+}
+]]>
+            </programlisting>
+                </para>
+
+                <para>Здесь мы видим свойства описывающие набор данных для каждой сущности. А так же
+                    задание дополнительных свойств создания модели с помощью Fluent API. Полное
+                    описание Fluent API вы может прочитать в документации Microsoft <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://msdn.microsoft.com/en-us/data/jj591617.aspx"
+                        >Configuring/Mapping Properties and Types with the Fluent API</link>.</para>
+                <para>Зададим в методе <methodname>OnModelCreating</methodname> точность для свойств
+                    типа decimal с помощью Fluent API. Для этого допишем следующие строчки <programlisting language="csharp">
+<![CDATA[ 
+            modelBuilder.Entity<PRODUCT>()
+                .Property(p => p.PRICE)
+                .HasPrecision(15, 2);
+            modelBuilder.Entity<INVOICE>()
+                .Property(p => p.TOTAL_SALE)
+                .HasPrecision(15, 2);
+
+            modelBuilder.Entity<INVOICE_LINE>()
+                .Property(p => p.SALE_PRICE)
+                .HasPrecision(15, 2);
+
+            modelBuilder.Entity<INVOICE_LINE>()
+                .Property(p => p.QUANTITY)
+                .HasPrecision(15, 0);
+]]>
+            </programlisting>
+                </para>
+            </section>
+        </section>
+    </section>
+
+    <section>
+        <title>Создание пользовательского интерфейса</title>
+
+        <para>В нашем приложении мы создадим два справочника: справочник товаров и справочник
+            заказчиков. Каждый справочник содержит сетку <classname>DataGridView</classname>, панель
+            с кнопками <classname>ToolStrip</classname>, а также компонент
+                <classname>BindingSource</classname>, который служит для упрощения привязки данных к
+            элементам управления в форме. <figure>
+                <title>Форма справочника заказчиков</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-customer-form.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Форма справочника заказчиков.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+        <para>Поскольку по функционалу оба справочника похожи и реализованы схожим образом описывать
+            мы будем только один.</para>
+
+        <section xml:id="app-dotnet-getcontext">
+            <title>Получение контекста</title>
+
+            <para>Для работы с нашей моделью нам потребуется метод для получения контекста (или
+                модели). В принципе для этого достаточно выполнить:
+                <programlisting language="csharp">
+DbModel dbContext = new DbModel();                    
+                </programlisting>
+            </para>
+            <para>Однако, если в строке подключения не хранятся конфиденциальные данные (например,
+                пароль), а мы инициализируем во время авторизации их при старте приложения, то нам
+                потребуется специальный метод для хранения и восстановления строки подключения или
+                сохранение ранее созданного контекста. Для этого создадим специальный класс, который
+                помимо метода для получения контекста будет также содержать некоторые глобальные
+                переменные уровня приложения, например рабочий период. <programlisting language="csharp">
+<![CDATA[                        
+static class AppVariables
+{
+    private static DbModel dbContext = null;
+
+    /// <summary>
+    /// Дата начала рабочего периода
+    /// </summary>
+    public static DateTime StartDate { get; set; }
+
+    /// <summary>
+    /// Дата окончания рабочего периода
+    /// </summary>
+    public static DateTime FinishDate { get; set; }
+
+    /// <summary>
+    /// Returns an instance of the model (context)
+    /// </summary>
+    /// <returns>Model</returns>
+    public static DbModel CreateDbContext() {
+        dbContext = dbContext ?? new DbModel();
+        return dbContext;        
+    }
+}                    
+]]>
+                </programlisting>
+            </para>
+            <para>Сама строка подключения инициализируется при старте приложения, после того как
+                успешно прошла авторизация. Для этого в обработчике события <varname>Load</varname>
+                главной формы напишем следующий код. <programlisting language="csharp">
+<![CDATA[                        
+private void MainForm_Load(object sender, EventArgs e) {
+    var dialog = new LoginForm();
+    if (dialog.ShowDialog() == DialogResult.OK)
+    {
+        var dbContext = AppVariables.getDbContext();
+
+        try
+        {
+            string s = dbContext.Database.Connection.ConnectionString;
+            var builder = new FbConnectionStringBuilder(s);
+            builder.UserID = dialog.UserName;
+            builder.Password = dialog.Password;
+
+            dbContext.Database.Connection.ConnectionString = builder.ConnectionString;
+
+            // пробуем подключится
+            dbContext.Database.Connection.Open();
+        }
+        catch (Exception ex)
+        {
+            // отображаем ошибку
+            MessageBox.Show(ex.Message, "Error");
+            Application.Exit();
+        }
+    }
+    else
+        Application.Exit();
+}                  
+]]>
+                </programlisting>
+            </para>
+            <para>Теперь для получения контекста мы будем использовать статический метод
+                    <methodname>CreateDbContext</methodname>.
+                <programlisting language="csharp">
+var dbContext = AppVariables.getDbContext();                   
+                </programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Работа с данными</title>
+
+            <para>Сами по себе сущности модели не содержат никаких данных. Самым простым способом
+                загрузить данные является вызовам метода <methodname>Load</methodname>, например вот
+                так: <programlisting language="csharp">
+<![CDATA[                        
+private void LoadCustomersData()
+{
+    dbContext.CUSTOMERS.Load(); 
+    var customers = dbContext.CUSTOMERS.Local;
+
+    bindingSource.DataSource = customers.ToBindingList();    
+}
+
+private void CustomerForm_Load(object sender, EventArgs e)
+{
+    LoadCustomersData();
+
+    dataGridView.DataSource = bindingSource;
+    dataGridView.Columns["CUSTOMER_ID"].Visible = false;
+}                 
+]]>
+                </programlisting>
+            </para>
+
+            <para>Однако такой способ имеет ряд недостатков:<orderedlist>
+                    <listitem>
+                        <para>Метод <methodname>Load</methodname> загружает сразу все данные из
+                            таблицы CUSTOMER в память.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Ленивые свойства (<varname>INVOICES</varname>) хоть и не загружаются
+                            сразу, а лишь по мере обращения к ним, всё равно будут загружены при
+                            отображении записей в гриде. Причём ровно столько раз, сколько записей
+                            будет выведено.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Порядок записей неопределён.</para>
+                    </listitem>
+                </orderedlist></para>
+
+            <para>Для обхода этих недостатком мы будем использовать технологию LINQ (Language
+                Integrated Query), или точнее <emphasis role="bold">LINQ to Entities</emphasis>.
+                LINQ to Entities предлагает простой и интуитивно понятный подход для получения
+                данных с помощью выражений, которые по форме близки выражениям языка SQL. С
+                синтаксисом LINQ вы можете ознакомиться по <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://msdn.microsoft.com/ru-ru/library/bb386964(v=vs.110).aspx"
+                    >LINQ to Entities</link>.</para>
+
+            <section>
+                <title>Методы расшрений LINQ</title>
+
+                <para>Методы расширений LINQ могут возвращать два объекта:
+                        <interfacename>IEnumerable</interfacename> и
+                        <interfacename>IQueryable</interfacename>. Интерфейс IQueryable наследуется
+                    от <interfacename>IEnumerable</interfacename>, поэтому по идее объект
+                        <interfacename>IQueryable</interfacename> это и есть также объект
+                        <interfacename>IEnumerable</interfacename>. Но между ними есть существенная
+                    разница.</para>
+                <para>Интерфейс <interfacename>IEnumerable</interfacename> находится в пространстве
+                    имён <package>System.Collections</package>. Объект
+                        <interfacename>IEnumerable</interfacename> представляет набор данных в
+                    памяти и может перемещаться по этим данным только вперёд. При выполнении запроса
+                        <interfacename>IEnumerable</interfacename> загружает все данные, и если нам
+                    надо выполнить их фильтрацию, то сама фильтрация происходит на стороне
+                    клиента.</para>
+                <para>Интерфейс <interfacename>IQueryable</interfacename> располагается в
+                    пространстве имён <package>System.Linq</package>. Объект
+                        <interfacename>IQueryable</interfacename> предоставляет удалённый доступ к
+                    базе данных и позволяет перемещаться по данным как в прямом порядке от начала до
+                    конца, так и в обратном порядке. В процессе создания запроса, возвращаемым
+                    объектом которого является <interfacename>IQueryable</interfacename>, происходит
+                    оптимизация запроса. В итоге в процессе его выполнения тратится меньше памяти,
+                    меньше пропускной способности сети.</para>
+                <para>Свойство <varname>Local</varname> возвращает интерфейс
+                        <interfacename>IEnumerable</interfacename>. Поэтому мы можем составлять LINQ
+                    запросы к нему. <programlisting language="csharp">
+<![CDATA[                        
+private void LoadCustomersData()
+{
+    var dbContext = AppVariables.getDbContext();
+    dbContext.CUSTOMERS.Load(); 
+    
+    var customers = 
+        from customer in dbContext.CUSTOMERS.Local
+        orderby customer.NAME
+        select new customer;
+
+    bindingSource.DataSource = customers.ToBindingList();
+}                 
+]]>
+                </programlisting>
+                </para>
+
+                <para>Однако как уже сказано этот запрос будет выполняться над данными в памяти. В
+                    принципе для маленьких таблиц, которым не требуется предварительная фильтрация
+                    это приемлемо.</para>
+                <para>Для того чтобы LINQ запрос был преобразован в SQL и выполнялся на стороне
+                    сервера нам необходимо использовать в LINQ запросе вместо обращения к свойству
+                        <varname>dbContext.CUSTOMERS.Local</varname> обращаться сразу к
+                        <varname>dbContext.CUSTOMERS</varname>. В этом случае нам не потребуется
+                    предварительный вызов <code>dbContext.CUSTOMERS.Load();</code> для загрузки
+                    коллекции в память.</para>
+
+                <section>
+                    <title>IQueryable и BindingList</title>
+
+                    <para>Однако тут нас подстерегает одна маленькая засада. Объекты
+                            <interfacename>IQueryable</interfacename> не умеют возвращать
+                            <classname>BindingList</classname>. <classname>BindingList</classname>
+                        является базовым классом для создания двустороннего механизма привязки
+                        данных. Из интерфейса <interfacename>IQueryable</interfacename> мы можем
+                        получить обычный список посредством вызова <methodname>ToList</methodname>,
+                        но в этом случае мы лишаемся приятных бонусов, таких как сортировка в гриде
+                        и многих других. Кстати в .NET Framework 5 это уже исправили и создали
+                        специальное расширение. Сделаем своё расширение, которое будет делать тоже
+                        самое. <programlisting language="csharp">
+<![CDATA[                        
+public static class DbExtensions
+{
+    // Внутренний класс для маппинга на него значения генератора
+    private class IdResult
+    {
+        public int Id { get; set; }
+    }
+
+    // Преобразование IQueryable в BindingList
+    public static BindingList<T> ToBindingList<T>
+        (this IQueryable<T> source) where T : class
+    {
+        return (new ObservableCollection<T>(source)).ToBindingList();
+    }
+
+    // Получение следующего значения последовательности
+    public static int NextValueFor(this DbModel dbContext, string genName)
+    {
+        string sql = String.Format(
+            "SELECT NEXT VALUE FOR {0} AS Id FROM RDB$DATABASE", genName);
+        return dbContext.Database.SqlQuery<IdResult>(sql).First().Id;
+    }
+
+    // Отсоединение всех объектов коллекции DbSet от контекста
+    // Полезно для обновлении кеша
+    public static void DetachAll<T>(this DbModel dbContext, DbSet<T> dbSet) 
+        where T : class 
+    {         
+        foreach (var obj in dbSet.Local.ToList())
+        {
+            dbContext.Entry(obj).State = EntityState.Detached;
+        }
+    }
+
+    // Обновление всех изменённых объектов в коллекции
+    public static void Refresh(this DbModel dbContext, RefreshMode mode, 
+       IEnumerable collection)
+    {
+        var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
+        objectContext.Refresh(mode, collection);
+    }
+
+    // Обновление объекта
+    public static void Refresh(this DbModel dbContext, RefreshMode mode, 
+         object entity)
+    {
+        var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
+        objectContext.Refresh(mode, entity);
+    }
+}                
+]]>
+                </programlisting> В этом же классе присутствует ещё несколько расширений. </para>
+
+                </section>
+
+                <section>
+                    <title>Другие расширения</title>
+
+                    <para>Метод <methodname>NextValueFor</methodname> предназначен для получения
+                        следующего значения генератора. Метод
+                            <methodname>dbContext.Database.SqlQuery</methodname> позволяет выполнять
+                        SQL запросы напрямую и отображать их результаты на некоторую сущность
+                        (проекцию). Вы можете воспользоваться им, если вам потребуется выполнить SQL
+                        запрос напрямую.</para>
+                    <para>Метод <methodname>DetachAll</methodname> предназначен для отсоединения
+                        всех объектов коллекции DBSet от контекста. Это необходимо для обновления
+                        внутреннего кеша. Дело в том, что в рамках контекста все извлекаемые
+                        кешируются и не извлекаются из базы данных снова. Однако это не всегда
+                        полезно, поскольку затрудняет получение изменённых записей сделанных в
+                        другом контексте. </para>
+
+                    <note>
+                        <para>В Web приложениях контекст обычно живёт очень короткое время, а новый
+                            контекст имеет не заполненный кеш.</para>
+                    </note>
+
+                    <para>Метод <methodname>Refresh</methodname> предназначен для обновления свойств
+                        объекта-сущности. Он полезен для обновления свойств объекта после его
+                        редактирования или добавления.</para>
+
+                </section>
+
+                <section>
+                    <title>Код для загрузки данных</title>
+
+                    <para>Таким образом, наш код загрузки данных будет выглядеть так <programlisting language="csharp">
+<![CDATA[                        
+private void LoadCustomersData()
+{
+    var dbContext = AppVariables.getDbContext();
+    // отсоединяем все загруженные объекты
+    // это необходимо чтобы обновился внутренний кеш
+    // при второй и последующих вызовах этого метода
+    dbContext.DetachAll(dbContext.CUSTOMERS);
+
+    var customers =
+          from customer in dbContext.CUSTOMERS
+          orderby customer.NAME
+          select customer;
+
+
+    bindingSource.DataSource = customers.ToBindingList();
+}
+
+private void CustomerForm_Load(object sender, EventArgs e)
+{
+    LoadCustomersData();
+
+    dataGridView.DataSource = bindingSource;
+    dataGridView.Columns["INVOICES"].Visible = false;
+    dataGridView.Columns["CUSTOMER_ID"].Visible = false;
+    dataGridView.Columns["NAME"].HeaderText = "Name";
+    dataGridView.Columns["ADDRESS"].HeaderText = "Address";
+    dataGridView.Columns["ZIPCODE"].HeaderText = "ZipCode";
+    dataGridView.Columns["PHONE"].HeaderText = "Phone";
+}               
+]]>
+                </programlisting>
+                    </para>
+                </section>
+
+                <section>
+                    <title>Добавление заказчика</title>
+
+                    <para>Код обработчика события на нажатие кнопки добавления выглядит следующим
+                        образом. <programlisting language="csharp">
+<![CDATA[                        
+private void btnAdd_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    // создание нового экземпляра сущности        
+    var customer = (CUSTOMER)bindingSource.AddNew();
+    // создаём форму для редактирования
+    using (CustomerEditorForm editor = new CustomerEditorForm()) {
+        editor.Text = "Добавление заказчика";
+        editor.Customer = customer;
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+           if (editor.DialogResult == DialogResult.OK) {
+              try {
+                 // получаем новое значение генератора
+                 // и присваиваем его идентификатору
+                 customer.CUSTOMER_ID = dbContext.NextValueFor("GEN_CUSTOMER_ID");
+                 // добавляем нового заказчика
+                 dbContext.CUSTOMERS.Add(customer);
+                 // пытаемся сохранить изменения
+                 dbContext.SaveChanges();
+                 // и обновить текущую запись
+                 dbContext.Refresh(RefreshMode.StoreWins, customer);
+              }
+              catch (Exception ex) {
+                 // отображаем ошибку
+                 MessageBox.Show(ex.Message, "Error");
+                 // не закрываем форму для возможности исправления ошибки
+                 fe.Cancel = true;
+              }
+           }
+           else
+               bindingSource.CancelEdit();
+
+        };
+        // показываем модальную форму
+        editor.ShowDialog(this);
+    }
+}               
+]]>
+                </programlisting>
+                    </para>
+                    <para>При добавлении новой записи мы получаем значение следующего идентификатора
+                        с помощью генератора. Мы могли бы не инициализировать значение
+                        идентификатора, и в этом случае отработал бы BEFORE INSERT триггер, который
+                        всё равно дёрнул бы следующее значение генератора. Однако в этом случае мы
+                        не смогли бы обновить вновь добавленную запись.</para>
+                </section>
+
+                <section>
+                    <title>Редактирование заказчика</title>
+
+                    <para>Код обработчика события на нажатие кнопки редактирования выглядит
+                        следующим образом. <programlisting language="csharp">
+<![CDATA[                        
+private void btnEdit_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    // получаем сущность
+    var customer = (CUSTOMER)bindingSource.Current;
+    // создаём форму для редактирования
+    using (CustomerEditorForm editor = new CustomerEditorForm()) {
+        editor.Text = "Редактирование заказчика";
+        editor.Customer = customer;
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+            if (editor.DialogResult == DialogResult.OK) {
+                try {
+                    // пытаемся сохранить изменения
+                    dbContext.SaveChanges();
+                    dbContext.Refresh(RefreshMode.StoreWins, customer);
+                    // обновляем все связанные контролы
+                    bindingSource.ResetCurrentItem();
+                }
+                catch (Exception ex) {
+                    // отображаем ошибку
+                    MessageBox.Show(ex.Message, "Error");
+                    // не закрываем форму для возможности исправления ошибки
+                    fe.Cancel = true;
+                }
+            }
+            else
+                bindingSource.CancelEdit();
+
+        };
+        // показываем модальную форму
+        editor.ShowDialog(this);
+    }
+}             
+]]>
+                </programlisting>
+                    </para>
+                    <para>Форма для редактирования заказчика выглядит следующим образом. <figure>
+                            <title>Форма редактирования заказчика</title>
+                            <mediaobject>
+                                <imageobject>
+                                    <imagedata fileref="images/dotnet-customer-editor-form.png"/>
+                                </imageobject>
+                                <textobject>
+                                    <phrase>Форма редактирования заказчика.</phrase>
+                                </textobject>
+                            </mediaobject>
+                        </figure>
+                    </para>
+
+                    <para>Код привязки к данным очень прост. <programlisting language="csharp">
+<![CDATA[                        
+public CUSTOMER Customer { get; set; }
+
+private void CustomerEditorForm_Load(object sender, EventArgs e)
+{
+    edtName.DataBindings.Add("Text", this.Customer, "NAME");
+    edtAddress.DataBindings.Add("Text", this.Customer, "ADDRESS");
+    edtZipCode.DataBindings.Add("Text", this.Customer, "ZIPCODE");
+    edtPhone.DataBindings.Add("Text", this.Customer, "PHONE");
+}             
+]]>
+                </programlisting>
+                    </para>
+                </section>
+
+                <section>
+                    <title>Удаление заказчика</title>
+
+                    <para>Код обработчика события на нажатие кнопки удаления выглядит следующим
+                        образом. <programlisting language="csharp">
+<![CDATA[                        
+private void btnDelete_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    var result = MessageBox.Show("Вы действительно хотите удалить заказчика?",
+                "Подтверждение",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+    if (result == DialogResult.Yes) {
+       // получаем сущность 
+       var customer = (CUSTOMER)bindingSource.Current;
+       try {
+           dbContext.CUSTOMERS.Remove(customer);
+           // пытаемся сохранить изменения
+           dbContext.SaveChanges();
+           // удаляем из связанного списка
+           bindingSource.RemoveCurrent();
+       }
+       catch (Exception ex) {
+           // отображаем ошибку
+           MessageBox.Show(ex.Message, "Error");
+       }
+    }
+}             
+]]>
+                </programlisting>
+                    </para>
+                </section>
+            </section>
+        </section>
+
+        <section>
+            <title>Журналы</title>
+
+            <para>В нашем приложении будет один журнал «Счёт-фактуры». В отличие от справочников
+                журналы содержат довольно большое количество записей и являются часто
+                пополняемыми.</para>
+            <para>Счёт-фактура — состоит из заголовка, где описываются общие атрибуты (номер, дата,
+                заказчик …), и строк счёт-фактуры со списком товаром, их количеством, стоимостью и
+                т.д. Для таких документов удобно иметь два грида: в главном отображаются данные о
+                шапке документа, а в детализирующем — список товаров. Таким образом, на форму
+                документа нам потребуется поместить два компонента
+                    <classname>DataGridView</classname>, к каждому из которых привязать свой
+                    <classname>BindingSource</classname>
+                <figure>
+                    <title>Форма журнала счёт-фактур</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/dotnet-invoice-form.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Форма журнала счёт-фактур.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+
+            <section>
+                <title>Фильтрация данных</title>
+
+                <para>Большинство журналов содержат поле с датой создания документа. Чтобы уменьшить
+                    количество выбираемых данных обычно принято вводить такое понятие как рабочий
+                    период для того, чтобы уменьшить объём данных передаваемый на клиента. Рабочий
+                    период — это диапазон дат, внутри которого требуются рабочие документы.
+                    Поскольку приложение может содержать более одного журнала, то имеет смысл
+                    разместить переменные, содержащие дату начала и окончания рабочего периода, в
+                    глобальном модуле AppVariables (см. <link linkend="app-dotnet-getcontext"
+                        >Получение контекста</link>), который, так или иначе, используется всеми
+                    модулями, работающими с БД. При старте приложения рабочий период обычно
+                    инициализируется датой начала и окончания текущего квартала (могут быть другие
+                    варианты). В ходе работы приложения можно изменить рабочий период по желанию
+                    пользователя.</para>
+                <para>Поскольку чаще всего требуются именно последние введённые документы, то имеет
+                    смысл сортировать их по дате в обратном порядке. Извлекать данные, как и в
+                    случае со справочниками будем при помощи LINQ.</para>
+            </section>
+
+            <section>
+                <title>Загрузка данных счёт-фактур</title>
+
+                <para> С учётом вышесказанного, метод для загрузки данных шапок счёт-фактур будет
+                    выглядеть следующим образом: <programlisting language="csharp">
+<![CDATA[                        
+public void LoadInvoicesData() {
+    var dbContext = AppVariables.getDbContext();
+
+    // запрос на LINQ преобразуется в SQL
+    var invoices =
+        from invoice in dbContext.INVOICES
+        where (invoice.INVOICE_DATE >= AppVariables.StartDate) &&
+              (invoice.INVOICE_DATE <= AppVariables.FinishDate)
+        orderby invoice.INVOICE_DATE descending
+        select new InvoiceView
+        {
+            Id = invoice.INVOICE_ID,
+            Cusomer_Id = invoice.CUSTOMER_ID,
+            Customer = invoice.CUSTOMER.NAME,
+            Date = invoice.INVOICE_DATE,
+            Amount = invoice.TOTAL_SALE,
+            Payed = (invoice.PAYED == 1) ? "Yes" : "No"
+        };
+
+    masterBinding.DataSource = invoices.ToBindingList();
+}          
+]]>
+                </programlisting>
+                </para>
+                <para>В качестве проекции мы использовали не анонимный тип, а класс
+                        <classname>InvoiceView</classname>. Это упрощает приведение типа.
+                    Определение класса <classname>InvoiceView</classname> выглядит следующим
+                    образом: <programlisting language="csharp">
+<![CDATA[                        
+public class InvoiceView {
+    public int Id { get; set; }
+    public int Cusomer_Id { get; set; }
+    public string Customer { get; set; }
+    public DateTime? Date { get; set; }
+    public decimal? Amount { get; set; }
+    public string Payed { get; set; }
+
+    public void Load(int Id) {
+        var dbContext = AppVariables.getDbContext();
+
+        var invoices =
+            from invoice in dbContext.INVOICES
+            where invoice.INVOICE_ID == Id
+            select new InvoiceView
+            {
+                Id = invoice.INVOICE_ID,
+                Cusomer_Id = invoice.CUSTOMER_ID,
+                Customer = invoice.CUSTOMER.NAME,
+                Date = invoice.INVOICE_DATE,
+                Amount = invoice.TOTAL_SALE,
+                Payed = (invoice.PAYED == 1) ? "Yes" : "No"
+            };
+
+        InvoiceView invoiceView = invoices.ToList().First();
+        this.Id = invoiceView.Id;
+        this.Cusomer_Id = invoiceView.Cusomer_Id;
+        this.Customer = invoiceView.Customer;
+        this.Date = invoiceView.Date;
+        this.Amount = invoiceView.Amount;
+        this.Payed = invoiceView.Payed;
+    }
+}         
+]]>
+                </programlisting> Метод <methodname>Load</methodname> позволяет нам быстро
+                    обновить 1 добавленную или обновлённую запись в гриде, вместо того чтобы
+                    полностью перезагружать все записи. </para>
+
+                <para>Код обработчика события на нажатие кнопки добавления выглядит следующим
+                    образом. <programlisting language="csharp">
+<![CDATA[                        
+private void btnAddInvoice_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    var invoice = dbContext.INVOICES.Create();
+
+    using (InvoiceEditorForm editor = new InvoiceEditorForm()) {
+        editor.Text = "Добавление счёт фактуры";
+        editor.Invoice = invoice;
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+            if (editor.DialogResult == DialogResult.OK) {
+                try {
+                    // получаем значение генератора
+                    invoice.INVOICE_ID = dbContext.NextValueFor("GEN_INVOICE_ID");
+                    // добавляем запись
+                    dbContext.INVOICES.Add(invoice);
+                    // пытаемся сохранить изменения
+                    dbContext.SaveChanges();
+                    // добавляем проекцию в список для грида
+                    ((InvoiceView)masterBinding.AddNew()).Load(invoice.INVOICE_ID);
+                }
+                catch (Exception ex) {
+                    // отображаем ошибку
+                    MessageBox.Show(ex.Message, "Error");
+                    // не закрываем форму для возможности исправления ошибки
+                    fe.Cancel = true;
+                }
+            }
+        };
+        // показываем модальную форму
+        editor.ShowDialog(this);
+    }
+}      
+]]>
+                </programlisting>
+                </para>
+                <para>В отличие от аналогичного метода справочника здесь обновление записи
+                    происходит не с помощью вызова <methodname>dbContext.Refresh</methodname>, а с
+                    помощью метода <methodname>Load</methodname> проекции
+                        <classname>InvoiceView</classname>. Дело в том, что
+                        <methodname>dbContext.Refresh</methodname> предназначен для обновления
+                    объектов сущностей, а не произвольных проекций, которые могут получаться
+                    сложными LINQ запросами.</para>
+
+                <para>Код обработчика события на нажатие кнопки редактирования выглядит следующим
+                    образом. <programlisting language="csharp">
+<![CDATA[                        
+private void btnEditInvoice_Click(object sender, EventArgs e) {
+    // получение контекста
+    var dbContext = AppVariables.getDbContext();
+    // поиск сущности по идентификатору
+    var invoice = dbContext.INVOICES.Find(this.CurrentInvoice.Id);
+
+    if (invoice.PAYED == 1) {
+        MessageBox.Show("Изменение не возможно, счёт фактура уже оплачена.", "Ошибка");
+        return;
+    }
+
+    using (InvoiceEditorForm editor = new InvoiceEditorForm()) {
+        editor.Text = "Edit invoice";
+        editor.Invoice = invoice;
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+            if (editor.DialogResult == DialogResult.OK) {
+                try {
+                    // пытаемся сохранить изменения
+                    dbContext.SaveChanges();
+                    // перезагружаем проекцию
+                    CurrentInvoice.Load(invoice.INVOICE_ID);
+                    masterBinding.ResetCurrentItem();
+                }
+                catch (Exception ex) {
+                    // отображаем ошибку
+                    MessageBox.Show(ex.Message, "Error");
+                    // не закрываем форму для возможности исправления ошибки
+                    fe.Cancel = true;
+                }
+            }
+        };
+        // показываем модальную форму
+        editor.ShowDialog(this);
+    }
+}    
+]]>
+                </programlisting>
+                </para>
+                <para>Здесь нам потребовалось найти сущность по её идентификатору доступному в
+                    текущей записи. Свойство CurrentInvoice предназначено для получения выделенной в
+                    гриде счёт-фактуры. Оно реализовано так: <programlisting language="csharp">
+<![CDATA[                        
+public InvoiceView CurrentInvoice {
+    get {
+        return (InvoiceView)masterBinding.Current;
+    }
+}  
+]]>
+                </programlisting>
+                </para>
+                <para>Удаление шапки счёт фактуры вы можете сделать самостоятельно.</para>
+
+                <section>
+                    <title>Оплата счёт-фактуры</title>
+
+                    <para>Помимо добавления, редактирования и удаления для счёт-фактур мы ввели ещё
+                        одну операцию оплаты, код метода реализующего эту операцию выглядит
+                        следующим образом: <programlisting language="csharp">
+<![CDATA[                        
+private void btnInvoicePay_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    var invoice = dbContext.INVOICES.Find(this.CurrentInvoice.Id);
+    try {
+        if (invoice.PAYED == 1)
+           throw new Exception("Изменение не возможно, счёт фактура уже оплачена.");
+
+        invoice.PAYED = 1;
+        // сохраняем изменения
+        dbContext.SaveChanges();
+        // перезагружаем изменённую запись
+        CurrentInvoice.Load(invoice.INVOICE_ID);
+        masterBinding.ResetCurrentItem();
+    }
+    catch (Exception ex) {
+        // отображаем ошибку
+        MessageBox.Show(ex.Message, "Ошибка");
+    }
+} 
+]]>
+                </programlisting>
+                    </para>
+                </section>
+            </section>
+
+            <section>
+                <title>Отображение позиций счёт-фактур</title>
+
+                <para>Для отображения позиций счёт-фактуры существует два метода:<orderedlist>
+                        <listitem>
+                            <para>Получать данные по каждой счёт-фактуре из навигационного свойства
+                                INVOICE_LINE и отображать содержимое этого сложного свойства
+                                (возможно с преобразованиями LINQ ) в детейл гриде.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Получать данные по каждой счёт-фактуре отдельным LINQ запросом,
+                                который будет перевыполняться при перемещении в указателя в мастер
+                                гриде.</para>
+                        </listitem>
+                    </orderedlist> Каждый из методов имеет свои преимущества и недостатки. </para>
+
+                <para>Первый метод предполагает, что при открытии формы счёт-фактуры мы должны сразу
+                    извлечь все счёт-фактуры за указанный период и связанные данные по их позициям.
+                    Это хоть и выполняется одним SQL запросом, но может занять довольно много
+                    времени, и требует значительного объёма оперативной памяти. Этот метод лучше
+                    подходит для WEB приложений где вывод записей обычно происходит
+                    постранично.</para>
+
+                <para>Второй метод несколько более сложен в реализации, но позволяет быстро
+                    открывать форму счёт-фактуры и менее требователен к ресурсам, однако при каждом
+                    перемещении указателя в мастер гриде будет перевыполняться SQL запрос и
+                    загружать сетевой трафик (хотя объём будет невелик).</para>
+
+                <para>В нашем приложении я буду использовать второй подход. Для этого необходимо
+                    написать обработчик события изменения текущей записи для компонента
+                        <classname>BindingSource</classname>. <programlisting language="csharp">
+<![CDATA[                        
+private void masterBinding_CurrentChanged(object sender, EventArgs e) {
+   LoadInvoiceLineData(this.CurrentInvoice.Id);
+   detailGridView.DataSource = detailBinding;
+} 
+]]>
+                </programlisting>
+                </para>
+                <para>Метод для загрузки данных о позициях счёт-фактуры выглядит следующим образом: <programlisting language="csharp">
+<![CDATA[                        
+private void LoadInvoiceLineData(int? id) {
+    var dbContext = AppVariables.getDbContext();
+
+    var lines =
+        from line in dbContext.INVOICE_LINES
+        where line.INVOICE_ID == id
+        select new InvoiceLineView
+        {
+            Id = line.INVOICE_LINE_ID,
+            Invoice_Id = line.INVOICE_ID,
+            Product_Id = line.PRODUCT_ID,
+            Product = line.PRODUCT.NAME,
+            Quantity = line.QUANTITY,
+            Price = line.SALE_PRICE,
+            Total = Math.Round(line.QUANTITY * line.SALE_PRICE, 2)
+        };
+
+    detailBinding.DataSource = lines.ToBindingList();
+}
+]]>
+                </programlisting>
+                </para>
+                <para>В качестве проекции мы использовали класс
+                        <classname>InvoiceLineView</classname>. <programlisting language="csharp">
+<![CDATA[                        
+public class InvoiceLineView {
+   public int Id { get; set; }
+   public int Invoice_Id { get; set; }
+   public int Product_Id { get; set; }
+   public string Product { get; set; }
+   public decimal Quantity { get; set; }
+   public decimal Price { get; set; }
+   public decimal Total { get; set; }
+}
+]]>
+                </programlisting>
+                </para>
+                <para>Замечу, что в отличие от класса <classname>InvoiceView</classname> здесь
+                    отсутствует метод для загрузки одной текущей записи. Здесь скорость перезагрузки
+                    детейл грида не настолько критична, поскольку один документ не содержит тысячи
+                    позиций, однако при желании вы можете реализовать такой метод. </para>
+                <para>Добавим специальное свойство для получения текущей строки документа выделенной
+                    в детейл гриде. <programlisting language="csharp">
+<![CDATA[                        
+public InvoiceLineView CurrentInvoiceLine {
+    get {
+        return (InvoiceLineView)detailBinding.Current;
+    }
+}
+]]>
+                </programlisting>
+                </para>
+            </section>
+
+            <section>
+                <title>Работа с хранимыми процедурами</title>
+
+                <para>В методах для добавления, редактирования и удаления мы покажем, как работать с
+                    хранимыми процедурами в Entity Framework. Например, метод для добавления новой
+                    записи выглядит так: <programlisting language="csharp">
+<![CDATA[                        
+private void btnAddInvoiceLine_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    // получаем текущую счёт-фактуру
+    var invoice = dbContext.INVOICES.Find(this.CurrentInvoice.Id);
+    // проверяем не оплачена ли счёт-фактура
+    if (invoice.PAYED == 1) {
+        MessageBox.Show("Невозможно изменение, счёт-фактура оплачена.", "Error");
+        return;
+    }
+    // создаём позицию счёт-фактуры
+    var invoiceLine = dbContext.INVOICE_LINES.Create();
+    invoiceLine.INVOICE_ID = invoice.INVOICE_ID;
+    // создаём редактор позиции счёт фактуры
+    using (InvoiceLineEditorForm editor = new InvoiceLineEditorForm()) {
+        editor.Text = "Add invoice line";
+        editor.InvoiceLine = invoiceLine;
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+            if (editor.DialogResult == DialogResult.OK) {
+              try {
+                 // создаём параметры ХП
+                 var invoiceIdParam = new FbParameter("INVOICE_ID", FbDbType.Integer);
+                 var productIdParam = new FbParameter("PRODUCT_ID", FbDbType.Integer);
+                 var quantityParam = new FbParameter("QUANTITY", FbDbType.Integer);
+                 // инициализируем параметры значениями
+                 invoiceIdParam.Value = invoiceLine.INVOICE_ID;
+                 productIdParam.Value = invoiceLine.PRODUCT_ID;
+                 quantityParam.Value = invoiceLine.QUANTITY;
+                 // выполняем хранимую процедуру
+                 dbContext.Database.ExecuteSqlCommand(
+                   "EXECUTE PROCEDURE SP_ADD_INVOICE_LINE("
+                        + "@INVOICE_ID, @PRODUCT_ID, @QUANTITY)", 
+                   invoiceIdParam, 
+                   productIdParam, 
+                   quantityParam);
+                 // обновляем гриды
+                 // перезагрузка текущей записи счёт-фактуры
+                 CurrentInvoice.Load(invoice.INVOICE_ID);
+                 // перезагрузка всех записей детейл грида
+                 LoadInvoiceLineData(invoice.INVOICE_ID);
+                 // обновляем связанные данные
+                 masterBinding.ResetCurrentItem();
+              }
+              catch (Exception ex) {
+                 // отображаем ошибку
+                 MessageBox.Show(ex.Message, "Error");
+                 // не закрываем форму для возможности исправления ошибки
+                 fe.Cancel = true;
+              }
+            }
+        };
+        // показываем модальную форму
+        editor.ShowDialog(this);
+    }
+}
+]]>
+                </programlisting>
+                </para>
+                <para>Здесь обновление записи мастер грида требуется потому, что одно из его полей
+                    (TotalSale) содержит агрегированную информацию по строкам документа.</para>
+                <para>Метод для обновления записи реализован так. <programlisting language="csharp">
+<![CDATA[                        
+private void btnEditInvoiceLine_Click(object sender, EventArgs e) {
+    var dbContext = AppVariables.getDbContext();
+    // получаем текущую счёт-фактуру
+    var invoice = dbContext.INVOICES.Find(this.CurrentInvoice.Id);
+    // проверяем не оплачена ли счёт-фактура
+    if (invoice.PAYED == 1) {
+        MessageBox.Show("Изменение не возможно, счёт фактура оплачена.", "Error");
+        return;
+    }
+    // получаем текущую позицию счёт-фактуры
+    var invoiceLine = invoice.INVOICE_LINES
+        .Where(p => p.INVOICE_LINE_ID == this.CurrentInvoiceLine.Id)
+        .First();
+    // создаём редактор позиции счёт фактуры
+    using (InvoiceLineEditorForm editor = new InvoiceLineEditorForm()) {
+        editor.Text = "Edit invoice line";
+        editor.InvoiceLine = invoiceLine;
+
+        // Обработчик закрытия формы
+        editor.FormClosing += delegate (object fSender, FormClosingEventArgs fe) {
+           if (editor.DialogResult == DialogResult.OK) {
+               try {
+                   // создаём параметры ХП
+                   var idParam = new FbParameter("INVOICE_LINE_ID", FbDbType.Integer);
+                   var quantityParam = new FbParameter("QUANTITY", FbDbType.Integer);
+                   // инициализируем параметры значениями
+                   idParam.Value = invoiceLine.INVOICE_LINE_ID;
+                   quantityParam.Value = invoiceLine.QUANTITY;
+                   // выполняем хранимую процедуру
+                   dbContext.Database.ExecuteSqlCommand(
+                      "EXECUTE PROCEDURE SP_EDIT_INVOICE_LINE("
+                         + "@INVOICE_LINE_ID, @QUANTITY)", 
+                      idParam, 
+                      quantityParam);
+                   // обновляем гриды
+                   // перезагрузка текущей записи счёт-фактуры
+                   CurrentInvoice.Load(invoice.INVOICE_ID);
+                   // перезагрузка всех записей детейл грида
+                   LoadInvoiceLineData(invoice.INVOICE_ID);
+                   // обновляем связанные контролы
+                   masterBinding.ResetCurrentItem();
+               }
+               catch (Exception ex) {
+                   // отображаем ошибку
+                   MessageBox.Show(ex.Message, "Error");
+                   // не закрываем форму для возможности исправления ошибки
+                   fe.Cancel = true;
+               }
+           }
+       };
+
+       // показываем модальную форму
+       editor.ShowDialog(this);
+    }
+}
+]]>
+                </programlisting>
+                </para>
+
+                <section>
+                    <title>Удаление позиции счёт-фактуры</title>
+
+                    <para>Метод для удаления записи реализован так. <programlisting language="csharp">
+<![CDATA[                        
+private void btnDeleteInvoiceLine_Click(object sender, EventArgs e) {
+    var result = MessageBox.Show(
+                "Вы действительно хотите удалить строку счёт-фактуры?",
+                "Подтверждение",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+    if (result == DialogResult.Yes) {
+       var dbContext = AppVariables.getDbContext();
+       // получаем текущую счёт-фактуру
+       var invoice = dbContext.INVOICES.Find(this.CurrentInvoice.Id);
+       try {
+           // проверяем не оплачена ли счёт-фактура
+           if (invoice.PAYED == 1)
+              throw new Exception("Не возможно удалить запись, счёт-фактура оплачена.");
+           // создаём параметры ХП
+           var idParam = new FbParameter("INVOICE_LINE_ID", FbDbType.Integer);
+           // инициализируем параметры значениями
+           idParam.Value = this.CurrentInvoiceLine.Id;
+           // выполняем хранимую процедуру
+           dbContext.Database.ExecuteSqlCommand(
+              "EXECUTE PROCEDURE SP_DELETE_INVOICE_LINE(@INVOICE_LINE_ID)", 
+              idParam);
+
+           // обновляем гриды
+           // перезагрузка текущей записи счёт-фактуры
+           CurrentInvoice.Load(invoice.INVOICE_ID);
+           // перезагрузка всех записей детейл грида
+           LoadInvoiceLineData(invoice.INVOICE_ID);
+           // обновляем связанные контролы
+           masterBinding.ResetCurrentItem();
+       }
+       catch (Exception ex) {
+           // отображаем ошибку
+           MessageBox.Show(ex.Message, "Error");
+       }
+    }
+}
+]]>
+                </programlisting>
+                    </para>
+                </section>
+            </section>
+
+            <section>
+                <title>Выбор из спраовчника товаров</title>
+
+                <para>В методах для добавления и редактирования позиций счёт-фактуры мы использовали
+                    форму для редактирования. <figure>
+                        <title>Форма редактора позиций счёт-фактур</title>
+                        <mediaobject>
+                            <imageobject>
+                                <imagedata fileref="images/dotnet-invoiceline-editor-form.png"/>
+                            </imageobject>
+                            <textobject>
+                                <phrase>Форма редактора позиций счёт-фактур.</phrase>
+                            </textobject>
+                        </mediaobject>
+                    </figure>
+                </para>
+
+                <para>Для отображения товара мы будем использовать <classname>TextBox</classname>.
+                    По нажатию кнопки, расположенной рядом, будет вызываться модальная форма с
+                    гридом для выбора товара. В качестве модальной окна для выбора продукта
+                    используем ту же форму, что была создана для их отображения. Код обработчика
+                    нажатия кнопки и инициализации формы будет выглядеть следующим образом: <programlisting language="csharp">
+<![CDATA[                        
+public partial class InvoiceLineEditorForm : Form {
+    public InvoiceLineEditorForm() {
+        InitializeComponent();
+    }
+
+
+    public INVOICE_LINE InvoiceLine { get; set; }
+
+    private void InvoiceLineEditorForm_Load(object sender, EventArgs e) {
+        if (this.InvoiceLine.PRODUCT != null) {
+           edtProduct.Text = this.InvoiceLine.PRODUCT.NAME;
+           edtPrice.Text = this.InvoiceLine.PRODUCT.PRICE.ToString("F2");
+           btnChooseProduct.Click -= this.btnChooseProduct_Click;
+        }
+        if (this.InvoiceLine.QUANTITY == 0)
+           this.InvoiceLine.QUANTITY = 1;
+        edtQuantity.DataBindings.Add("Value", this.InvoiceLine, "QUANTITY");
+    }
+
+    private void btnChooseProduct_Click(object sender, EventArgs e) {
+       GoodsForm goodsForm = new GoodsForm();
+       if (goodsForm.ShowDialog() == DialogResult.OK) {
+          InvoiceLine.PRODUCT_ID = goodsForm.CurrentProduct.Id;
+          edtProduct.Text = goodsForm.CurrentProduct.Name;
+          edtPrice.Text = goodsForm.CurrentProduct.Price.ToString("F2");
+       }
+   }
+}
+]]>
+                </programlisting>
+                </para>
+            </section>
+        </section>
+
+        <section>
+            <title>Работа с транзакциями</title>
+
+            <para>Когда мы вызываем при добавлении, обновлении, удалении метод
+                    <methodname>SaveChanges()</methodname>, то фактически Entity Framework неявно
+                стартует и завершает транзакцию. Поскольку используется отсоединённая модель, то все
+                операции происходят в рамках одной транзакции. Кроме того EF автоматически стартует
+                и завершает транзакцию при каждом извлечении данных. Рассмотрим работу
+                автоматических транзакций на следующем примере. Допустим нам необходимо сделать
+                скидку на товары, выделенные в гриде. Код без явного использования транзакций будет
+                выглядеть следующим образом: <programlisting language="csharp">
+<![CDATA[                        
+var dbContext = AppVariables.getDbContext();
+foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
+    int id = (int)gridRows.Cells["Id"].Value;
+    // здесь происходит неявный старт и завершение транзакции
+    var product = dbContext.PRODUCTS.Find(id);
+    // скидка 10%
+    decimal discount = 10.0m;
+    product.PRICE = product.PRICE * (100 - discount) /100;
+}
+// здесь происходит неявный старт и завершение транзакции
+// все изменения происходят за одну транзакцию
+dbContext.SaveChanges();
+]]>
+                </programlisting>
+            </para>
+            <para>Допустим, мы выбрали 10 товаров. В этом случае будет неявно использовано 10
+                транзакций для поиска товара по идентификатору и одиннадцатая для сохранения
+                изменений. В данном случае можно использовать всего одну транзакцию, если
+                использовать явное управление транзакциями. Например, вот так: <programlisting language="csharp">
+<![CDATA[                        
+var dbContext = AppVariables.getDbContext();
+// явный старт транзакции по умолчанию
+using (var dbTransaction = dbContext.Database.BeginTransaction()) {
+    string sql =
+         "UPDATE PRODUCT " +
+         "SET PRICE =  PRICE * ROUND((100 - @DISCOUNT)/100, 2) " +
+         "WHERE PRODUCT_ID = @PRODUCT_ID";
+    try {
+        // создаём параметры запроса
+        var idParam = new FbParameter("PRODUCT_ID", FbDbType.Integer);
+        var discountParam = new FbParameter("DISCOUNT", FbDbType.Decimal);
+        // создаём SQL команду для обновления записей
+        var sqlCommand = dbContext.Database.Connection.CreateCommand();
+        sqlCommand.CommandText = sql;
+        // указываем команде, какую транзакцию использовать
+        sqlCommand.Transaction = dbTransaction.UnderlyingTransaction;
+        sqlCommand.Parameters.Add(discountParam);
+        sqlCommand.Parameters.Add(idParam);
+        // подготавливаем команду
+        sqlCommand.Prepare();
+        // для всех выделенных записей в гриде
+        foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
+            int id = (int)gridRows.Cells["Id"].Value;
+            // инициализируем параметры запроса
+            idParam.Value = id;
+            discountParam.Value = 10.0m; // скидка 10%
+            // выполняем sql запрос
+            sqlCommand.ExecuteNonQuery();
+        }
+        dbTransaction.Commit();
+    }
+    catch (Exception ex) {
+        dbTransaction.Rollback();
+        MessageBox.Show(ex.Message, "error");                 
+    }
+}
+]]>
+                </programlisting>
+            </para>
+            <para>В данном случае мы стартовали транзакцию с параметрами по умолчанию. Для того
+                чтобы задавать свои параметры транзакции необходимо использовать метод
+                    <methodname>UseTransaction</methodname>. <programlisting language="csharp">
+<![CDATA[                        
+private void btnDiscount_Click(object sender, EventArgs e) {         
+    DiscountEditorForm editor = new DiscountEditorForm();
+
+    editor.Text = "Enter discount";
+    if (editor.ShowDialog() != DialogResult.OK)
+        return;
+
+
+    bool needUpdate = false;
+
+    var dbContext = AppVariables.getDbContext();
+    var connection = dbContext.Database.Connection;
+    // явный старт транзакции
+    using (var dbTransaction = connection.BeginTransaction(IsolationLevel.Snapshot)) {
+        dbContext.Database.UseTransaction(dbTransaction);
+        string sql =
+            "UPDATE PRODUCT " +
+            "SET PRICE =  ROUND(PRICE * (100 - @DISCOUNT)/100, 2) " +
+            "WHERE PRODUCT_ID = @PRODUCT_ID";
+        try {
+            // создаём параметры запроса
+            var idParam = new FbParameter("PRODUCT_ID", FbDbType.Integer);
+            var discountParam = new FbParameter("DISCOUNT", FbDbType.Decimal);
+            // создаём SQL команду для обновления записей
+            var sqlCommand = connection.CreateCommand();
+            sqlCommand.CommandText = sql;
+            // указываем команде, какую транзакцию использовать
+            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.Parameters.Add(discountParam);
+            sqlCommand.Parameters.Add(idParam);
+            // подготавливаем команду
+            sqlCommand.Prepare();
+            // для всех выделенных записей в гриде
+            foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
+                int id = (int)gridRows.Cells["PRODUCT_ID"].Value;
+                // инициализируем параметры запроса
+                idParam.Value = id;
+                discountParam.Value = editor.Discount;
+                // выполняем sql запрос                            
+                needUpdate = (sqlCommand.ExecuteNonQuery() > 0) || needUpdate;
+            }
+            dbTransaction.Commit();
+        }
+        catch (Exception ex) {
+            dbTransaction.Rollback();
+            MessageBox.Show(ex.Message, "error");
+            needUpdate = false;
+        }
+    }
+    // перезагружаем содержимое грида
+    if (needUpdate) {
+       // для всех выделенных записей в гриде
+       foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
+            var product = (PRODUCT)bindingSource.List[gridRows.Index];
+            dbContext.Refresh(RefreshMode.StoreWins, product);
+       }
+       bindingSource.ResetBindings(false);
+    }
+
+}
+]]>
+                </programlisting>
+            </para>
+            <para>Ну вот. Теперь у нас для всего набора обновлений используется всего одна
+                транзакция, и нет лишних команд для поиска данных. Осталось только добавить диалог
+                для ввода значения скидки и обновление данных в гриде. Попробуйте сделать это
+                самостоятельно.</para>
+            <para>В заключении приведём скриншот готового приложения. <figure>
+                    <title>Скриншот готового приложения</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/dotnet-winform-app.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Скриншот готового приложения</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>Заключение</title>
+
+        <para>Исходные коды примера приложения вы можете скачать по ссылке <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/sim1984/FBFormAppExample"
+                >https://github.com/sim1984/FBFormAppExample</link>.</para>
+    </section>
+
+</chapter>

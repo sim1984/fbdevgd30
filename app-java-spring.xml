@@ -1,0 +1,4132 @@
+<!DOCTYPE chapter>  
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-java-spring" xml:lang="ru">
+    <info>
+        <title>Создание приложений с использованием jOOQ и Spring MVC</title>
+    </info>
+
+    <para>В данной главе будет описан процесс создания web приложения на языке Java с использованием
+        фреймворка Spring MVC, библиотеки jOOQ и СУБД Firebird.</para>
+
+    <para>Для упрощения разработки вы можете воспользоваться одной из распространённых IDE для Java
+        (NetBeanse, IntelliJ IDEA, Eclipse, JDeveloper или др.). Лично я использовал NetBeanse. Для
+        тестирования и отладки нам так же потребуется установить один и веб-серверов или серверов
+        приложения (Apache Tomcat или Glass Fish). Создаём проект на основе шаблона Maven проекта
+        веб-приложения.</para>
+
+    <para>После создания проекта на основе шаблона необходимо преобразовать его структуру папок так
+        чтобы она была корректной для Spring 4. Если проект создавался в среде NetBeans 8.2, то
+        необходимо выполнить следующие шаги:<orderedlist>
+            <listitem>
+                <para>Удалить файл <filename>index.html</filename></para>
+            </listitem>
+            <listitem>
+                <para>Создать папку <filename>WEB-INF</filename> внутри папки <filename>Web
+                        Pages</filename></para>
+            </listitem>
+            <listitem>
+                <para>Внутри папки <filename>WEB-INF</filename> создать папки
+                        <filename>jsp</filename>, <filename>jspf</filename> и
+                        <filename>resources</filename></para>
+            </listitem>
+            <listitem>
+                <para>Внутри папки <filename>resources</filename> создаём папки
+                        <filename>js</filename> и <filename>CSS</filename></para>
+            </listitem>
+            <listitem>
+                <para>Внутри папки <filename>jsp</filename> создаём файл
+                        <filename>index.jsp</filename></para>
+            </listitem>
+        </orderedlist></para>
+    <para>После наших манипуляций структура папок должна выглядеть следующим образом. <figure>
+            <title>Структура каталогов Spring MVC проекта</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/java-dir-structure.png"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Структура каталогов Spring MVC проект</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
+    </para>
+    <para>В папке <filename>WEB-INF/jsp</filename> будут размещаться jsp странице, а в папке
+            <filename>WEB-INF/jspf</filename> части страниц, которые будут подключены в другие
+        странице с помощью инструкции
+        <programlisting>
+&lt;%@ include file ="<replaceable>&lt;имя файла&gt;</replaceable>" %&gt;
+            </programlisting>
+    </para>
+    <para>Папка <filename>resource</filename> предназначена для размещения статических веб ресурсов.
+        В папке <filename>WEB-INF/resources/css</filename> будут размещаться файлы каскадных таблиц
+        стилей, в папке <filename>WEB-INF/resources/fonts</filename> – файлы шрифтов, в папке
+            <filename>WEB-INF/resources/js</filename> – файлы JavaScript и сторонние JavaScript
+        библиотеки.</para>
+    <para>Теперь поправим файл <filename>pom.xml</filename> и пропишем в него общие свойства
+        приложения, зависимости от пакетов библиотек (Spring MVC, Jaybird, JDBC пул, JOOQ) и
+        свойства JDBC подключения. <programlisting language="javascript">
+<![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.ibase</groupId>
+    <artifactId>fbjavaex</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+
+    <name>Firebird Java Example</name>
+
+    <properties>
+        <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring.version>4.3.4.RELEASE</spring.version>
+        <jstl.version>1.2</jstl.version>
+        <javax.servlet.version>3.0.1</javax.servlet.version>    
+        <db.url>jdbc:firebirdsql://localhost:3050/examples</db.url>    
+        <db.driver>org.firebirdsql.jdbc.FBDriver</db.driver>
+        <db.username>SYSDBA</db.username>
+        <db.password>masterkey</db.password>
+    </properties>
+    
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-web-api</artifactId>
+            <version>7.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>  
+            <groupId>javax.servlet</groupId>  
+            <artifactId>javax.servlet-api</artifactId>  
+            <version>${javax.servlet.version}</version>  
+            <scope>provided</scope> 
+        </dependency> 
+         
+        <dependency>  
+            <groupId>jstl</groupId>  
+            <artifactId>jstl</artifactId>  
+            <version>${jstl.version}</version>  
+        </dependency>   
+        
+        <!-- Работа с JSON -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.8.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.8.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.8.5</version>
+        </dependency>        
+                   
+        
+        <!-- Spring -->
+        
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+ 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+ 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>        
+        
+        <!-- JDBC -->
+        
+        <dependency>
+            <groupId>org.firebirdsql.jdbc</groupId>
+            <artifactId>jaybird-jdk18</artifactId>
+            <version>3.0.0</version>
+        </dependency>  
+        
+        <!-- Пул коннектов -->  
+        
+        <dependency>
+            <groupId>commons-dbcp</groupId>
+            <artifactId>commons-dbcp</artifactId>
+            <version>1.4</version>
+        </dependency>          
+        
+        <!-- jOOQ -->   
+                
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>3.9.2</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta</artifactId>
+            <version>3.9.2</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
+            <version>3.9.2</version>
+        </dependency>   
+        
+        <!-- Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <type>jar</type>
+            <scope>test</scope>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>            
+           
+    </dependencies>
+
+    <build>          
+        
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                    <compilerArguments>
+                        <endorseddirs>${endorsed.dir}</endorseddirs>
+                    </compilerArguments>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.6</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${endorsed.dir}</outputDirectory>
+                            <silent>true</silent>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>javax</groupId>
+                                    <artifactId>javaee-endorsed-api</artifactId>
+                                    <version>7.0</version>
+                                    <type>jar</type>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+]]>            
+        </programlisting>
+    </para>
+    <para>После того как вы прописали все необходимые зависимости, желательно перезагрузить POM,
+        чтобы загрузить все необходимые библиотеки. Если этого не сделать, то в процессе работы с
+        проектом могут возникать ошибки. В NetBeans это делается следующим образом <figure>
+            <title>Перезагрузка POM</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/java-reload-pom.png"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Перезагрузка POM</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
+    </para>
+    <para>Мне не очень нравится конфигурирование через xml, поэтому я буду работать через классы
+        конфигурации Java. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.view.JstlView;
+import org.springframework.web.servlet.view.UrlBasedViewResolver;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConverter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import java.util.List;
+
+@Configuration
+@ComponentScan("ru.ibase.fbjavaex")
+@EnableWebMvc
+public class WebAppConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void configureMessageConverters(
+      List<HttpMessageConverter<?>> httpMessageConverters) {
+        MappingJackson2HttpMessageConverter jsonConverter = 
+            new MappingJackson2HttpMessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, 
+                               false);
+        jsonConverter.setObjectMapper(objectMapper);
+        httpMessageConverters.add(jsonConverter);
+    }
+
+    @Bean
+    public UrlBasedViewResolver setupViewResolver() {
+        UrlBasedViewResolver resolver = new UrlBasedViewResolver();
+        resolver.setPrefix("/WEB-INF/jsp/");
+        resolver.setSuffix(".jsp");
+        resolver.setViewClass(JstlView.class);
+        return resolver;
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/resources/**")
+                .addResourceLocations("/WEB-INF/resources/");
+    }
+}
+]]>            
+        </programlisting>
+    </para>
+    <para>В данном конфигурационном классе мы задаём место поиска веб ресурсов и JSP представлений.
+        Метод <methodname>configureMessageConverters</methodname> устанавливает, что дата должна
+        сериализоваться в строковое представление (по умолчанию сериализуется в числовом
+        представлении как timestamp).</para>
+    <para>Теперь избавимся от файла <filename>Web.xml</filename> вместо него создадим файл
+            <filename>WebInitializer.java</filename>. <programlisting language="javascript">
+<![CDATA[
+package ru.ibase.fbjavaex.config;
+
+import javax.servlet.ServletContext;  
+import javax.servlet.ServletException;  
+import javax.servlet.ServletRegistration.Dynamic;  
+  
+import org.springframework.web.WebApplicationInitializer;  
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;  
+import org.springframework.web.servlet.DispatcherServlet;  
+  
+public class WebInitializer implements WebApplicationInitializer {
+    
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {        
+        AnnotationConfigWebApplicationContext ctx = 
+            new AnnotationConfigWebApplicationContext();  
+        ctx.register(WebAppConfig.class);  
+        ctx.setServletContext(servletContext);    
+        Dynamic servlet = servletContext.addServlet("dispatcher", 
+                                                    new DispatcherServlet(ctx));  
+        servlet.addMapping("/");  
+        servlet.setLoadOnStartup(1);
+    }
+    
+}
+]]>            
+        </programlisting>
+    </para>
+    <para>Осталось сконфигурировать IoC контейнеры для внедрения зависимостей. К этому шагу мы
+        вернёмся позже, а сейчас перейдём к генерации классов для работы с базой данных через
+        jOOQ.</para>
+
+    <section>
+        <title>Генерации классов для работы с базой данных через jOOQ</title>
+
+        <para>Работу с базой данных будем вести с помощью библиотеки <link
+                xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.jooq.org"
+                >jOOQ</link>. jOOQ позволяет строить SQL запросы из объектов jOOQ и кода (наподобие
+            LINQ ). jOOQ имеет более тесную интеграцию с базой данных, чем ORM, поэтому кроме
+            простых CRUD SQL запросов используемых в Active Record, позволяет использовать
+            дополнительные возможности. Например, jOOQ умеет работать с хранимыми процедурами и
+            функциями, последовательностями, использовать оконные функции и другие, специфичные для
+            определённой СУБД, возможности. Полная документация по работе с jOOQ находится по адресу
+                <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="http://www.jooq.org/doc/3.9/manual-single-page/"
+                >http://www.jooq.org/doc/3.9/manual-single-page/</link></para>
+
+        <para>Классы jOOQ для работы с базой данных генерируются на основе схемы базы данных,
+            описанной в главе <link linkend="app-db">Создание базы данных для примеров</link>. </para>
+
+        <para>Для генерации классов jOOQ, работающих с нашей БД, необходимо скачать следующие
+            бинарные файлы по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="http://www.jooq.org/download">http://www.jooq.org/download</link> или
+            через maven репозиторий: <itemizedlist>
+                <listitem>
+                    <para><filename>jooq-3.9.2.jar</filename> — главная библиотека, которая
+                        включается в наше приложение для работы с jOOQ.</para>
+                </listitem>
+                <listitem>
+                    <para><filename>jooq-meta-3.9.2.jar</filename> — утилита, которая включается в
+                        вашу сборку для навигации по схеме базы данных через сгенерированные
+                        объекты;</para>
+                </listitem>
+                <listitem>
+                    <para><filename>jooq-codegen-3.9.2.jar</filename> — утилита, которая включается
+                        в вашу сборку для генерации схемы базы данных.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>Кроме того для подключения к БД Firebird через JDBC вам потребуется скачать драйвер
+                <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/FirebirdSQL/jaybird/releases/download/v3.0.0/Jaybird-3.0.0-JDK_1.8.zip"
+                >jaybird-full-3.0.0.jar</link>.</para>
+        <para>Теперь надо создать файл конфигурации <filename>example.xml</filename>, который будет
+            использован для генерации классов схемы БД. <programlisting language="javascript">
+<![CDATA[
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.8.0.xsd">
+  <!-- Конфигурация подключения к БД -->
+  <jdbc>
+    <driver>org.firebirdsql.jdbc.FBDriver</driver>
+    <url>jdbc:firebirdsql://localhost:3050/examples</url>
+    <user>SYSDBA</user>
+    <password>masterkey</password>
+    <properties>
+      <property>
+        <key>charSet</key>
+        <value>utf-8</value>
+      </property>
+    </properties>
+  </jdbc>
+
+  <generator>
+    <name>org.jooq.util.JavaGenerator</name>
+
+    <database>
+      <!-- Тип базы данных. Формат:
+           org.util.[database].[database]Database -->
+      <name>org.jooq.util.firebird.FirebirdDatabase</name>
+
+      <inputSchema></inputSchema>
+
+      <!-- Все объекты, которые генерируются из вашей схемы 
+           (Регулярное выражение Java. Используйте фильтры, чтобы ограничить 
+           количество объектов). 
+           Следите за чувствительностью к регистру. В зависимости от вашей 
+           базы данных, это может быть важно! -->
+      <includes>.*</includes>
+
+      <!-- Объекты, которые исключаются при генерации из вашей схемы.
+           (Регулярное выражение Java).
+           В данном случае мы исключаем системные таблицы RDB$, таблицы 
+           мониторинга MON$ и псевдотаблицы безопасности SEC$. -->
+      <excludes>
+          RDB\$.*
+        | MON\$.*
+        | SEC\$.*
+      </excludes>
+    </database>
+
+    <target>
+      <!-- Имя пакета в который будут выгружены сгенерированные классы -->
+      <packageName>ru.ibase.fbjavaex.exampledb</packageName>
+
+      <!-- Директория для размещения сгенерированных классов. 
+           Здесь используется структура директорий Maven. -->
+      <directory>e:/OpenServer/domains/localhost/fbjavaex/src/main/java/</directory>
+    </target>
+  </generator>
+</configuration>
+]]>                
+            </programlisting>
+        </para>
+        <para>Теперь переходим в командную строку и выполняем следующую команду:
+            <programlisting>
+java -cp jooq-3.9.2.jar;jooq-meta-3.9.2.jar;jooq-codegen-3.9.2.jar;
+jaybird-full-3.0.0.jar;. org.jooq.util.GenerationTool example.xml                
+            </programlisting>
+        </para>
+        <para>Данная команда создаст необходимые классы и позволит писать на языке Java запросы к
+            объектам БД. Подробнее с процессом генерации классов вы можете ознакомиться по ссылке
+                <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/%23code-generation"
+                >https://www.jooq.org/doc/3.9/manual-single-page/#code-generation</link>. </para>
+    </section>
+    <section>
+        <title>Конфигурация IoC контейнеров</title>
+
+        <para>В Spring внедрение зависимостей (Dependency Injection (DI)) осуществляется через
+            Spring IoC (Inversion of Control) контейнер. Внедрение зависимостей, является процессом,
+            согласно которому объекты определяют свои зависимости, т.е. объекты, с которыми они
+            работают, через аргументы конструктора/фабричного метода или свойства, которые были
+            установлены или возвращены фабричным методом. Затем контейнер inject (далее "внедряет")
+            эти зависимости при создании бина. Подробнее о внедрении зависимостей вы можете почитать
+            по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#beans"
+                >http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#beans</link>.</para>
+        <para>Я не сторонник xml конфигурации, поэтому мы будем использовать подход на основе
+            аннотаций и Java-конфигурации. Основными признаками и частями Java-конфигурации IoC
+            контейнера являются классы с аннотацией <parameter>@Configuration</parameter> и методы с
+            аннотацией <parameter>@Bean</parameter>. Аннотация <parameter>@Bean</parameter>
+            используется для указания того, что метод создает, настраивает и инициализирует новый
+            объект, управляемый Spring IoC контейнером. Такие методы можно использовать как в
+            классах с аннотацией <parameter>@Configuration</parameter>. Наш IoC контейнер будет
+            возвращать пул подключений, менеджер транзакций, транслятор исключений (преобразует
+            исключения <exceptionname>SQLException</exceptionname> в специфичные для Spring
+            исключения <exceptionname>DataAccessException</exceptionname>), DSL контекст (стартовая
+            точка, для построения всех запросов используя Fluent API), а также менеджеры для
+            реализации бизнес логики и гриды для отображения данных. <programlisting language="java">
+<![CDATA[
+/**
+ * Конфигурация IoC контейнера
+ * для осуществления внедрения зависимостей.
+ */
+
+package ru.ibase.fbjavaex.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import org.apache.commons.dbcp.BasicDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
+import org.jooq.impl.DataSourceConnectionProvider;
+import org.jooq.DSLContext;
+import org.jooq.impl.DefaultDSLContext;
+import org.jooq.impl.DefaultConfiguration;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DefaultExecuteListenerProvider;
+
+import ru.ibase.fbjavaex.exception.ExceptionTranslator;
+
+import ru.ibase.fbjavaex.managers.*;
+import ru.ibase.fbjavaex.jqgrid.*;
+
+/**
+ * Конфигурационный класс Spring IoC контейнера
+ */
+@Configuration
+public class JooqConfig {
+
+
+    /**
+     * Возвращает пул коннектов
+     *
+     * @return 
+     */
+    @Bean(name = "dataSource")
+    public DataSource getDataSource() {
+        BasicDataSource dataSource = new BasicDataSource();
+        // определяем конфигурацию подключения
+        dataSource.setUrl("jdbc:firebirdsql://localhost:3050/examples");
+        dataSource.setDriverClassName("org.firebirdsql.jdbc.FBDriver");
+        dataSource.setUsername("SYSDBA");
+        dataSource.setPassword("masterkey");
+        dataSource.setConnectionProperties("charSet=utf-8");
+        return dataSource;
+    }
+
+    /**
+     * Возращает менеджер транзакций
+     * 
+     * @return 
+     */
+    @Bean(name = "transactionManager")
+    public DataSourceTransactionManager getTransactionManager() {
+        return new DataSourceTransactionManager(getDataSource());
+    }
+
+    @Bean(name = "transactionAwareDataSource")
+    public TransactionAwareDataSourceProxy getTransactionAwareDataSource() {
+        return new TransactionAwareDataSourceProxy(getDataSource());
+    }
+
+    /**
+     * Возвращает провайдер подключений
+     * 
+     * @return 
+     */
+    @Bean(name = "connectionProvider")
+    public DataSourceConnectionProvider getConnectionProvider() {
+        return new DataSourceConnectionProvider(getTransactionAwareDataSource());
+    }
+
+    /**
+     * Возвращает транслятор исключений
+     * 
+     * @return 
+     */
+    @Bean(name = "exceptionTranslator")
+    public ExceptionTranslator getExceptionTranslator() {
+        return new ExceptionTranslator();
+    }
+
+    /**
+     * Возвращает конфигурацию DSL контекста
+     *
+     * @return 
+     */
+    @Bean(name = "dslConfig")
+    public org.jooq.Configuration getDslConfig() {
+        DefaultConfiguration config = new DefaultConfiguration();
+        // используем диалект SQL СУБД Firebird
+        config.setSQLDialect(SQLDialect.FIREBIRD);
+        config.setConnectionProvider(getConnectionProvider());
+        DefaultExecuteListenerProvider listenerProvider = 
+          new DefaultExecuteListenerProvider(getExceptionTranslator());
+        config.setExecuteListenerProvider(listenerProvider);
+        return config;
+    }
+
+    /**
+     * Возвращает DSL контекст
+     *
+     * @return 
+     */
+    @Bean(name = "dsl")
+    public DSLContext getDsl() {
+        org.jooq.Configuration config = this.getDslConfig();
+        return new DefaultDSLContext(config);
+    }
+
+    /**
+     * Возвращает менеджер заказчиков
+     * 
+     * @return 
+     */
+    @Bean(name = "customerManager")
+    public CustomerManager getCustomerManager() {
+        return new CustomerManager();
+    }
+
+    /**
+     * Возвращает грид с заказчиками
+     * 
+     * @return 
+     */
+    @Bean(name = "customerGrid")
+    public JqGridCustomer getCustomerGrid() {
+        return new JqGridCustomer();
+    }
+
+    /**
+     * Возвращает менеджер продуктов
+     * 
+     * @return 
+     */
+    @Bean(name = "productManager")
+    public ProductManager getProductManager() {
+        return new ProductManager();
+    }
+
+    /**
+     * Возвращает грид с товарами
+     * 
+     * @return 
+     */
+    @Bean(name = "productGrid")
+    public JqGridProduct getProductGrid() {
+        return new JqGridProduct();
+    }
+
+    /**
+     * Возвращает менеджер счёт фактур
+     * 
+     * @return 
+     */
+    @Bean(name = "invoiceManager")
+    public InvoiceManager getInvoiceManager() {
+        return new InvoiceManager();
+    }
+
+    /**
+     * Возвращает грид с заголовками счёт фактур
+     * 
+     * @return 
+     */
+    @Bean(name = "invoiceGrid")
+    public JqGridInvoice getInvoiceGrid() {
+        return new JqGridInvoice();
+    }
+
+    /**
+     * Возвращает грид с позициями счёт фактуры
+     * 
+     * @return 
+     */
+    @Bean(name = "invoiceLineGrid")
+    public JqGridInvoiceLine getInvoiceLineGrid() {
+        return new JqGridInvoiceLine();
+    }
+
+    /**
+     * Возвращает рабочий период
+     * 
+     * @return 
+     */
+    @Bean(name = "workingPeriod")
+    public WorkingPeriod getWorkingPeriod() {
+        return new WorkingPeriod();
+    }
+
+}
+]]>                
+            </programlisting>
+        </para>
+    </section>
+    <section>
+        <title>Построение SQL запросов используя jOOQ</title>
+
+        <para>Прежде чем рассматривать реализацию менеджеров и сеток (grids) расскажем, как работать
+            с базой данных через jOOQ. Здесь будут изложены лишь краткие сведения о построении
+            запросов, полную документацию по этому вопросу вы можете найти в главе <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/%23sql-building"
+                >sql-building</link> документации jOOQ.</para>
+
+        <para>Класс <classname>org.jooq.impl.DSL</classname> является основным классом, от которого
+            вы будете создавать все объекты jOOQ. Он выступает в роли статической фабрики для
+            табличных выражений, выражений столбцов (или полей), условных выражений и многих других
+            частей запроса.</para>
+        <para><classname>DSLContext</classname> ссылается на объект
+                <classname>org.jooq.Configuration</classname>, который настраивает поведение jOOQ,
+            при выполнении запросов. В отличие от статического <classname>DSL</classname>,
+                <classname>DSLContext</classname> позволяет создавать SQL-операторы, которые уже
+            "настроены" и готовы к выполнению. В нашем приложении <classname>DSLContext</classname>
+            создаётся в классе конфигурации <classname>JooqConfig</classname> в методе
+                <methodname>getDsl</methodname>. Конфигурация для <classname>DSLContext</classname>
+            возвращается методом <methodname>getDslConfig</methodname>. В этом методе мы указали,
+            что будем использовать диалект SQL СУБД Firebird, провайдер подключений (определяет, как
+            мы получаем подключение через JDBC) и слушатель выполнения SQL запросов. </para>
+        <para>jOOQ поставляется с собственным DSL (или Domain Specific Language), который эмулирует
+            SQL в Java. Это означает, что вы можете писать SQL-операторы почти так, как если бы Java
+            изначально поддерживал их, примерно так же, как .NET в C# делает это с помощью LINQ к
+            SQL.</para>
+        <para>jOOQ использует неформальную BNF нотацию, которая моделирует унифицированный SQL
+            диалект, подходящий для большинства СУБД. В отличие от других, более простых
+            фреймворков, которые используют "Fluent API" или "метод цепочек", иерархия интерфейса
+            BNF на основе jOOQ не позволяет плохой синтаксис запросов.</para>
+        <para>Давайте рассмотрим простой запрос на языке SQL <programlisting language="sql">
+ <![CDATA[
+ SELECT *
+  FROM author a
+  JOIN book b ON a.id = b.author_id
+ WHERE a.year_of_birth > 1920
+   AND a.first_name = 'Paulo'
+ ORDER BY b.title
+ ]]>               
+            </programlisting>
+        </para>
+        <para>В jOOQ он будет выглядеть следующим образом: <programlisting language="java">
+ <![CDATA[
+Result<Record> result =
+dsl.select()
+   .from(AUTHOR.as("a"))
+   .join(BOOK.as("b")).on(a.ID.equal(b.AUTHOR_ID))
+   .where(a.YEAR_OF_BIRTH.greaterThan(1920)
+   .and(a.FIRST_NAME.equal("Paulo")))
+   .orderBy(b.TITLE)
+   .fetch();
+ ]]>               
+            </programlisting>
+        </para>
+        <para>Классы <classname>AUTHOR</classname> и <classname>BOOK</classname>, описывающие
+            соответствующие таблицы должны быть сгенерированы заранее. Процесс генерации классов
+            jOOQ по заданной схеме БД был описан выше.</para>
+        <para>В данном случае мы задали таблицам <classname>AUTHOR</classname> и
+                <classname>BOOK</classname> алиас с помощью конструкции <function>as</function>. Без
+            использования алиасов этот запрос выглядел бы следующим образом <programlisting language="java">
+<![CDATA[
+Result<Record> result =
+dsl.select()
+   .from(AUTHOR)
+   .join(BOOK).on(AUTHOR.ID.equal(BOOK.AUTHOR_ID))
+   .where(AUTHOR.YEAR_OF_BIRTH.greaterThan(1920)
+   .and(AUTHOR.FIRST_NAME.equal("Paulo")))
+   .orderBy(BOOK.TITLE)
+   .fetch();
+]]>               
+            </programlisting>
+        </para>
+        <para>Теперь посмотрим более сложный запрос с использованием агрегатных функций и
+            группировки. <programlisting language="sql">
+ <![CDATA[
+SELECT AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME, COUNT(*)
+FROM AUTHOR
+  JOIN BOOK ON AUTHOR.ID = BOOK.AUTHOR_ID
+WHERE BOOK.LANGUAGE = 'DE'
+  AND BOOK.PUBLISHED > '2008-01-01'
+GROUP BY AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME
+  HAVING COUNT(*) > 5
+ORDER BY AUTHOR.LAST_NAME ASC NULLS FIRST
+  OFFSET 1 ROWS
+  FETCH FIRST 2 ROWS ONLY
+ ]]>               
+            </programlisting>
+        </para>
+        <para>В jOOQ он будет выглядеть так: <programlisting language="java">
+<![CDATA[
+dsl.select(AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME, count())
+   .from(AUTHOR)
+   .join(BOOK).on(BOOK.AUTHOR_ID.equal(AUTHOR.ID))
+   .where(BOOK.LANGUAGE.equal("DE"))
+   .and(BOOK.PUBLISHED.greaterThan("2008-01-01"))
+   .groupBy(AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME)
+   .having(count().greaterThan(5))
+   .orderBy(AUTHOR.LAST_NAME.asc().nullsFirst())
+   .limit(2)
+   .offset(1)
+   .fetch();
+]]>               
+            </programlisting>
+        </para>
+        <para>Заметьте ограничение на количество возвращаемых записей, будет сгенерировано в
+            соответствии с указанным диалектом SQL. В примере выше использовался диалект
+                <literal>FIREIRD_3_0</literal>. Если бы был указан диалект
+                <literal>FIREBIRD_2_5</literal> или просто <literal>FIREBIRD</literal>, то
+            использовалось бы предложение ROWS вместо OFFSET … FETCH.</para>
+        <para>Вы можете собирать запрос по частям. Это позволяет менять его динамически, что можно
+            использовать для изменения порядка сортировки или добавления дополнительных параметров
+            фильтрации. <programlisting language="java">
+<![CDATA[
+SelectFinalStep<?> select
+    = dsl.select()
+         .from(PRODUCT);
+
+SelectQuery<?> query = select.getQuery();
+switch (searchOper) {
+    case "eq":
+         query.addConditions(PRODUCT.NAME.eq(searchString));
+         break;
+    case "bw":
+         query.addConditions(PRODUCT.NAME.startsWith(searchString));
+         break;
+    case "cn":
+         query.addConditions(PRODUCT.NAME.contains(searchString));
+         break;
+}
+switch (sOrd) {
+    case "asc":
+         query.addOrderBy(PRODUCT.NAME.asc());
+         break;
+    case "desc":
+         query.addOrderBy(PRODUCT.NAME.desc());
+         break;
+}
+return query.fetchMaps();
+]]>               
+            </programlisting>
+        </para>
+        <section>
+            <title>Именованные и неименованные параметры</title>
+
+            <para>По умолчанию каждый раз, когда вы используете в запросе литера строк, дат и чисел,
+                а также подставляете внешние переменные, jOOQ делает привязку этой переменной или
+                литерала через неименованные параметры. Например, следующее выражение на языке Java <programlisting language="java">
+<![CDATA[
+dsl.select()
+   .from(BOOK)
+   .where(BOOK.ID.equal(5))
+   .and(BOOK.TITLE.equal("Animal Farm"))
+   .fetch();
+]]>               
+            </programlisting> Эквивалентно полной форме записи <programlisting language="java">
+<![CDATA[
+dsl.select()
+   .from(BOOK)
+   .where(BOOK.ID.equal(val(5)))
+   .and(BOOK.TITLE.equal(val("Animal Farm")))
+   .fetch();
+]]>               
+            </programlisting> и преобразуется в sql запрос <programlisting language="sql">
+<![CDATA[
+SELECT *
+FROM BOOK
+WHERE BOOK.ID = ?
+  AND BOOK.TITLE = ?
+]]>               
+            </programlisting>
+            </para>
+            <para>Вам не нужно беспокоиться какой индекс у соответствующего параметра, значения
+                автоматически будут привязаны к нужному параметру. Если нужно изменить значение
+                параметра, то вы можете сделать это, выбрав нужный параметр по номеру индекса
+                (индексация начинается с 1). <programlisting language="java">
+<![CDATA[
+Select<?> select = 
+  dsl.select()
+     .from(BOOK)
+     .where(BOOK.ID.equal(5))
+     .and(BOOK.TITLE.equal("Animal Farm"));
+Param<?> param = select.getParam("2");
+Param.setValue("Animals as Leaders");
+]]>               
+            </programlisting>
+            </para>
+            <para>Другим способом присвоить параметру новое значение является вызов метода
+                    <methodname>bind</methodname>. <programlisting language="java">
+<![CDATA[
+Query query1 = 
+  dsl.select()
+     .from(AUTHOR)
+     .where(LAST_NAME.equal("Poe"));
+query1.bind(1, "Orwell");
+]]>               
+            </programlisting>
+            </para>
+            <para>Кроме того, jOOQ поддерживает именованные параметры. В этом случае их надо явно
+                создавать, используя <classname>org.jooq.Param</classname>. <programlisting language="java">
+<![CDATA[
+// Create a query with a named parameter. You can then use that name for 
+// accessing the parameter again
+Query query1 = 
+  dsl.select()
+     .from(AUTHOR)
+     .where(LAST_NAME.equal(param("lastName", "Poe")));
+Param<?> param1 = query.getParam("lastName");
+
+// Or, keep a reference to the typed parameter in order 
+// not to lose the <T> type information:
+Param<String> param2 = param("lastName", "Poe");
+Query query2 = 
+  dsl.select()
+     .from(AUTHOR)
+     .where(LAST_NAME.equal(param2));
+
+// You can now change the bind value directly on the Param reference:
+param2.setValue("Orwell");
+]]>               
+            </programlisting>
+            </para>
+            <para>Другим способом присвоить параметру новое значение является вызов метода
+                    <methodname>bind</methodname>. <programlisting language="java">
+<![CDATA[
+// Or, with named parameters
+Query query2 = 
+  dsl.select()
+     .from(AUTHOR)
+     .where(LAST_NAME.equal(param("lastName", "Poe")));
+query2.bind("lastName", "Orwell");
+]]>               
+            </programlisting>
+            </para>
+        </section>
+        <section>
+            <title>Возврат значений из селективных запросов</title>
+
+            <para>jOOQ предоставляет множество способов извлечения данных из SQL запросов. Мы не
+                будем перечислять здесь все способы, подробнее вы можете прочитать о них в главе
+                    <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/#fetching"
+                    >Fetching</link> документации jOOQ. Мы в своём примере будем пользоваться
+                возвратом в список карт (метод <methodname>fetchMaps</methodname>), который удобно
+                использовать для сериализации результата в JSON.</para>
+        </section>
+        <section>
+            <title>Другие типы запросов</title>
+
+            <para>Теперь посмотрим, как выглядят другие типы запросов. Например, следующий запрос
+                для вставки записи <programlisting language="sql">
+<![CDATA[
+INSERT INTO AUTHOR
+       (ID, FIRST_NAME, LAST_NAME)
+VALUES (100, 'Hermann', 'Hesse');
+]]>                    
+                </programlisting> в jOOQ будет выглядеть так <programlisting language="java">
+<![CDATA[
+dsl.insertInto(AUTHOR,
+        AUTHOR.ID, AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME)
+   .values(100, "Hermann", "Hesse")
+   .execute();
+]]>                    
+                </programlisting>
+            </para>
+            <para>Вот такой запрос для обновления записи <programlisting language="sql">
+<![CDATA[
+UPDATE AUTHOR
+   SET FIRST_NAME = 'Hermann',
+       LAST_NAME = 'Hesse'
+ WHERE ID = 3;
+]]>                    
+                </programlisting> с использованием jOOQ записывается
+                следующим образом <programlisting language="java">
+<![CDATA[
+dsl.update(AUTHOR)
+   .set(AUTHOR.FIRST_NAME, "Hermann")
+   .set(AUTHOR.LAST_NAME, "Hesse")
+   .where(AUTHOR.ID.equal(3))
+   .execute();
+]]>                    
+                </programlisting>
+            </para>
+            <para>Запрос на удаление записи <programlisting language="sql">
+<![CDATA[
+DELETE FROM AUTHOR
+ WHERE ID = 100;
+]]>                    
+                </programlisting> выглядит так <programlisting language="java">
+<![CDATA[
+dsl.delete(AUTHOR)
+   .where(AUTHOR.ID.equal(100))
+   .execute();
+]]>                    
+                </programlisting>
+            </para>
+            <para>Кроме того, в jOOQ можете строить более сложные модифицирующие запросы, например
+                    <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/#merge-statement"
+                    >MERGE</link>.</para>
+            <para>Большим преимуществом jOOQ является поддержка работы с хранимыми процедурами.
+                Хранимые процедуры извлекаются в пакет <package>*.Routines.*</package> после чего с
+                ними можно удобно работать, например следующий код на Java <programlisting language="java">
+<![CDATA[
+int invoiceId = dsl.nextval(GEN_INVOICE_ID).intValue();
+        
+spAddInvoice(dsl.configuration(), 
+             invoiceId,
+             customerId,
+             invoiceDate);
+]]>                    
+                </programlisting> эквивалентен получению следующего значения
+                генератора с помощью SQL запроса <programlisting language="sql">
+<![CDATA[
+SELECT NEXT VALUE FOR GEN_INVOICE_ID FROM RDB$DATABASE
+]]>                    
+                </programlisting> и последующего вызова хранимой процедуры <programlisting language="sql">
+<![CDATA[
+EXECUTE PROCEDURE SP_ADD_INVOICE(:INVOICE_ID, :CUSTOMER_ID, :INVOICE_DATE);
+]]>                    
+                </programlisting>
+            </para>
+            <para>jOOQ также предоставляет вам средства для построения простых DDL запросов, но мы
+                не будет их рассматривать здесь.</para>
+        </section>
+        <section>
+            <title>Работа с транзакциями</title>
+
+            <para>По умолчанию jOOQ работает в режиме авто подтверждения транзакции, т.е. на каждый
+                SQL оператор стартует новая транзакция, и если в процессе выполнения SQL оператора
+                не было ошибок транзакция подтверждается, в противном случае откатывается. По
+                умолчанию используется транзакция с параметрами <code>READ_WRITE READ_COMMITED
+                    REC_VERSION WAIT</code>. То есть те же самые что используются JDBC драйвером.
+                Изменить режим изолированности по умолчанию можно через параметры пула соединений
+                (см. <methodname>BasicDataSource.setDefaultTransactionIsolation</methodname> в
+                методе <methodname>getDataSource</methodname> класса конфигурации
+                    <classname>JooqConfig</classname>).</para>
+            <para>В jOOQ существует несколько способов явного управления транзакциями. Поскольку мы
+                разрабатываем приложение с использованием Spring Framework, будем использовать
+                менеджер транзакций заданный в конфигурации (JooqConfig). Получить менеджер
+                транзакций можно, объявив в классе свойство <varname>txMgr</varname> следующим
+                образом:
+                <programlisting language="java">
+@Autowired 
+private DataSourceTransactionManager txMgr;                    
+                </programlisting>
+            </para>
+            <para>В этом случае типичный сценарий работы с транзакцией выглядит следующим образом: <programlisting language="java">
+<![CDATA[
+TransactionStatus tx = txMgr.getTransaction(new DefaultTransactionDefinition());
+try {
+    // действия внутри транзакции
+    for (int i = 0; i < 2; i++)
+        dsl.insertInto(BOOK)
+           .set(BOOK.ID, 5)
+           .set(BOOK.AUTHOR_ID, 1)
+           .set(BOOK.TITLE, "Book 5")
+           .execute();
+    // подтверждение транзакции
+    txMgr.commit(tx);
+}
+catch (DataAccessException e) {
+    // откат транзакции
+    txMgr.rolback(tx);
+}
+]]>                  
+                </programlisting>
+            </para>
+            <para>Однако Spring позволяет осуществить подобный сценарий намного проще с помощью
+                аннотации <option>@Transactional</option> указанной перед методом класса. В этом
+                случае все действия, производимые в методе, будут обёрнуты транзакцией. <programlisting language="java">
+<![CDATA[
+    /**
+     * Удаление заказчика
+     * 
+     * @param customerId 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)    
+    public void delete(int customerId) {
+        this.dsl.deleteFrom(CUSTOMER)
+                .where(CUSTOMER.CUSTOMER_ID.eq(customerId))
+                .execute();
+    }
+]]>                  
+                </programlisting>
+            </para>
+            <para>Параметр <parameter>propagation</parameter> задаёт, каким образом будет вестись
+                работа с транзакциями, если наш метод вызывается из внешней транзакции.<itemizedlist>
+                    <listitem>
+                        <para><constant>Propagation.REQUIRED</constant> — выполняться в существующей
+                            транзакции, если она есть, иначе создавать новую;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.MANDATORY</constant> — выполняться в
+                            существующей транзакции, если она есть, иначе генерировать
+                            исключение;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.SUPPORTS</constant> — выполняться в существующей
+                            транзакции, если она есть, иначе выполняться вне транзакции;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.NOT_SUPPORTED</constant> — всегда выполняться
+                            вне транзакции. Если есть существующая, то она будет остановлена;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.REQUIRES_NEW</constant> — всегда выполняться в
+                            новой независимой транзакции. Если есть существующая, то она будет
+                            остановлена до окончания выполнения новой транзакции;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.NESTED</constant> — если есть текущая
+                            транзакция, выполняться в новой, так называемой, вложенной транзакции.
+                            Если вложенная транзакция будет отменена, то это не повлияет на внешнюю
+                            транзакцию; если будет отменена внешняя транзакция, то будет отменена и
+                            вложенная. Если текущей транзакции нет, то просто создаётся
+                            новая;</para>
+                    </listitem>
+                    <listitem>
+                        <para><constant>Propagation.NEVER</constant> — всегда выполнять вне
+                            транзакции, при наличии существующей генерировать исключение.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Параметр <parameter>isolation</parameter> указывает режим изолированности
+                транзакции. Поддерживается 5 значений: <constant>DEFAULT</constant>,
+                    <constant>READ_UNCOMMITTED</constant>, <constant>READ_COMMITTED</constant>,
+                    <constant>REPEATABLE_READ</constant>, <constant>SERIALIZABLE</constant>. Если
+                указано значение параметра <constant>DEFAULT</constant>, то будет использоваться
+                умолчательный режим изолированности транзакции. Остальные режимы изолированности
+                взяты из SQL стандарта. В Firebird несколько другие режимы изолированности и
+                полностью соответствует всем критериям лишь режим READ_COMMITED. Таким образом,
+                режим в JDBC <constant>READ_COMMITTED</constant> отображает на
+                    <literal>read_committed</literal> в Firebird,
+                    <constant>REPEATABLE_READ</constant> — <literal>concurrency</literal>
+                (Snapshot), а <constant>SERIALIZABLE</constant> — <literal>consistency</literal>.
+                Кроме того, помимо режима изолированности, Firebird поддерживает дополнительные
+                параметры транзакции (<literal>NO RECORD_VERSION</literal> и
+                    <literal>RECORD_VERSION</literal>, <literal>WAIT</literal> и <literal>NO
+                    WAIT</literal>). Вы можете настроить отображение стандартных уровней
+                изолированности на параметры транзакции Firebird с помощью задания свойств JDBC
+                соединения (подробнее см. в <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://www.firebirdsql.org/file/Jaybird_2_1_JDBC_driver_manual.pdf"
+                    >Jaybird 2.1 JDBC driver Java Programmer's Manual</link> в главе Using
+                transactions). Если ваша транзакция работает более чем с 1 запросом, то
+                рекомендуется режим изолированности <literal>REPEATABLE_READ</literal> для
+                обеспечения согласованности данных.</para>
+            <para>В аннотации <option>@Transactional</option> вы можете задать, является ли
+                транзакция только для чтения с помощью свойства <varname>readOnly</varname>. По
+                умолчанию транзакция находится в режиме read-write.</para>
+
+        </section>
+    </section>
+    <section>
+        <title>Написание кода приложения</title>
+
+        <para>Данные нашего приложения мы будем отображать с помощью JavaScript компонента <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/tonytomov/jqGrid">jqGrid</link>. В настоящий момент
+            jqGrid распространяется по коммерческой лицензии, но бесплатен для некоммерческих целей.
+            Вместо него вы можете воспользоваться форком <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/free-jqgrid/jqGrid">free-jqGrid</link>. Для
+            отображения данных в данном гриде и элементов постраничной навигации нам требуется
+            вернуть данные в формате JSON, структура которых выглядит следующим образом. <programlisting language="javascript">
+<![CDATA[
+{
+    total: 100,
+    page: 3,
+    records: 3000,
+    rows: [
+       {id: 1, name: "Ada"},
+       {id: 2, name: "Smith"},
+      …
+    ]
+}
+]]>                
+            </programlisting> где <itemizedlist>
+                <listitem>
+                    <para><varname>total</varname> — общее количество страниц;</para>
+                </listitem>
+                <listitem>
+                    <para><varname>page</varname> — номер текущей страницы;</para>
+                </listitem>
+                <listitem>
+                    <para><varname>records</varname> — общее количество записей;</para>
+                </listitem>
+                <listitem>
+                    <para><varname>rows</varname> — массив записей на текущей странице.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>Создадим класс который описывает данную структуру: <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.jqgrid;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Класс описывающий структуру которая используется jqGrid
+ * Предназначен для сериализации в JSON
+ * 
+ * @author Simonov Denis
+ */
+public class JqGridData {
+
+    /**
+     * Total number of pages
+     */
+    private final int total;
+
+    /**
+     * The current page number
+     */
+    private final int page;
+
+    /**
+     * Total number of records
+     */
+    private final int records;
+
+    /**
+     * The actual data
+     */
+    private final List<Map<String, Object>> rows;
+
+    /**
+     * Конструктор
+     * 
+     * @param total
+     * @param page
+     * @param records
+     * @param rows 
+     */
+    public JqGridData(int total, int page, int records, 
+                      List<Map<String, Object>> rows) {
+        this.total = total;
+        this.page = page;
+        this.records = records;
+        this.rows = rows;
+    }
+
+    /**
+     * Возвращает общее количество страниц
+     * 
+     * @return 
+     */
+    public int getTotal() {
+        return total;
+    }
+
+    /**
+     * Возвращает текущую страницу
+     * 
+     * @return 
+     */
+    public int getPage() {
+        return page;
+    }
+
+    /**
+     * Возвращает общее количество записей
+     * 
+     * @return 
+     */
+    public int getRecords() {
+        return records;
+    }
+
+    /**
+     * Возвращает список карт
+     * Это массив данных для отображения в гриде
+     * 
+     * @return 
+     */
+    public List<Map<String, Object>> getRows() {
+        return rows;
+    }
+}
+]]>                
+            </programlisting>
+        </para>
+        <para>Теперь напишем абстрактный класс, который будет возвращать вышеописанную структуру в
+            зависимости от условий поиска и сортировки. Этот класс будет предком классов
+            возвращающие подобные структуры для конкретных сущностей. <programlisting language="java">
+<![CDATA[
+/*
+ * Абстрактный класс для работы с JqGrid
+ */
+package ru.ibase.fbjavaex.jqgrid;
+
+import java.util.Map;
+import java.util.List;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Autowired;
+
+/**
+ * Работа с JqGrid
+ *
+ * @author Simonov Denis
+ */
+public abstract class JqGrid {
+
+
+    @Autowired(required = true)
+    protected DSLContext dsl;
+
+    protected String searchField = "";
+    protected String searchString = "";
+    protected String searchOper = "eq";
+    protected Boolean searchFlag = false;
+    protected int pageNo = 0;
+    protected int limit = 0;
+    protected int offset = 0;
+    protected String sIdx = "";
+    protected String sOrd = "asc";
+
+    /**
+     * Возвращает общее количество записей
+     *
+     * @return
+     */
+    public abstract int getCountRecord();
+
+    /**
+     * Возвращает структуру для сериализации в JSON
+     * 
+     * @return
+     */
+    public JqGridData getJqGridData() {
+        int recordCount = this.getCountRecord();
+        List<Map<String, Object>> records = this.getRecords();
+
+        int total = 0;
+        if (this.limit > 0) {
+            total = recordCount / this.limit + 1;
+        }
+
+        JqGridData jqGridData = new JqGridData(
+            total, 
+            this.pageNo, 
+            recordCount, 
+            records);
+        return jqGridData;
+    }
+
+
+    /**
+     * Возвращает количество записей на странице
+     * 
+     * @return
+     */
+    public int getLimit() {
+        return this.limit;
+    }
+
+    /**
+     * Возвращает смещение для извлечения первой записи на странице
+     * 
+     * @return
+     */
+    public int getOffset() {
+        return this.offset;
+    }
+
+    /**
+     * Возвращает имя поля для сортировки
+     * 
+     * @return
+     */
+    public String getIdx() {
+        return this.sIdx;
+    }
+
+    /**
+     * Возвращает порядок сортировки
+     * 
+     * @return
+     */
+    public String getOrd() {
+        return this.sOrd;
+    }
+
+    /**
+     * Возвращает номер текущей страницы
+     * 
+     * @return
+     */
+    public int getPageNo() {
+        return this.pageNo;
+    }
+
+    /**
+     * Возвращает массив записей как список карт
+     * 
+     * @return
+     */
+    public abstract List<Map<String, Object>> getRecords();
+
+    /**
+     * Возвращает поле для поиска
+     * 
+     * @return
+     */
+    public String getSearchField() {
+        return this.searchField;
+    }
+
+    /**
+     * Возвращает значение для поиска
+     * 
+     * @return
+     */
+    public String getSearchString() {
+        return this.searchString;
+    }
+
+    /**
+     * Возвращает операцию поиска
+     * 
+     * @return
+     */
+    public String getSearchOper() {
+        return this.searchOper;
+    }
+
+    /**
+     * Устанавливает ограничение на количество выводимых записей
+     *
+     * @param limit
+     */
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    /**
+     * Устанавливает количество записей, которые надо пропустить
+     *
+     * @param offset
+     */
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    /**
+     * Устанавливает сортировку
+     *
+     * @param sIdx
+     * @param sOrd
+     */
+    public void setOrderBy(String sIdx, String sOrd) {
+        this.sIdx = sIdx;
+        this.sOrd = sOrd;
+    }
+
+    /**
+     * Устанавливает номер текущей страницы
+     * 
+     * @param pageNo
+     */	
+    public void setPageNo(int pageNo) {
+        this.pageNo = pageNo;
+        this.offset = (pageNo - 1) * this.limit;
+    }
+
+    /**
+     * Устанавливает условие поиска
+     *
+     * @param searchField
+     * @param searchString
+     * @param searchOper
+     */
+    public void setSearchCondition(String searchField, String searchString, 
+                                   String searchOper) {
+        this.searchFlag = true;
+        this.searchField = searchField;
+        this.searchString = searchString;
+        this.searchOper = searchOper;
+    }
+}
+]]>                
+            </programlisting>
+        </para>
+        <important>
+            <para>Данный класс содержит свойство DSLContext dsl, которое будет использоваться для
+                построения запросов на выборку данных с помощью jOOQ.</para>
+        </important>
+
+        <section>
+            <title>Создание справочников</title>
+
+            <para>Теперь мы можем приступить к созданию справочников. Мы опишем процесс создания
+                справочников на примере справочника заказчиков. Справочник продуктов создаётся
+                схожим образом, и при желании вы можете просмотреть его исходный код по ссылке,
+                приведённой в конце этой главы.</para>
+            <para>Сначала реализуем класс для работы с jqGrid, он будет наследоваться от нашего
+                абстрактного класса <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname>
+                описанного выше. В нём имеется возможность поиска и разнонаправленной сортировки по
+                полю NAME. В листинге исходного кода будут приведены поясняющие комментарии. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.jqgrid;
+
+import org.jooq.*;
+import java.util.List;
+import java.util.Map;
+
+import static ru.ibase.fbjavaex.exampledb.Tables.CUSTOMER;
+
+/**
+ * Грид заказчиков
+ * 
+ * @author Simonov Denis
+ */
+public class JqGridCustomer extends JqGrid {
+
+    /**
+     * Добавление условия поиска
+     *
+     * @param query
+     */
+    private void makeSearchCondition(SelectQuery<?> query) {
+        switch (this.searchOper) {
+            case "eq":
+                // CUSTOMER.NAME = ?
+                query.addConditions(CUSTOMER.NAME.eq(this.searchString));
+                break;
+            case "bw":
+                // CUSTOMER.NAME STARTING WITH ?
+                query.addConditions(CUSTOMER.NAME.startsWith(this.searchString));
+                break;
+            case "cn":
+                // CUSTOMER.NAME CONTAINING ?
+                query.addConditions(CUSTOMER.NAME.contains(this.searchString));
+                break;
+        }
+    }
+
+
+    /**
+     * Возвращает общее количество записей
+     *
+     * @return
+     */
+    @Override
+    public int getCountRecord() {
+        // запрос, возвращающий количество записей
+        SelectFinalStep<?> select
+            = dsl.selectCount()
+                 .from(CUSTOMER);
+
+        SelectQuery<?> query = select.getQuery();
+        // если мы осуществляем поиск, то добавляем условие поиска
+        if (this.searchFlag) {
+            makeSearchCondition(query);
+        }
+        // возвращаем количество
+        return (int) query.fetch().getValue(0, 0);
+    }
+
+    /**
+     * Возвращает записи грида
+     * 
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getRecords() {
+        // Базовый запрос на выборку
+        SelectFinalStep<?> select = 
+            dsl.select()
+               .from(CUSTOMER);
+
+        SelectQuery<?> query = select.getQuery();
+        // если мы осуществляем поиск, то добавляем условие поиска
+        if (this.searchFlag) {
+            makeSearchCondition(query);
+        }
+        // задаём порядок сортировки
+        switch (this.sOrd) {
+            case "asc":
+                query.addOrderBy(CUSTOMER.NAME.asc());
+                break;
+            case "desc":
+                query.addOrderBy(CUSTOMER.NAME.desc());
+                break;
+        }
+        // ограничиваем количество записей
+        if (this.limit != 0) {
+            query.addLimit(this.limit);
+        }
+        // смещение
+        if (this.offset != 0) {
+            query.addOffset(this.offset);
+        }
+        // возвращаем массив карт
+        return query.fetchMaps();
+    }
+}
+]]>                
+            </programlisting>
+            </para>
+            <para>Добавление, редактирование и удаление заказчика мы будем осуществлять через класс
+                    <classname>CustomerManager</classname>, который является своеобразным
+                бизнес-слоем между соответствующим контроллером и базой данных. Все операции в этом
+                слое мы будем осуществлять в транзакции с уровнем изолированности Snapshot. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.managers;
+
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Isolation;
+
+import static ru.ibase.fbjavaex.exampledb.Tables.CUSTOMER;
+import static ru.ibase.fbjavaex.exampledb.Sequences.GEN_CUSTOMER_ID;
+
+/**
+ * Менеджер заказчиков
+ *
+ * @author Simonov Denis
+ */
+public class CustomerManager {
+
+    @Autowired(required = true)
+    private DSLContext dsl;
+    
+    /**
+     * Добавление заказчика
+     * 
+     * @param name
+     * @param address
+     * @param zipcode
+     * @param phone 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)  
+    public void create(String name, String address, String zipcode, String phone) {
+        if (zipcode != null) {
+            if (zipcode.trim().isEmpty()) {
+                zipcode = null;
+            }
+        }        
+        
+        int customerId = this.dsl.nextval(GEN_CUSTOMER_ID).intValue();
+               
+        this.dsl
+                .insertInto(CUSTOMER,
+                        CUSTOMER.CUSTOMER_ID,
+                        CUSTOMER.NAME,
+                        CUSTOMER.ADDRESS,
+                        CUSTOMER.ZIPCODE,
+                        CUSTOMER.PHONE)
+                .values(
+                        customerId,
+                        name,
+                        address,
+                        zipcode,
+                        phone
+                )
+                .execute();
+    }
+
+    /**
+     * Редактирование заказчика
+     * 
+     * @param customerId
+     * @param name
+     * @param address
+     * @param zipcode
+     * @param phone 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)      
+    public void edit(int customerId, String name, String address, 
+                     String zipcode, String phone) {
+
+        if (zipcode != null) {
+            if (zipcode.trim().isEmpty()) {
+                zipcode = null;
+            }
+        }
+               
+        this.dsl.update(CUSTOMER)
+                .set(CUSTOMER.NAME, name)
+                .set(CUSTOMER.ADDRESS, address)
+                .set(CUSTOMER.ZIPCODE, zipcode)
+                .set(CUSTOMER.PHONE, phone)
+                .where(CUSTOMER.CUSTOMER_ID.eq(customerId))
+                .execute();
+    }
+
+    /**
+     * Удаление заказчика
+     * 
+     * @param customerId 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)    
+    public void delete(int customerId) {
+        this.dsl.deleteFrom(CUSTOMER)
+                .where(CUSTOMER.CUSTOMER_ID.eq(customerId))
+                .execute();
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>Теперь перейдём к написанию контроллера. Классы контроллеров начинаются с
+                аннотации <option>@Controller</option>. Для определения действий контроллера
+                необходимо добавить аннотацию <option>@RequestMapping</option> перед методом и
+                указать в ней маршрут, по которому будет вызвано действие контроллера. Маршрут
+                указывается в параметре <parameter>value</parameter>. В параметре
+                    <parameter>method</parameter> можно указать метод HTTP запроса (PUT, GET, POST,
+                DELETE). Входной точкой нашего контроллера будет метод
+                    <methodname>index</methodname>, он отвечает за отображение JSP страницы
+                (представления). Эта страница содержит разметку для отображения грида, панель
+                инструментов и навигации.</para>
+            <para>Данные для отображения загружаются асинхронно компонентом jqGrid (маршрут
+                    <uri>/customer/getdata</uri>). С данным маршрутом связан метод
+                    <methodname>getData</methodname>. Метод содержит дополнительную аннотацию
+                    <option>@ResponseBody</option>, которая говорит о том, что наш метод возвращает
+                объект для сериализации в один из форматов. В аннотации
+                    <option>@RequestMapping</option> задан параметр <code>produces =
+                    MediaType.APPLICATION_JSON</code>, что обозначает, что возвращаемый объект будет
+                сериализован в формат JSON. Именно в этом методе мы работаем с классом
+                    <classname>JqGridCustomer</classname> описанном выше. Аннотация
+                    <option>@RequestParam</option> позволяет извлечь значение параметра из HTTP
+                запроса. Данный метод класса работает с GET запросами. Параметр
+                    <parameter>value</parameter> в аннотации <option>@RequestParam</option> задаёт
+                имя параметра HTTP запроса для извлечения. Параметр <parameter>required</parameter>
+                задаёт, является ли параметр HTTP запроса обязательным. Параметр
+                    <parameter>defaultValue</parameter> задаёт значение по умолчанию, которое будет
+                подставлено в случае отсутствия HTTP параметра.</para>
+            <para>Метод <methodname>addCustomer</methodname> предназначен для добавления нового
+                заказчика. Он связан с маршрутом <uri>/customer/create</uri>, и в отличие от
+                предыдущего метода работает с POST запросом. Метод возвращает <code
+                    language="javascript">{success: true}</code> в случае успешного добавления, и
+                объект с текстом ошибки в случае ошибки. Данный метод работает с классом бизнес слоя
+                    <classname>CustomerManager</classname>.</para>
+            <para>Метод <methodname>editCustomer</methodname> связан с маршрутом
+                    <uri>/customer/edit</uri> и предназначен для редактирования заказчика. Метод
+                    <methodname>deleteCustomer</methodname> связан с маршрутом
+                    <uri>/customer/delete</uri> и предназначен для удаления заказчика. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.controllers;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import javax.ws.rs.core.MediaType;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import ru.ibase.fbjavaex.managers.CustomerManager;
+
+import ru.ibase.fbjavaex.jqgrid.JqGridCustomer;
+import ru.ibase.fbjavaex.jqgrid.JqGridData;
+
+
+/**
+ * Контроллер заказчиков
+ *
+ * @author Simonov Denis
+ */
+@Controller
+public class CustomerController {
+
+
+    @Autowired(required = true)
+    private JqGridCustomer customerGrid;
+    
+    @Autowired(required = true)
+    private CustomerManager customerManager;
+
+
+    /**
+     * Действие по умолчанию
+     * Возвращает имя JSP страницы (представления) для отображения
+     *
+     * @param map
+     * @return имя JSP шаблона
+     */
+    @RequestMapping(value = "/customer/", method = RequestMethod.GET)
+    public String index(ModelMap map) {
+        return "customer";
+    }
+
+    /**
+     * Возвращает данные в формате JSON для jqGrid
+     *
+     * @param rows количество строк на страницу
+     * @param page номер страницы
+     * @param sIdx поле для сортировки
+     * @param sOrd порядок сортировки
+     * @param search должен ли осуществляться поиск
+     * @param searchField поле поиска
+     * @param searchString значение поиска
+     * @param searchOper операция поиска
+     * @return JSON для jqGrid
+     */
+    @RequestMapping(value = "/customer/getdata", 
+            method = RequestMethod.GET, 
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public JqGridData getData(
+            // количество записей на странице
+            @RequestParam(value = "rows", required = false, 
+                          defaultValue = "20") int rows,
+            // номер текущей страницы
+            @RequestParam(value = "page", required = false, 
+                          defaultValue = "1") int page,
+            // поле для сортировки
+            @RequestParam(value = "sidx", required = false, 
+                          defaultValue = "") String sIdx,
+            // направление сортировки
+            @RequestParam(value = "sord", required = false, 
+                          defaultValue = "asc") String sOrd,
+            // осуществляется ли поиск
+            @RequestParam(value = "_search", required = false, 
+                          defaultValue = "false") Boolean search,
+            // поле поиска
+            @RequestParam(value = "searchField", required = false, 
+                          defaultValue = "") String searchField,
+            // значение поиска
+            @RequestParam(value = "searchString", required = false, 
+                          defaultValue = "") String searchString,
+            // операция поиска
+            @RequestParam(value = "searchOper", required = false, 
+                          defaultValue = "") String searchOper,
+            // фильтр
+            @RequestParam(value="filters", required=false, 
+                          defaultValue="") String filters) {
+        customerGrid.setLimit(rows);
+        customerGrid.setPageNo(page);
+        customerGrid.setOrderBy(sIdx, sOrd);
+        if (search) {
+            customerGrid.setSearchCondition(searchField, searchString, searchOper);
+        }
+
+        return customerGrid.getJqGridData();
+    }
+
+    @RequestMapping(value = "/customer/create", 
+            method = RequestMethod.POST, 
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> addCustomer(
+            @RequestParam(value = "NAME", required = true, 
+                          defaultValue = "") String name,
+            @RequestParam(value = "ADDRESS", required = false, 
+                          defaultValue = "") String address,
+            @RequestParam(value = "ZIPCODE", required = false, 
+                          defaultValue = "") String zipcode,
+            @RequestParam(value = "PHONE", required = false, 
+                          defaultValue = "") String phone) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            customerManager.create(name, address, zipcode, phone);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    @RequestMapping(value = "/customer/edit", 
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> editCustomer(
+            @RequestParam(value = "CUSTOMER_ID", required = true, 
+                          defaultValue = "0") int customerId,
+            @RequestParam(value = "NAME", required = true, 
+                          defaultValue = "") String name,
+            @RequestParam(value = "ADDRESS", required = false, 
+                          defaultValue = "") String address,
+            @RequestParam(value = "ZIPCODE", required = false, 
+                          defaultValue = "") String zipcode,
+            @RequestParam(value = "PHONE", required = false, 
+                          defaultValue = "") String phone) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            customerManager.edit(customerId, name, address, zipcode, phone);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    @RequestMapping(value = "/customer/delete", 
+            method = RequestMethod.POST, 
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> deleteCustomer(
+            @RequestParam(value = "CUSTOMER_ID", required = true, 
+                          defaultValue = "0") int customerId) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            customerManager.delete(customerId);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>JSP страница для отображения справочника заказчиков не содержит ничего особенного:
+                разметку с основными частями страницы, таблицу для отображения грида и блок для
+                отображения панели навигации. JSP шаблоны не очень продвинутое средство, при желании
+                вы можете заменить их на другие системы шаблонов, которые поддерживают наследование.
+                В файле <filename>../jspf/head.jspf</filename> содержатся общие скрипты и стили для
+                всех страниц сайта, а файл <filename>../jspf/menu.jspf</filename> главное меню
+                сайта. Мы не будем приводить их код, он довольно простой и при желании вы можете
+                посмотреть его в исходных кодах проекта. <programlisting language="javascript">
+<![CDATA[
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="cp" value="${pageContext.request.servletContext.contextPath}" 
+       scope="request" />
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>An example of a Spring MVC application using Firebird 
+               and jOOQ</title>
+        
+        <!-- Scripts and styles -->
+        <%@ include file="../jspf/head.jspf" %>
+        <script src="${cp}/resources/js/jqGridCustomer.js"></script>   
+    </head>
+    <body>
+        <!-- Navigation menu -->
+        <%@ include file="../jspf/menu.jspf" %>
+
+        <div class="container body-content">            
+
+            <h2>Customers</h2>
+
+            <table id="jqGridCustomer"></table>
+            <div id="jqPagerCustomer"></div>
+
+            <hr/>
+            <footer>
+                <p>&copy; 2016 - An example of a Spring MVC application 
+                using Firebird and jOOQ</p>
+            </footer>         
+        </div>
+            
+<script type="text/javascript">
+    $(document).ready(function () {
+        JqGridCustomer({
+            baseAddress: '${cp}'
+        });
+    });
+</script> 
+            
+    </body>
+</html>
+]]>                    
+                </programlisting>
+            </para>
+            <para>Основная логика на стороне клиента сосредоточена в JavaScript модуле
+                    <filename>/resources/js/jqGridCustomer.js</filename>
+                <programlisting language="javascript">
+<![CDATA[
+var JqGridCustomer = (function ($) {
+
+  return function (options) {
+      var jqGridCustomer = {
+          dbGrid: null,          
+          options: $.extend({
+              baseAddress: null,
+              showEditorPanel: true
+          }, options),
+          // return model description
+          getColModel: function () {
+              return [
+                  {
+                      label: 'Id', 
+                      name: 'CUSTOMER_ID', // field name
+                      key: true, 
+                      hidden: true           
+                  },
+                  {
+                      label: 'Name', 
+                      name: 'NAME', 
+                      width: 240, 
+                      sortable: true, 
+                      editable: true, 
+                      edittype: "text", // field type in the editor
+                      search: true, 
+                      searchoptions: {
+                          // allowed search operators
+                          sopt: ['eq', 'bw', 'cn'] 
+                      },
+                      // size and maximum length for the input field
+                      editoptions: {size: 30, maxlength: 60},                     
+                      editrules: {required: true}      
+                  },
+                  {
+                      label: 'Address',
+                      name: 'ADDRESS',
+                      width: 300,
+                      sortable: false, // prohibit sorting
+                      editable: true, 
+                      search: false, // prohibit search
+                      edittype: "textarea", // Memo field
+                      editoptions: {maxlength: 250, cols: 30, rows: 4}
+                  },
+                  {
+                      label: 'Zip Code',
+                      name: 'ZIPCODE',
+                      width: 30,
+                      sortable: false,
+                      editable: true,
+                      search: false,
+                      edittype: "text",
+                      editoptions: {size: 30, maxlength: 10}
+                  },
+                  {
+                      label: 'Phone',
+                      name: 'PHONE',
+                      width: 80,
+                      sortable: false,
+                      editable: true,
+                      search: false,
+                      edittype: "text",
+                      editoptions: {size: 30, maxlength: 14}
+                  }
+              ];
+          },
+          // grid initialization
+          initGrid: function () {
+              // url to retrieve data
+              var url = jqGridCustomer.options.baseAddress 
+                      + '/customer/getdata';
+              jqGridCustomer.dbGrid = $("#jqGridCustomer").jqGrid({
+                  url: url,
+                  datatype: "json", // data format
+                  mtype: "GET", // request type
+                  colModel: jqGridCustomer.getColModel(),
+                  rowNum: 500, // number of rows displayed
+                  loadonce: false, // load only once
+                  sortname: 'NAME', // Sorting by NAME by default
+                  sortorder: "asc",
+                  width: window.innerWidth - 80, 
+                  height: 500, 
+                  viewrecords: true, // display the number of records
+                  guiStyle: "bootstrap",
+                  iconSet: "fontAwesome",
+                  caption: "Customers", 
+                  // navigation item
+                  pager: 'jqPagerCustomer'
+              });
+          },
+          // editing options
+          getEditOptions: function () {
+            return {
+              url: jqGridCustomer.options.baseAddress + '/customer/edit',
+              reloadAfterSubmit: true,
+              closeOnEscape: true,
+              closeAfterEdit: true,
+              drag: true,
+              width: 400,
+              afterSubmit: jqGridCustomer.afterSubmit,
+              editData: {
+                // In addition to the values from the form, pass the key field
+                CUSTOMER_ID: function () {
+                  // get the current row
+                  var selectedRow = jqGridCustomer.dbGrid.getGridParam("selrow");
+                  // get the value of the field CUSTOMER_ID
+                  var value = jqGridCustomer.dbGrid.getCell(selectedRow, 
+                              'CUSTOMER_ID');
+                  return value;
+                }
+              }
+            };
+          },
+          // Add options
+          getAddOptions: function () {
+            return {
+              url: jqGridCustomer.options.baseAddress + '/customer/create',
+              reloadAfterSubmit: true,
+              closeOnEscape: true,
+              closeAfterAdd: true,
+              drag: true,
+              width: 400,
+              afterSubmit: jqGridCustomer.afterSubmit
+            };
+          },
+          // Edit options
+          getDeleteOptions: function () {
+            return {
+              url: jqGridCustomer.options.baseAddress + '/customer/delete',
+              reloadAfterSubmit: true,
+              closeOnEscape: true,
+              closeAfterDelete: true,
+              drag: true,
+              msg: "Delete the selected customer?",
+              afterSubmit: jqGridCustomer.afterSubmit,
+              delData: {
+                // pass the key field
+                CUSTOMER_ID: function () {
+                  var selectedRow = jqGridCustomer.dbGrid.getGridParam("selrow");
+                  var value = jqGridCustomer.dbGrid.getCell(selectedRow, 
+                              'CUSTOMER_ID');
+                  return value;
+                }
+              }
+            };
+          },
+          // initializing the navigation bar with editing dialogs
+          initPagerWithEditors: function () {
+              jqGridCustomer.dbGrid.jqGrid('navGrid', '#jqPagerCustomer',
+                  {
+                       // buttons
+                       search: true, 
+                       add: true, 
+                       edit: true, 
+                       del: true, 
+                       view: true, 
+                       refresh: true, 
+                       // button captions
+                       searchtext: "Search",
+                       addtext: "Add",
+                       edittext: "Edit",
+                       deltext: "Delete",
+                       viewtext: "View",
+                       viewtitle: "Selected record",
+                       refreshtext: "Refresh"
+                  },
+                  jqGridCustomer.getEditOptions(),
+                  jqGridCustomer.getAddOptions(),
+                  jqGridCustomer.getDeleteOptions()
+             );
+          },
+          // initialize the navigation bar without editing dialogs
+          initPagerWithoutEditors: function () {
+              jqGridCustomer.dbGrid.jqGrid('navGrid', '#jqPagerCustomer',
+                  {
+                       // buttons
+                       search: true, 
+                       add: false,
+                       edit: false,
+                       del: false, 
+                       view: false, 
+                       refresh: true,
+                       // button captions
+                       searchtext: "Search",
+                       viewtext: "View",
+                       viewtitle: "Selected record",
+                       refreshtext: "Refresh"
+                  }
+              );
+          },
+          // initialize the navigation bar
+          initPager: function () {
+              if (jqGridCustomer.options.showEditorPanel) {
+                  jqGridCustomer.initPagerWithEditors();
+              } else {
+                  jqGridCustomer.initPagerWithoutEditors();
+              }
+          },
+          // initialize
+          init: function () {
+              jqGridCustomer.initGrid();
+              jqGridCustomer.initPager();
+          },
+          // processor of the results of processing forms (operations)
+          afterSubmit: function (response, postdata) {
+              var responseData = response.responseJSON;
+              // check the result for error messages
+              if (responseData.hasOwnProperty("error")) {
+                  if (responseData.error.length) {
+                      return [false, responseData.error];
+                  }
+              } else {
+                  // if an error was not returned, refresh the grid
+                  $(this).jqGrid(
+                          'setGridParam',
+                          {
+                              datatype: 'json'
+                          }
+                  ).trigger('reloadGrid');
+              }
+              return [true, "", 0];
+          }
+      };
+      jqGridCustomer.init();
+      return jqGridCustomer;
+  };
+})(jQuery);
+]]>                    
+                </programlisting>
+            </para>
+            <para>Сетка jqGrid создаётся в методе <methodname>initGrid</methodname> и привязывается
+                к html элементу с идентификатором jqGridCustomer. Описание столбцов (колонок) грида
+                возвращается методом <methodname>getColModel</methodname>. Каждый столбец в jqGrid
+                имеет достаточно много возможных свойств. В исходном коде присутствуют комментарии,
+                объясняющие свойства столбцов. Подробнее о конфигурировании модели столбцов jqGrid
+                вы можете прочитать в документации проекта jqGrid в разделе <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Acolmodel_options"
+                    >ColModel API</link>.</para>
+            <para>Панель навигации может быть создана с кнопками редактирования или без них (методы
+                    <methodname>initPagerWithEditors</methodname> и
+                    <methodname>initPagerWithoutEditors</methodname> соответственно). Конструктор
+                панели прикрепляет её к элементу с идентификатором jqPagerCustomer. Опции создания
+                панели навигации описаны в разделе <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Anavigator"
+                    >Navigator</link> документации jqGrid.</para>
+            <para>Функции <methodname>getEditOptions</methodname>,
+                    <methodname>getAddOptions</methodname>,
+                    <methodname>getDeleteOptions</methodname> возвращают опции диалогов
+                редактирования, добавления и удаления соответственно. Свойство
+                    <varname>url</varname> указывает, по какому адресу будут отправлены данные после
+                нажатия кнопки OK в диалоге. Свойство <methodname>afterSubmit</methodname> —
+                событие, происходящее после отправки данных на сервер и получения ответа от него. В
+                методе <methodname>afterSubmit</methodname> проверяется, не вернул ли наш контроллер
+                ошибку. Если ошибки не было, то производится обновление грида, в противном случае
+                ошибка сообщается пользователю. Обратите внимание на свойство
+                    <varname>editData</varname>. Оно позволяет задать значения дополнительных полей,
+                которые не участвуют в диалоге редактирования. Дело в том, что диалоги
+                редактирования не включают в себя значение скрытых полей, а отображать автоматически
+                генерируемые ключи не сильно хочется.</para>
+        </section>
+        <section>
+            <title>Создание журналов</title>
+
+            <para>В отличие от справочников журналы содержат довольно большое количество записей и
+                являются часто пополняемыми. Большинство журналов содержат поле с датой создания
+                документа. Чтобы уменьшить количество выбираемых данных обычно принято вводить такое
+                понятие как рабочий период для того, чтобы уменьшить объём данных передаваемый на
+                клиента. Рабочий период — это диапазон дат, внутри которого требуются рабочие
+                документы. Рабочий период описывается классом <classname>WorkingPeriod</classname>.
+                Этот класс создаётся через бин workingPeriod в классе конфигурации
+                    <classname>ru.ibase.fbjavaex.config.JooqConfig</classname>. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.config;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+
+/**
+ * Working period
+ *
+ * @author Simonov Denis
+ */
+public class WorkingPeriod {
+
+    private Timestamp beginDate;
+    private Timestamp endDate;
+
+    /** 
+     * Contructor
+     */
+    WorkingPeriod() {
+        // in real applications is calculated from the current date
+        this.beginDate = Timestamp.valueOf("2015-06-01 00:00:00");
+        this.endDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1));
+    }
+
+    /**
+     * Returns the start date of the work period
+     *
+     * @return
+     */
+    public Timestamp getBeginDate() {
+        return this.beginDate;
+    }
+
+    /**
+     * Returns the end date of the work period
+     * 
+     * @return
+     */
+    public Timestamp getEndDate() {
+        return this.endDate;
+    }
+
+    /**
+     * Setting the start date of the work period
+     * 
+     * @param value
+     */
+    public void setBeginDate(Timestamp value) {
+        this.beginDate = value;
+    }
+
+    /**
+     * Setting the end date of the work period
+     * 
+     * @param value
+     */
+    public void setEndDate(Timestamp value) {
+        this.endDate = value;
+    }
+
+    /**
+     * Setting the working period
+     * 
+     * @param beginDate
+     * @param endDate
+     */
+    public void setRangeDate(Timestamp beginDate, Timestamp endDate) {
+        this.beginDate = beginDate;
+        this.endDate = endDate;
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>В нашем приложении будет один журнал «Счёт-фактуры». Счёт-фактура – состоит из
+                заголовка, где описываются общие атрибуты (номер, дата, заказчик …), и позиций
+                счёт-фактуры (наименование товара, количество, стоимостью и т.д.). Шапка
+                счёт-фактуру отображается в основной сетке, а позиции могут быть просмотрены в
+                детализирующей сетке, которая раскрывается по щелчку по значку «+» на нужном
+                документе. </para>
+            <para>Реализуем класс для просмотра шапок счёт-фактуры через jqGrid, он будет
+                наследоваться от нашего абстрактного класса
+                    <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname>, описанного выше. В нём
+                имеется возможность поиска наименованию заказчика и дате счёта. Кроме того данный
+                класс поддерживает сортировку по дате в обоих направлениях. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.jqgrid;
+
+import java.sql.*;
+import org.jooq.*;
+
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.ibase.fbjavaex.config.WorkingPeriod;
+
+import static ru.ibase.fbjavaex.exampledb.Tables.INVOICE;
+import static ru.ibase.fbjavaex.exampledb.Tables.CUSTOMER;
+
+/**
+ * Grid handler for the invoice journal
+ *
+ * @author Simonov Denis
+ */
+public class JqGridInvoice extends JqGrid {
+    
+    @Autowired(required = true)
+    private WorkingPeriod workingPeriod;    
+
+    /**
+     * Adding a search condition
+     *
+     * @param query
+     */
+    private void makeSearchCondition(SelectQuery<?> query) {
+        // adding a search condition to the query, 
+        // if it is produced for different fields, 
+        // different comparison operators are available when searching.
+        if (this.searchString.isEmpty()) {
+            return;
+        }
+
+        if (this.searchField.equals("CUSTOMER_NAME")) {
+            switch (this.searchOper) {
+               case "eq": // equal
+                 query.addConditions(CUSTOMER.NAME.eq(this.searchString));
+                 break;
+               case "bw": // starting with
+                 query.addConditions(CUSTOMER.NAME.startsWith(this.searchString));
+                 break;
+               case "cn": // containing
+                 query.addConditions(CUSTOMER.NAME.contains(this.searchString));
+                 break;
+            }
+        }
+        if (this.searchField.equals("INVOICE_DATE")) {
+            Timestamp dateValue = Timestamp.valueOf(this.searchString);
+
+            switch (this.searchOper) {
+               case "eq": // =
+                 query.addConditions(INVOICE.INVOICE_DATE.eq(dateValue));
+                 break;
+               case "lt": // <
+                 query.addConditions(INVOICE.INVOICE_DATE.lt(dateValue));
+                 break;
+               case "le": // <=
+                 query.addConditions(INVOICE.INVOICE_DATE.le(dateValue));
+                 break;
+               case "gt": // >
+                 query.addConditions(INVOICE.INVOICE_DATE.gt(dateValue));
+                 break;
+               case "ge": // >=
+                 query.addConditions(INVOICE.INVOICE_DATE.ge(dateValue));
+                 break;
+            }
+        }
+    }
+
+    /**
+     * Returns the total number of records
+     *
+     * @return
+     */
+    @Override
+    public int getCountRecord() {
+        SelectFinalStep<?> select
+                = dsl.selectCount()
+                     .from(INVOICE)
+                     .where(INVOICE.INVOICE_DATE.between(
+                                this.workingPeriod.getBeginDate(), 
+                                this.workingPeriod.getEndDate()));
+
+        SelectQuery<?> query = select.getQuery();
+
+        if (this.searchFlag) {
+            makeSearchCondition(query);
+        }
+
+        return (int) query.fetch().getValue(0, 0);
+    }
+
+
+
+    /**
+     * Returns the list of invoices
+     * 
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getRecords() {
+        SelectFinalStep<?> select = dsl.select(
+                INVOICE.INVOICE_ID,
+                INVOICE.CUSTOMER_ID,
+                CUSTOMER.NAME.as("CUSTOMER_NAME"),
+                INVOICE.INVOICE_DATE,
+                INVOICE.PAID,
+                INVOICE.TOTAL_SALE)
+            .from(INVOICE)
+            .innerJoin(CUSTOMER).on(CUSTOMER.CUSTOMER_ID.eq(INVOICE.CUSTOMER_ID))
+            .where(INVOICE.INVOICE_DATE.between(
+                       this.workingPeriod.getBeginDate(), 
+                       this.workingPeriod.getEndDate()));
+
+        SelectQuery<?> query = select.getQuery();
+        // add a search condition
+        if (this.searchFlag) {
+            makeSearchCondition(query);
+        }
+        // add sorting
+        if (this.sIdx.equals("INVOICE_DATE")) {
+            switch (this.sOrd) {
+               case "asc":
+                 query.addOrderBy(INVOICE.INVOICE_DATE.asc());
+                 break;
+               case "desc":
+                 query.addOrderBy(INVOICE.INVOICE_DATE.desc());
+                 break;
+            }
+        }
+        // limit the number of records and add an offset
+        if (this.limit != 0) {
+            query.addLimit(this.limit);
+        }
+        if (this.offset != 0) {
+            query.addOffset(this.offset);
+        }
+        
+        return query.fetchMaps();
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>Класс для просмотра позиций счёт-фактуры через jqGrid несколько проще. Во-первых,
+                его записи отфильтрованы по коду шапки счёт фактуры, а во-вторых в нём мы не будем
+                реализовывать поиск и пользовательскую сортировку. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.jqgrid;
+
+import org.jooq.*;
+
+import java.util.List;
+import java.util.Map;
+
+import static ru.ibase.fbjavaex.exampledb.Tables.INVOICE_LINE;
+import static ru.ibase.fbjavaex.exampledb.Tables.PRODUCT;
+
+/**
+ * The grid handler for the invoice items
+ *
+ * @author Simonov Denis
+ */
+public class JqGridInvoiceLine extends JqGrid {
+        
+    private int invoiceId;    
+    
+    
+    public int getInvoiceId() {
+        return this.invoiceId; 
+    }
+    
+    public void setInvoiceId(int invoiceId) {
+        this.invoiceId = invoiceId;
+    }
+    
+    /**
+     * Returns the total number of records
+     *
+     * @return
+     */
+    @Override
+    public int getCountRecord() {
+        SelectFinalStep<?> select
+            = dsl.selectCount()
+                 .from(INVOICE_LINE)
+                 .where(INVOICE_LINE.INVOICE_ID.eq(this.invoiceId));
+
+        SelectQuery<?> query = select.getQuery();
+
+        return (int) query.fetch().getValue(0, 0);
+    }
+    
+       
+    /**
+     * Returns invoice items
+     * 
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getRecords() {
+        SelectFinalStep<?> select = dsl.select(
+                INVOICE_LINE.INVOICE_LINE_ID,
+                INVOICE_LINE.INVOICE_ID,
+                INVOICE_LINE.PRODUCT_ID,
+                PRODUCT.NAME.as("PRODUCT_NAME"),
+                INVOICE_LINE.QUANTITY,
+                INVOICE_LINE.SALE_PRICE,
+                INVOICE_LINE.SALE_PRICE.mul(INVOICE_LINE.QUANTITY).as("TOTAL"))
+            .from(INVOICE_LINE)
+            .innerJoin(PRODUCT).on(PRODUCT.PRODUCT_ID.eq(INVOICE_LINE.PRODUCT_ID))
+            .where(INVOICE_LINE.INVOICE_ID.eq(this.invoiceId));
+
+        SelectQuery<?> query = select.getQuery();
+        return query.fetchMaps();
+    }    
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>Добавлять, редактировать, удалять счёт фактуры (и их позиции), а также оплачивать
+                их, мы будем через класс
+                    <classname>ru.ibase.fbjavaex.managers.InvoiceManager</classname>, который
+                является своеобразным бизнес слоем. Все операции в этом слое мы будем осуществлять в
+                транзакции с уровнем изолированности Snapshot. В этом классе все операции с базой
+                данных осуществляются с помощью вызовов хранимых процедур (это не является
+                обязательным, просто показан один из вариантов). <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.managers;
+
+
+import java.sql.Timestamp;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Isolation;
+
+import static ru.ibase.fbjavaex.exampledb.Sequences.GEN_INVOICE_ID;
+import static ru.ibase.fbjavaex.exampledb.Routines.spAddInvoice;
+import static ru.ibase.fbjavaex.exampledb.Routines.spEditInvoice;
+import static ru.ibase.fbjavaex.exampledb.Routines.spPayForInovice;
+import static ru.ibase.fbjavaex.exampledb.Routines.spDeleteInvoice;
+import static ru.ibase.fbjavaex.exampledb.Routines.spAddInvoiceLine;
+import static ru.ibase.fbjavaex.exampledb.Routines.spEditInvoiceLine;
+import static ru.ibase.fbjavaex.exampledb.Routines.spDeleteInvoiceLine;
+
+/**
+ * Invoice manager
+ *
+ * @author Simonov Denis
+ */
+public class InvoiceManager {
+
+    @Autowired(required = true)
+    private DSLContext dsl;
+
+    /**
+     * Add invoice
+     * 
+     * @param customerId
+     * @param invoiceDate 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void create(Integer customerId, 
+                       Timestamp invoiceDate) {
+        int invoiceId = this.dsl.nextval(GEN_INVOICE_ID).intValue();
+        
+        spAddInvoice(this.dsl.configuration(), 
+            invoiceId,
+            customerId,
+            invoiceDate);
+    }    
+    
+    /**
+     * Edit invoice
+     * 
+     * @param invoiceId
+     * @param customerId
+     * @param invoiceDate 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void edit(Integer invoiceId, 
+                     Integer customerId, 
+                     Timestamp invoiceDate) {
+        spEditInvoice(this.dsl.configuration(), 
+            invoiceId,
+            customerId,
+            invoiceDate);        
+    }
+    
+    /**
+     * Payment of invoices
+     * 
+     * @param invoiceId 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void pay(Integer invoiceId) {
+        spPayForInovice(this.dsl.configuration(), 
+            invoiceId);         
+    }
+    
+    /**
+     * Delete invoice
+     * 
+     * @param invoiceId 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void delete(Integer invoiceId) {
+        spDeleteInvoice(this.dsl.configuration(), 
+            invoiceId);      
+    }
+    
+    /**
+     * Add invoice item
+     * 
+     * @param invoiceId
+     * @param productId
+     * @param quantity 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void addInvoiceLine(Integer invoiceId, 
+                               Integer productId, 
+                               Integer quantity) {
+        spAddInvoiceLine(this.dsl.configuration(), 
+            invoiceId,
+            productId,
+            quantity);     
+    }
+    
+    /**
+     * Edit invoice item
+     * 
+     * @param invoiceLineId
+     * @param quantity 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void editInvoiceLine(Integer invoiceLineId, 
+                                Integer quantity) {
+        spEditInvoiceLine(this.dsl.configuration(), 
+            invoiceLineId,
+            quantity);     
+    }  
+    
+    /**
+     * Delete invoice item
+     * 
+     * @param invoiceLineId 
+     */
+    @Transactional(propagation = Propagation.REQUIRED, 
+                   isolation = Isolation.REPEATABLE_READ)     
+    public void deleteInvoiceLine(Integer invoiceLineId) {
+        spDeleteInvoiceLine(this.dsl.configuration(), 
+            invoiceLineId);      
+    }       
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>Теперь перейдём к написанию контроллера. Входной точкой нашего контроллера будет
+                метод <methodname>index</methodname>, он отвечает за отображение JSP страницы
+                (представления). Эта страница содержит разметку для отображения грида, панель
+                инструментов и навигации.</para>
+            <para>Данные для отображения шапок счёт фактуры загружаются асинхронно компонентом
+                jqGrid (маршрут <uri>/invoice/getdata</uri>). С данным маршрутом связан метод
+                    <methodname>getData</methodname> (аналогично справочникам). Позиции счёт фактуры
+                возвращаются методом <methodname>getDetailData</methodname> (маршрут
+                    <uri>/invoice/getdetaildata</uri>). В этот метод передаётся код счёт фактуры, на
+                которой был раскрыт детализирующий грид. Методы <methodname>addInvoice</methodname>,
+                    <methodname>editInvoice</methodname>, <methodname>payInvoice</methodname>,
+                    <methodname>deleteInvoice</methodname> осуществляют добавление, редактирование,
+                оплату и удаление счёт фактуры. Методы <methodname>addInvoiceLine</methodname>,
+                    <methodname>editInvoiceLine</methodname>,
+                    <methodname>deleteInvoiceLine</methodname> осуществляют добавление,
+                редактирование и удаление позиции счёт фактуры. <programlisting language="java">
+<![CDATA[
+package ru.ibase.fbjavaex.controllers;
+
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.beans.PropertyEditorSupport;
+
+import javax.ws.rs.core.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.WebDataBinder;
+import ru.ibase.fbjavaex.jqgrid.JqGridInvoice;
+import ru.ibase.fbjavaex.jqgrid.JqGridInvoiceLine;
+
+import ru.ibase.fbjavaex.managers.InvoiceManager;
+
+import ru.ibase.fbjavaex.jqgrid.JqGridData;
+
+
+/**
+ * Invoice controller
+ *
+ * @author Simonov Denis
+ */
+@Controller
+public class InvoiceController {
+    
+    @Autowired(required = true)
+    private JqGridInvoice invoiceGrid;
+
+    @Autowired(required = true)
+    private JqGridInvoiceLine invoiceLineGrid;
+
+    @Autowired(required = true)
+    private InvoiceManager invoiceManager;
+
+    /**
+     * Describe how a string is converted to a date 
+     * from the input parameters of the HTTP request
+     * 
+     * @param binder 
+     */    
+    @InitBinder
+    public void initBinder(WebDataBinder binder)   {
+        binder.registerCustomEditor(Timestamp.class,
+                new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String value) {
+              try {
+                if ((value == null) || (value.isEmpty())) {
+                  setValue(null);
+                } else {
+                  Date parsedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+                       .parse(value);
+                  setValue(new Timestamp(parsedDate.getTime()));
+                }
+              } catch (ParseException e) {
+                throw new java.lang.IllegalArgumentException(value);
+              }
+            }
+        });
+    }
+
+    /**
+     * Default action
+     * Returns the JSP name of the page (view) to display
+     * 
+     * @param map
+     * @return JSP page name
+     */    
+    @RequestMapping(value = "/invoice/", method = RequestMethod.GET)
+    public String index(ModelMap map) {
+
+        return "invoice";
+    }
+
+    /**
+     * Returns a list of invoices in JSON format for jqGrid
+     * 
+     * @param rows number of entries per page
+     * @param page current page number
+     * @param sIdx sort field
+     * @param sOrd sorting order
+     * @param search search flag
+     * @param searchField search field
+     * @param searchString search value
+     * @param searchOper comparison operation
+     * @param filters filter
+     * @return 
+     */    
+    @RequestMapping(value = "/invoice/getdata",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public JqGridData getData(
+            @RequestParam(value = "rows", required = false, 
+                          defaultValue = "20") int rows,
+            @RequestParam(value = "page", required = false, 
+                          defaultValue = "1") int page,
+            @RequestParam(value = "sidx", required = false, 
+                          defaultValue = "") String sIdx,
+            @RequestParam(value = "sord", required = false, 
+                          defaultValue = "asc") String sOrd,
+            @RequestParam(value = "_search", required = false, 
+                          defaultValue = "false") Boolean search,
+            @RequestParam(value = "searchField", required = false, 
+                          defaultValue = "") String searchField,
+            @RequestParam(value = "searchString", required = false, 
+                          defaultValue = "") String searchString,
+            @RequestParam(value = "searchOper", required = false, 
+                          defaultValue = "") String searchOper,
+            @RequestParam(value = "filters", required = false, 
+                          defaultValue = "") String filters) {
+
+        if (search) {
+            invoiceGrid.setSearchCondition(searchField, searchString, searchOper);
+        }
+        invoiceGrid.setLimit(rows);
+        invoiceGrid.setPageNo(page);
+
+        invoiceGrid.setOrderBy(sIdx, sOrd);
+
+        return invoiceGrid.getJqGridData();
+    }
+
+    /**
+     * Add invoice
+     * 
+     * @param customerId customer id
+     * @param invoiceDate invoice date
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/create",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> addInvoice(
+            @RequestParam(value = "CUSTOMER_ID", required = true, 
+                          defaultValue = "0") Integer customerId,
+            @RequestParam(value = "INVOICE_DATE", required = false, 
+                          defaultValue = "") Timestamp invoiceDate) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.create(customerId, invoiceDate);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Edit invoice
+     * 
+     * @param invoiceId invoice id
+     * @param customerId customer id
+     * @param invoiceDate invoice date
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/edit",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> editInvoice(
+            @RequestParam(value = "INVOICE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceId,
+            @RequestParam(value = "CUSTOMER_ID", required = true, 
+                          defaultValue = "0") Integer customerId,
+            @RequestParam(value = "INVOICE_DATE", required = false, 
+                          defaultValue = "") Timestamp invoiceDate) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.edit(invoiceId, customerId, invoiceDate);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Pays an invoice
+     * 
+     * @param invoiceId invoice id
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/pay",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> payInvoice(
+            @RequestParam(value = "INVOICE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceId) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.pay(invoiceId);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Delete invoice
+     * 
+     * @param invoiceId invoice id
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/delete",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> deleteInvoice(
+            @RequestParam(value = "INVOICE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceId) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.delete(invoiceId);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Returns invoice item
+     * 
+     * @param invoice_id invoice id
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/getdetaildata",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public JqGridData getDetailData(
+            @RequestParam(value = "INVOICE_ID", required = true) int invoice_id) {
+
+        invoiceLineGrid.setInvoiceId(invoice_id);
+
+        return invoiceLineGrid.getJqGridData();
+
+    }
+
+    /**
+     * Add invoice item
+     * 
+     * @param invoiceId invoice id
+     * @param productId product id
+     * @param quantity quantity of products
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/createdetail",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> addInvoiceLine(
+            @RequestParam(value = "INVOICE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceId,
+            @RequestParam(value = "PRODUCT_ID", required = true, 
+                          defaultValue = "0") Integer productId,
+            @RequestParam(value = "QUANTITY", required = true, 
+                          defaultValue = "0") Integer quantity) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.addInvoiceLine(invoiceId, productId, quantity);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Edit invoice item
+     * 
+     * @param invoiceLineId invoice item id
+     * @param quantity quantity of products
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/editdetail",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> editInvoiceLine(
+            @RequestParam(value = "INVOICE_LINE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceLineId,
+            @RequestParam(value = "QUANTITY", required = true, 
+                          defaultValue = "0") Integer quantity) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.editInvoiceLine(invoiceLineId, quantity);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+
+    /**
+     * Delete invoice item
+     * 
+     * @param invoiceLineId invoice item id
+     * @return 
+     */
+    @RequestMapping(value = "/invoice/deletedetail",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public Map<String, Object> deleteInvoiceLine(
+            @RequestParam(value = "INVOICE_LINE_ID", required = true, 
+                          defaultValue = "0") Integer invoiceLineId) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            invoiceManager.deleteInvoiceLine(invoiceLineId);
+            map.put("success", true);
+        } catch (Exception ex) {
+            map.put("error", ex.getMessage());
+        }
+        return map;
+    }
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>В целом, контроллер счёт фактур похож на контроллеры справочников за двумя исключениями:<orderedlist>
+                    <listitem>
+                        <para>Контроллер отображает и работает с данными, как главного, так и
+                            детализирующего грида.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Счёт фактуры отфильтрованы по полю дата так, чтобы в выборку попадали
+                            только те счёт фактуры, которые входят в рабочий период.</para>
+                    </listitem>
+                </orderedlist></para>
+            <para>При работе с датами в Java существует много особенностей. </para>
+            <para>Тип <classname>java.sql.Timestamp</classname> в Java поддерживает точность до
+                наносекунд, в то время как в Firebird максимальная точность типа TIMESTAMP
+                составляет десятитысячную долю секунды. На самом деле это не является большой
+                проблемой.</para>
+            <para>Типы даты и времени в Java поддерживают работу временными зонами. С другой
+                стороны, в настоящее время Firebird не поддерживает тип TIMESTAMP WITH TIMEZONE. В
+                этом случае Java считает, что даты в базе данных хранятся в часовом поясе сервера (а
+                не в UTC как вы могли бы подумать). Однако при сериализации в JSON время будет
+                преобразовано в UTC. Это надо учитывать при обработке времени в JavaScript.</para>
+            <important>
+                <para>Java берёт смещение времени из собственной базы временных зон, а не из
+                    операционной системы. Это обстоятельство существенно повышает требования к
+                    актуальности версии JDK. Если у вас установлена древняя JDK, то работа с датой и
+                    временем может вестись не верно.</para>
+            </important>
+            <para>По умолчанию дата сериализуется в JSON в числовом представлении (как число
+                наносекунд прошедших с 1 января 1970). Это не всегда удобно. Для того чтобы дата
+                сериализовалась в текстовом представлении в классе
+                    <classname>WebAppConfig</classname>, описанном выше, в методе
+                    <methodname>configureMessageConverters</methodname> свойству конфигурации
+                    <constant>SerializationFeature.WRITE_DATES_AS_TIMESTAMPS</constant>
+                преобразования даты указать значение <literal>false</literal>. <programlisting language="java">
+<![CDATA[
+@Configuration
+@ComponentScan("ru.ibase.fbjavaex")
+@EnableWebMvc
+public class WebAppConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void configureMessageConverters(
+      List<HttpMessageConverter<?>> httpMessageConverters) {
+        MappingJackson2HttpMessageConverter jsonConverter = 
+            new MappingJackson2HttpMessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, 
+                               false);
+        jsonConverter.setObjectMapper(objectMapper);
+        httpMessageConverters.add(jsonConverter);
+    }
+…
+}
+]]>                    
+                </programlisting>
+            </para>
+            <para>Метод <methodname>initBinder</methodname> контроллера
+                    <classname>InvoiceController</classname> описывает, каким образом текстовое
+                представление даты, присылаемое браузером, преобразуется в значение типа
+                Timestamp.</para>
+            <para>JSP страница содержит разметку для отображения сетки с шапками счёт-фактур и
+                панель навигации. Позиции счёт фактур отображаются при раскрытии счёт шапки фактуры,
+                как выпадающий грид. <programlisting language="javascript">
+<![CDATA[
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="cp" value="${pageContext.request.servletContext.contextPath}" 
+       scope="request" />
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>An example of a Spring MVC application using Firebird and jOOQ</title>
+
+        <!-- Scripts and styles -->
+        <%@ include file="../jspf/head.jspf" %>
+        <script src="${cp}/resources/js/jqGridProduct.js"></script>   
+        <script src="${cp}/resources/js/jqGridCustomer.js"></script>   
+        <script src="${cp}/resources/js/jqGridInvoice.js"></script>   
+    </head>
+    <body>
+        <!-- Navigation menu -->
+        <%@ include file="../jspf/menu.jspf" %>
+
+        <div class="container body-content">            
+
+            <h2>Invoices</h2>
+
+            <table id="jqGridInvoice"></table>
+            <div id="jqPagerInvoice"></div>
+
+            <hr />
+            <footer>
+                <p>&copy; 2016 - An example of a Spring MVC application using 
+                   Firebird and jOOQ</p>
+            </footer>         
+        </div>
+
+        <script type="text/javascript">
+            var invoiceGrid = null;
+            $(document).ready(function () {
+                invoiceGrid = JqGridInvoice({
+                    baseAddress: '${cp}'
+                });
+            });
+        </script>
+
+    </body>
+</html>
+]]>                    
+                </programlisting>
+            </para>
+            <para>Основная логика на стороне клиента сосредоточена в JavaScript модуле
+                    <filename>/resources/js/jqGridInvoice.js</filename>
+                <programlisting language="javascript">
+<![CDATA[
+var JqGridInvoice = (function ($, jqGridProductFactory, jqGridCustomerFactory) {
+
+    return function (options) {
+        var jqGridInvoice = {
+            dbGrid: null,
+            detailGrid: null,
+            options: $.extend({
+                baseAddress: null
+            }, options),
+            // return invoice model description
+            getInvoiceColModel: function () {
+                return [
+                    {
+                        label: 'Id', 
+                        name: 'INVOICE_ID', // field name
+                        key: true,  
+                        hidden: true 
+                    },
+                    {
+                        label: 'Customer Id'
+                        name: 'CUSTOMER_ID', 
+                        hidden: true, 
+                        editrules: {edithidden: true, required: true}, 
+                        editable: true, 
+                        edittype: 'custom', // custom type
+                        editoptions: {
+                            custom_element: function (value, options) {
+                                // add hidden input
+                                return $("<input>")
+                                        .attr('type', 'hidden')
+                                        .attr('rowid', options.rowId)
+                                        .addClass("FormElement")
+                                        .addClass("form-control")
+                                        .val(value)
+                                        .get(0);
+                            }
+                        }
+                    },
+                    {
+                        label: 'Date',
+                        name: 'INVOICE_DATE',
+                        width: 60, 
+                        sortable: true, 
+                        editable: true, 
+                        search: true, 
+                        edittype: "text", // input type
+                        align: "right", 
+                        // format as date
+                        formatter: jqGridInvoice.dateTimeFormatter, 
+                        sorttype: 'date', // sort as date
+                        formatoptions: {
+                            srcformat: 'Y-m-d\TH:i:s', // input format
+                            newformat: 'd.m.Y H:i:s'   // output format
+                        },
+                        editoptions: {
+                            // initializing the form element for editing
+                            dataInit: function (element) {
+                                // creating datepicker
+                                $(element).datepicker({
+                                    id: 'invoiceDate_datePicker',
+                                    dateFormat: 'dd.mm.yy',
+                                    minDate: new Date(2000, 0, 1),
+                                    maxDate: new Date(2030, 0, 1)
+                                });
+                            }
+                        },
+                        searchoptions: {
+                            // initializing the form element for searching
+                            dataInit: function (element) {
+                                // создаём datepicker
+                                $(element).datepicker({
+                                    id: 'invoiceDate_datePicker',
+                                    dateFormat: 'dd.mm.yy',
+                                    minDate: new Date(2000, 0, 1),
+                                    maxDate: new Date(2030, 0, 1)
+                                });
+                            },
+                            searchoptions: { // search types
+                                sopt: ['eq', 'lt', 'le', 'gt', 'ge']
+                            }
+                        }
+                    },
+                    {
+                        label: 'Customer',
+                        name: 'CUSTOMER_NAME',
+                        width: 250,
+                        editable: true,
+                        edittype: "text",
+                        editoptions: {
+                            size: 50,
+                            maxlength: 60,
+                            readonly: true    
+                        },
+                        editrules: {required: true},
+                        search: true,
+                        searchoptions: {
+                            sopt: ['eq', 'bw', 'cn']
+                        }
+                    },
+                    {
+                        label: 'Amount',
+                        name: 'TOTAL_SALE',
+                        width: 60,
+                        sortable: false,
+                        editable: false,
+                        search: false,
+                        align: "right",
+                        // foramt as currency
+                        formatter: 'currency', 
+                        sorttype: 'number',
+                        searchrules: {
+                            "required": true,
+                            "number": true,
+                            "minValue": 0
+                        }
+                    },
+                    {
+                        label: 'Paid',
+                        name: 'PAID',
+                        width: 30,
+                        sortable: false,
+                        editable: true,
+                        search: true,
+                        searchoptions: {
+                            sopt: ['eq']
+                        },
+                        edittype: "checkbox", 
+                        formatter: "checkbox",
+                        stype: "checkbox",
+                        align: "center",
+                        editoptions: {
+                            value: "1",
+                            offval: "0"
+                        }
+                    }
+                ];
+            },
+            initGrid: function () {
+                // url to retrieve data
+                var url = jqGridInvoice.options.baseAddress + '/invoice/getdata';
+                jqGridInvoice.dbGrid = $("#jqGridInvoice").jqGrid({
+                    url: url,
+                    datatype: "json", // data format
+                    mtype: "GET", // http request type
+                    // model description
+                    colModel: jqGridInvoice.getInvoiceColModel(),
+                    rowNum: 500, // number of rows displayed	
+                    loadonce: false, // load only once
+                    // default sort by INVOICE_DATE column
+                    sortname: 'INVOICE_DATE', 
+                    sortorder: "desc", // sorting order
+                    width: window.innerWidth - 80,
+                    height: 500, 
+                    viewrecords: true, // display the number of entries
+                    guiStyle: "bootstrap",
+                    iconSet: "fontAwesome",
+                    caption: "Invoices", 
+                    // pagination element
+                    pager: '#jqPagerInvoice', 
+                    subGrid: true, // show subGrid
+                    // javascript function to display the child grid
+                    subGridRowExpanded: jqGridInvoice.showChildGrid,
+                    subGridOptions: { 
+                        // load only once
+                        reloadOnExpand: false,
+                        // load the subgrid string only when you click on the "+"
+                        selectOnExpand: true
+                    }
+                });
+            },
+            // date format function
+            dateTimeFormatter: function(cellvalue, options, rowObject) {
+                var date = new Date(cellvalue);
+                return date.toLocaleString().replace(",", "");
+            },
+            // returns a template for the editing dialog
+            getTemplate: function () {
+              var template = "<div style='margin-left:15px;' id='dlgEditInvoice'>";
+              template += "<div>{CUSTOMER_ID} </div>";
+              template += "<div> Date: </div><div>{INVOICE_DATE}</div>";
+              // customer input field with a button
+              template += "<div> Customer <sup>*</sup>:</div>";
+              template += "<div>";
+              template += "<div style='float: left;'>{CUSTOMER_NAME}</div> ";
+              template += "<a style='margin-left: 0.2em;' class='btn' ";
+              template += "onclick='invoiceGrid.showCustomerWindow(); ";
+              template += "return false;'>";
+              template += "<span class='glyphicon glyphicon-folder-open'>";
+              template += "</span>Select</a> ";
+              template += "<div style='clear: both;'></div>";
+              template += "</div>";
+              template += "<div> {PAID} Paid </div>";
+              template += "<hr style='width: 100%;'/>";
+              template += "<div> {sData} {cData}  </div>";
+              template += "</div>";
+              return template;
+            },
+            // date conversion in UTC
+            convertToUTC: function(datetime) {
+              if (datetime) {               
+                  var dateParts = datetime.split('.');
+                  var date = dateParts[2].substring(0, 4) + '-' + 
+                             dateParts[1] + '-' + dateParts[0];
+                  var time = dateParts[2].substring(5);
+                  if (!time) {
+                      time = '00:00:00';
+                  }
+                  var dt = Date.parse(date + 'T' + time);
+                  var s = dt.getUTCFullYear() + '-' +
+                          dt.getUTCMonth() + '-' +
+                          dt.getUTCDay() + 'T' +
+                          dt.getUTCHour() + ':' +
+                          dt.getUTCMinute() + ':' +
+                          dt.getUTCSecond() + '  GMT';
+                  return s;
+              } else
+                  return null;
+            },
+            // returns the options for editing invoices
+            getEditInvoiceOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/edit',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterEdit: true,
+                drag: true,
+                modal: true,
+                top: $(".container.body-content").position().top + 150,
+                left: $(".container.body-content").position().left + 150,
+                template: jqGridInvoice.getTemplate(),
+                afterSubmit: jqGridInvoice.afterSubmit,
+                editData: {
+                  INVOICE_ID: function () {
+                    var selectedRow = jqGridInvoice.dbGrid.getGridParam("selrow");
+                    var value = jqGridInvoice.dbGrid
+                               .getCell(selectedRow, 'INVOICE_ID');
+                    return value;
+                  },
+                  CUSTOMER_ID: function () {
+                    return $('#dlgEditInvoice input[name=CUSTOMER_ID]').val();
+                  },
+                  INVOICE_DATE: function () {
+                    var datetime = $('#dlgEditInvoice input[name=INVOICE_DATE]')
+                                  .val();
+                    return jqGridInvoice.convertToUTC(datetime);
+                  }
+                }
+              };
+            },
+            // returns options for adding invoices
+            getAddInvoiceOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/create',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterAdd: true,
+                drag: true,
+                modal: true,
+                top: $(".container.body-content").position().top + 150,
+                left: $(".container.body-content").position().left + 150,
+                template: jqGridInvoice.getTemplate(),
+                afterSubmit: jqGridInvoice.afterSubmit,
+                editData: {
+                  CUSTOMER_ID: function () {
+                    return $('#dlgEditInvoice input[name=CUSTOMER_ID]').val();
+                  },
+                  INVOICE_DATE: function () {
+                    var datetime = $('#dlgEditInvoice input[name=INVOICE_DATE]')
+                                  .val();
+                    return jqGridInvoice.convertToUTC(datetime);
+                  }
+                }
+              };
+            },
+            // returns the options for deleting invoices
+            getDeleteInvoiceOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/delete',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterDelete: true,
+                drag: true,
+                msg: "Delete the selected invoice?",
+                afterSubmit: jqGridInvoice.afterSubmit,
+                delData: {
+                  INVOICE_ID: function () {
+                    var selectedRow = jqGridInvoice.dbGrid.getGridParam("selrow");
+                    var value = jqGridInvoice.dbGrid
+                               .getCell(selectedRow, 'INVOICE_ID');
+                    return value;
+                  }
+                }
+              };
+            },
+            initPager: function () {
+                // display the navigation bar
+                jqGridInvoice.dbGrid.jqGrid('navGrid', '#jqPagerInvoice',
+                    {
+                         search: true, 
+                         add: true, 
+                         edit: true, 
+                         del: true, 
+                         view: false, 
+                         refresh: true, 
+
+                         searchtext: "Search",
+                         addtext: "Add",
+                         edittext: "Edit",
+                         deltext: "Delete",
+                         viewtext: "View",
+                         viewtitle: "Selected record",
+                         refreshtext: "Refresh"
+                    },
+                    jqGridInvoice.getEditInvoiceOptions(),
+                    jqGridInvoice.getAddInvoiceOptions(),
+                    jqGridInvoice.getDeleteInvoiceOptions()
+                );
+                // Add a button to pay the invoice
+                var urlPay = jqGridInvoice.options.baseAddress + '/invoice/pay';
+                jqGridInvoice.dbGrid.navButtonAdd('#jqPagerInvoice',
+                    {
+                       buttonicon: "glyphicon-usd",
+                       title: "Pay",
+                       caption: "Pay",
+                       position: "last",
+                       onClickButton: function () {
+                         // get the id of the current record
+                         var id = jqGridInvoice.dbGrid.getGridParam("selrow");
+                         if (id) {
+                           $.ajax({
+                               url: urlPay,
+                               type: 'POST',
+                               data: {INVOICE_ID: id},
+                               success: function (data) {
+                                   // Check if an error has occurred
+                                   if (data.hasOwnProperty("error")) {
+                                       jqGridInvoice.alertDialog('Ошибка', 
+                                                                 data.error);
+                                   } else {
+                                       // refresh grid
+                                       $("#jqGridInvoice").jqGrid(
+                                           'setGridParam',
+                                           {
+                                               datatype: 'json'
+                                           }
+                                       ).trigger('reloadGrid');
+                                   }
+                               }
+                           });
+                         }
+                       }
+                    }
+                );
+            },
+            init: function () {
+                jqGridInvoice.initGrid();
+                jqGridInvoice.initPager();
+            },
+            afterSubmit: function (response, postdata) {
+                var responseData = response.responseJSON;
+                // Check if an error has occurred
+                if (responseData.hasOwnProperty("error")) {
+                    if (responseData.error.length) {
+                        return [false, responseData.error];
+                    }
+                } else {
+                    // refresh grid
+                    $(this).jqGrid(
+                            'setGridParam',
+                            {
+                                datatype: 'json'
+                            }
+                    ).trigger('reloadGrid');
+                }
+                return [true, "", 0];
+            },
+            getInvoiceLineColModel: function (parentRowKey) {
+              return [
+                  {
+                    label: 'Invoice Line ID',
+                    name: 'INVOICE_LINE_ID',
+                    key: true,
+                    hidden: true
+                  },
+                  {
+                    label: 'Invoice ID',
+                    name: 'INVOICE_ID',
+                    hidden: true,
+                    editrules: {edithidden: true, required: true},
+                    editable: true,
+                    edittype: 'custom',
+                    editoptions: {
+                      custom_element: function (value, options) {
+                          // create hidden input
+                          return $("<input>")
+                                 .attr('type', 'hidden')
+                                 .attr('rowid', options.rowId)
+                                 .addClass("FormElement")
+                                 .addClass("form-control")
+                                 .val(parentRowKey)
+                                 .get(0);
+                      }
+                    }
+                  },
+                  {
+                    label: 'Product ID',
+                    name: 'PRODUCT_ID',
+                    hidden: true,
+                    editrules: {edithidden: true, required: true},
+                    editable: true,
+                    edittype: 'custom',
+                    editoptions: {
+                      custom_element: function (value, options) {
+                          // create hidden input
+                          return $("<input>")
+                                 .attr('type', 'hidden')
+                                 .attr('rowid', options.rowId)
+                                 .addClass("FormElement")
+                                 .addClass("form-control")
+                                 .val(value)
+                                 .get(0);
+                      }
+                    }
+                  },
+                  {
+                    label: 'Product',
+                    name: 'PRODUCT_NAME',
+                    width: 300,
+                    editable: true,
+                    edittype: "text",
+                    editoptions: {
+                        size: 50,
+                        maxlength: 60,
+                        readonly: true
+                    },
+                    editrules: {required: true}
+                  },
+                  {
+                    label: 'Price',
+                    name: 'SALE_PRICE',
+                    formatter: 'currency',
+                    editable: true,
+                    editoptions: {
+                        readonly: true
+                    },
+                    align: "right",
+                    width: 100
+                  },
+                  {
+                    label: 'Quantity',
+                    name: 'QUANTITY',
+                    align: "right",
+                    width: 100,
+                    editable: true,
+                    editrules: {required: true, number: true, minValue: 1},
+                    editoptions: {
+                      dataEvents: [{
+                        type: 'change',
+                        fn: function (e) {
+                          var quantity = $(this).val() - 0;
+                          var price = 
+                            $('#dlgEditInvoiceLine input[name=SALE_PRICE]').val()-0;
+                          var total = quantity * price;
+                          $('#dlgEditInvoiceLine input[name=TOTAL]').val(total);
+                        }
+                      }],
+                      defaultValue: 1
+                    }
+                  },
+                  {
+                    label: 'Total',
+                    name: 'TOTAL',
+                    formatter: 'currency',
+                    align: "right",
+                    width: 100,
+                    editable: true,
+                    editoptions: {
+                        readonly: true
+                    }
+                  }
+              ];
+            },
+            // returns the options for editing the invoice item
+            getEditInvoiceLineOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/editdetail',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterEdit: true,
+                drag: true,
+                modal: true,
+                top: $(".container.body-content").position().top + 150,
+                left: $(".container.body-content").position().left + 150,
+                template: jqGridInvoice.getTemplateDetail(),
+                afterSubmit: jqGridInvoice.afterSubmit,
+                editData: {
+                  INVOICE_LINE_ID: function () {
+                    var selectedRow = jqGridInvoice.detailGrid
+                                     .getGridParam("selrow");
+                    var value = jqGridInvoice.detailGrid
+                               .getCell(selectedRow, 'INVOICE_LINE_ID');
+                    return value;
+                  },
+                  QUANTITY: function () {
+                    return $('#dlgEditInvoiceLine input[name=QUANTITY]').val();
+                  }
+                }
+              };
+            },
+            // returns options for adding an invoice item
+            getAddInvoiceLineOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/createdetail',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterAdd: true,
+                drag: true,
+                modal: true,
+                top: $(".container.body-content").position().top + 150,
+                left: $(".container.body-content").position().left + 150,
+                template: jqGridInvoice.getTemplateDetail(),
+                afterSubmit: jqGridInvoice.afterSubmit,
+                editData: {
+                  INVOICE_ID: function () {
+                    var selectedRow = jqGridInvoice.dbGrid.getGridParam("selrow");
+                    var value = jqGridInvoice.dbGrid
+                               .getCell(selectedRow, 'INVOICE_ID');
+                    return value;
+                  },
+                  PRODUCT_ID: function () {
+                    return $('#dlgEditInvoiceLine input[name=PRODUCT_ID]').val();
+                  },
+                  QUANTITY: function () {
+                    return $('#dlgEditInvoiceLine input[name=QUANTITY]').val();
+                  }
+                }
+              };
+            },
+            // returns the option to delete the invoice item
+            getDeleteInvoiceLineOptions: function () {
+              return {
+                url: jqGridInvoice.options.baseAddress + '/invoice/deletedetail',
+                reloadAfterSubmit: true,
+                closeOnEscape: true,
+                closeAfterDelete: true,
+                drag: true,
+                msg: "Delete the selected item?",
+                afterSubmit: jqGridInvoice.afterSubmit,
+                delData: {
+                  INVOICE_LINE_ID: function () {
+                    var selectedRow = jqGridInvoice.detailGrid
+                                     .getGridParam("selrow");
+                    var value = jqGridInvoice.detailGrid
+                               .getCell(selectedRow, 'INVOICE_LINE_ID');
+                    return value;
+                  }
+                }
+              };
+            },
+            // Event handler for the parent grid expansion event
+            // takes two parameters: the parent record identifier 
+            // and the primary record key
+            showChildGrid: function (parentRowID, parentRowKey) {
+                var childGridID = parentRowID + "_table";
+                var childGridPagerID = parentRowID + "_pager";
+                // send the primary key of the parent record
+                // to filter the entries of the invoice items
+                var childGridURL = jqGridInvoice.options.baseAddress 
+                                 + '/invoice/getdetaildata';
+                childGridURL = childGridURL + "?INVOICE_ID="
+                             + encodeURIComponent(parentRowKey);
+                // add HTML elements to display the table and page navigation 
+                // as children for the selected row in the master grid
+                $('<table>')
+                        .attr('id', childGridID)
+                        .appendTo($('#' + parentRowID));
+                $('<div>')
+                        .attr('id', childGridPagerID)
+                        .addClass('scroll')
+                        .appendTo($('#' + parentRowID));
+                // create and initialize the child grid
+                jqGridInvoice.detailGrid = $("#" + childGridID).jqGrid({
+                    url: childGridURL,
+                    mtype: "GET",
+                    datatype: "json",
+                    page: 1,
+                    colModel: jqGridInvoice.getInvoiceLineColModel(parentRowKey),
+                    loadonce: false,
+                    width: '100%',
+                    height: '100%',
+                    guiStyle: "bootstrap",
+                    iconSet: "fontAwesome",
+                    pager: "#" + childGridPagerID
+                });
+                // displaying the toolbar
+                $("#" + childGridID).jqGrid(
+                    'navGrid', '#' + childGridPagerID,
+                    {
+                        search: false, 
+                        add: true, 
+                        edit: true, 
+                        del: true, 
+                        refresh: true 
+                    },
+                    jqGridInvoice.getEditInvoiceLineOptions(),
+                    jqGridInvoice.getAddInvoiceLineOptions(),
+                    jqGridInvoice.getDeleteInvoiceLineOptions()
+                );
+            },
+            // returns a template for the invoice item editor
+            getTemplateDetail: function () {
+              var template = "<div style='margin-left:15px;' ";
+              template += "id='dlgEditInvoiceLine'>";
+              template += "<div>{INVOICE_ID} </div>";
+              template += "<div>{PRODUCT_ID} </div>";
+              // input field with a button
+              template += "<div> Product <sup>*</sup>:</div>";
+              template += "<div>";
+              template += "<div style='float: left;'>{PRODUCT_NAME}</div> ";
+              template += "<a style='margin-left: 0.2em;' class='btn' ";
+              template += "onclick='invoiceGrid.showProductWindow(); ";
+              template += "return false;'>";
+              template += "<span class='glyphicon glyphicon-folder-open'>";
+              template += "</span> Select</a> ";
+              template += "<div style='clear: both;'></div>";
+              template += "</div>";
+              template += "<div> Quantity: </div><div>{QUANTITY} </div>";
+              template += "<div> Price: </div><div>{SALE_PRICE} </div>";
+              template += "<div> Total: </div><div>{TOTAL} </div>";
+              template += "<hr style='width: 100%;'/>";
+              template += "<div> {sData} {cData}  </div>";
+              template += "</div>";
+              return template;
+            },
+            // Display selection window from the goods directory.
+            showProductWindow: function () {
+              var dlg = $('<div>')
+                        .attr('id', 'dlgChooseProduct')
+                        .attr('aria-hidden', 'true')
+                        .attr('role', 'dialog')
+                        .attr('data-backdrop', 'static')
+                        .css("z-index", '2000')
+                        .addClass('modal')
+                        .appendTo($('body'));
+
+              var dlgContent = $("<div>")
+                        .addClass("modal-content")
+                        .css('width', '760px')
+                        .appendTo($('<div>')
+                                .addClass('modal-dialog')
+                                .appendTo(dlg));
+
+              var dlgHeader = $('<div>').addClass("modal-header")
+                                          .appendTo(dlgContent);
+              $("<button>")
+                        .addClass("close")
+                        .attr('type', 'button')
+                        .attr('aria-hidden', 'true')
+                        .attr('data-dismiss', 'modal')
+                        .html("&times;")
+                        .appendTo(dlgHeader);
+              $("<h5>").addClass("modal-title")
+                         .html("Select product")
+                         .appendTo(dlgHeader);
+              var dlgBody = $('<div>')
+                        .addClass("modal-body")
+                        .appendTo(dlgContent);
+              var dlgFooter = $('<div>').addClass("modal-footer")
+                                          .appendTo(dlgContent);
+              $("<button>")
+                .attr('type', 'button')
+                .addClass('btn')
+                .html('OK')
+                .on('click', function () {
+                    var rowId = $("#jqGridProduct")
+                               .jqGrid("getGridParam", "selrow");
+                    var row = $("#jqGridProduct")
+                             .jqGrid("getRowData", rowId);
+                    $('#dlgEditInvoiceLine input[name=PRODUCT_ID]')
+                        .val(row["PRODUCT_ID"]);
+                    $('#dlgEditInvoiceLine input[name=PRODUCT_NAME]')
+                        .val(row["NAME"]);
+                    $('#dlgEditInvoiceLine input[name=SALE_PRICE]')
+                        .val(row["PRICE"]);
+                    var price = $('#dlgEditInvoiceLine input[name=SALE_PRICE]')
+                        .val()-0;
+                    var quantity = $('#dlgEditInvoiceLine input[name=QUANTITY]')
+                        .val()-0;
+                    var total = Math.round(price * quantity * 100) / 100;
+                    $('#dlgEditInvoiceLine input[name=TOTAL]').val(total);
+                    dlg.modal('hide');
+                })
+                .appendTo(dlgFooter);
+
+              $("<button>")
+                    .attr('type', 'button')
+                    .addClass('btn')
+                    .html('Cancel')
+                    .on('click', function () {
+                        dlg.modal('hide');
+                    })
+                    .appendTo(dlgFooter);
+
+              $('<table>')
+                    .attr('id', 'jqGridProduct')
+                    .appendTo(dlgBody);
+              $('<div>')
+                    .attr('id', 'jqPagerProduct')
+                    .appendTo(dlgBody);
+
+              dlg.on('hidden.bs.modal', function () {
+                    dlg.remove();
+              });
+              dlg.modal();
+
+              jqGridProductFactory({
+                  baseAddress: jqGridInvoice.options.baseAddress
+              });
+            },
+            // Display the selection window from the customer's directory.
+            showCustomerWindow: function () {
+                // the main block of the dialog
+                var dlg = $('<div>')
+                        .attr('id', 'dlgChooseCustomer')
+                        .attr('aria-hidden', 'true')
+                        .attr('role', 'dialog')
+                        .attr('data-backdrop', 'static')
+                        .css("z-index", '2000')
+                        .addClass('modal')
+                        .appendTo($('body'));
+                // block with the contents of the dialog
+                var dlgContent = $("<div>")
+                        .addClass("modal-content")
+                        .css('width', '730px')
+                        .appendTo($('<div>')
+                                .addClass('modal-dialog')
+                                .appendTo(dlg));
+                // block with dialog header
+                var dlgHeader = $('<div>').addClass("modal-header")
+                                          .appendTo(dlgContent);
+                // button "X" for closing
+                $("<button>")
+                        .addClass("close")
+                        .attr('type', 'button')
+                        .attr('aria-hidden', 'true')
+                        .attr('data-dismiss', 'modal')
+                        .html("&times;")
+                        .appendTo(dlgHeader);
+                // title of dialog
+                $("<h5>").addClass("modal-title")
+                         .html("Select customer")
+                         .appendTo(dlgHeader);
+                // body of dialog
+                var dlgBody = $('<div>')
+                        .addClass("modal-body")
+                        .appendTo(dlgContent);
+                // footer of dialog
+                var dlgFooter = $('<div>').addClass("modal-footer")
+                                          .appendTo(dlgContent);
+                // "OK" button
+                $("<button>")
+                    .attr('type', 'button')
+                    .addClass('btn')
+                    .html('OK')
+                    .on('click', function () {
+                        var rowId = $("#jqGridCustomer")
+                                   .jqGrid("getGridParam", "selrow");
+                        var row = $("#jqGridCustomer")
+                                 .jqGrid("getRowData", rowId);
+                        // Keep the identifier and the name of the customer 
+                        // in the input elements of the parent form.
+                        $('#dlgEditInvoice input[name=CUSTOMER_ID]')
+                            .val(rowId);
+                        $('#dlgEditInvoice input[name=CUSTOMER_NAME]')
+                            .val(row["NAME"]);
+                        dlg.modal('hide');
+                    })
+                    .appendTo(dlgFooter);
+                // "Cancel" button
+                $("<button>")
+                        .attr('type', 'button')
+                        .addClass('btn')
+                        .html('Cancel')
+                        .on('click', function () {
+                            dlg.modal('hide');
+                        })
+                        .appendTo(dlgFooter);
+                // add a table to display the customers in the body of the dialog
+                $('<table>')
+                        .attr('id', 'jqGridCustomer')
+                        .appendTo(dlgBody);
+                // add the navigation bar
+                $('<div>')
+                        .attr('id', 'jqPagerCustomer')
+                        .appendTo(dlgBody);
+                dlg.on('hidden.bs.modal', function () {
+                    dlg.remove();
+                });
+                // display dialog
+                dlg.modal();
+                jqGridCustomerFactory({
+                    baseAddress: jqGridInvoice.options.baseAddress
+                });
+            },
+            // A window for displaying the error.
+            alertDialog: function (title, error) {
+                var alertDlg = $('<div>')
+                        .attr('aria-hidden', 'true')
+                        .attr('role', 'dialog')
+                        .attr('data-backdrop', 'static')
+                        .addClass('modal')
+                        .appendTo($('body'));
+                var dlgContent = $("<div>")
+                        .addClass("modal-content")
+                        .appendTo($('<div>')
+                                .addClass('modal-dialog')
+                                .appendTo(alertDlg));
+                var dlgHeader = $('<div>').addClass("modal-header")
+                                          .appendTo(dlgContent);
+                $("<button>")
+                        .addClass("close")
+                        .attr('type', 'button')
+                        .attr('aria-hidden', 'true')
+                        .attr('data-dismiss', 'modal')
+                        .html("&times;")
+                        .appendTo(dlgHeader);
+                $("<h5>").addClass("modal-title")
+                         .html(title)
+                         .appendTo(dlgHeader);
+                $('<div>')
+                        .addClass("modal-body")
+                        .appendTo(dlgContent)
+                        .append(error);
+                alertDlg.on('hidden.bs.modal', function () {
+                    alertDlg.remove();
+                });
+                alertDlg.modal();
+            }
+        };
+        jqGridInvoice.init();
+        return jqGridInvoice;
+    };
+})(jQuery, JqGridProduct, JqGridCustomer);
+]]>                    
+                </programlisting>
+            </para>
+            <para>В журнале счёт фактур, основная сетка используется для отображения шапок, а
+                раскрывающаяся по клику для отображения позиций. Для отображения дочернего грида
+                свойству <varname>subGrid</varname> присвоено значение <literal>true</literal>.
+                Дочерняя сетка отображается, используя событие
+                    <function>subGridRowExpanded</function>, которое связано с методом
+                    <function>showChildGrid</function>. Позиции фильтруются по первичному ключу счёт
+                фактуры. Помимо основных кнопок панель навигации для шапки счёт фактуры добавлена
+                пользовательская кнопка для оплаты счёт фактуры с помощью функции
+                    <function>jqGridInvoice.dbGrid.navButtonAdd</function> (см. метод
+                    <function>initPager</function>).</para>
+            <para>В отличие от справочников диалоги редактирования для журналов намного сложнее.
+                Зачастую они используют выбор из других справочников. Поэтому такие диалоги
+                редактирования не получится построить автоматически с помощью jqGrid, однако в этой
+                библиотеки существует возможность построение диалогов по шаблону, которой мы и
+                воспользуемся. Шаблон диалога возвращает функцией <function>getTemplate</function>.
+                Открытие справочника заказчиков для выбора заказчика осуществляется функцией
+                    <function>invoiceGrid.showCustomerWindow()</function>. Она использует функции
+                уже описанного ранее модуля JqGridCustomer. После выбора заказчика из модального
+                окна его код подставляется в поле CUSTOMER_ID. В свойстве
+                    <varname>editData</varname> опций редактирования и добавления описаны поля,
+                которые надо будет передать на сервер, используя предварительную обработку или из
+                невидимых полей.</para>
+            <para>Теперь вернёмся к обработке дат. Как я уже говорил, контроллер
+                    <classname>InvoiceController</classname> возвращает дату в UTC, нам же
+                необходимо отобразить её в текущей часовой зоне. Для этого зададим функцию
+                форматирования даты <function>jqGridInvoice.dateTimeFormatter</function> через
+                свойство <varname>formatter</varname>, соответствующего поля INVOICE_DATE. При
+                отправке данных на сервер нам необходимо сделать обратную операцию – перевести время
+                из текущей временной зоны в UTC. За это отвечает функция
+                    <function>convertToUTC</function>.</para>
+            <para>Для редактора позиций счёт фактуры, так же используется пользовательский шаблон,
+                который возвращается функцией <function>getTemplateDetail</function>. Открытие окна
+                для выбора из справочника товаров осуществляется функцией
+                    <function>invoiceGrid.showProductWindow()</function>. Эта функция использует
+                функции модуля JqGridProduct.</para>
+            <para>Код модуля JqGridInvoice подробно прокомментирован так, чтобы вы могли понять
+                логику его работы. Дополнительные пояснения вы можете найти в нём.</para>
+            <para>Напоследок приведу несколько скриншотов получившегося веб приложения.</para>
+            <para>
+                <figure>
+                    <title>Журнал счёт-фактур</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/java-invoice-screen.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Журнал счёт-фактур</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Редактирование счёт-фактуры</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/java-invoice-editor-screen.png" width="680"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Редактирование счёт-фактуры</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Редактирование позиции счёт-фактуры</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/java-invoice-editor2-screen.png" width="680"
+                            />
+                        </imageobject>
+                        <textobject>
+                            <phrase>Редактирование позиции счёт-фактуры</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+                <figure>
+                    <title>Выбор из справочника в диалоге счёт-фактуры</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/java-invoice-editor3-screen.png" width="680"
+                            />
+                        </imageobject>
+                        <textobject>
+                            <phrase>Выбор из справочника в диалоге счёт-фактуры</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>Заключение</title>
+        <para>На этом мой пример закончен. Исходные коды вы можете скачать по ссылке <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="https://github.com/sim1984/fbjavaex"
+                >https://github.com/sim1984/fbjavaex</link>.</para>
+    </section>
+</chapter>
