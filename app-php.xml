@@ -5,61 +5,76 @@
     </info>
 
     <para>В этой главе мы рассмотрим процесс создания web приложения с использованием СУБД Firebird
-        на языке PHP.</para>
+        на языке PHP. Предполагается что у вас есть веб-сервер, такой как Apache HTTP Server или
+        Nginx с установленным и настроеным PHP, а так же установленный Firebird сервер.</para>
 
     <section>
-        <title>Обзор драйверов для работы с Firebird </title>
+        <title>Взаимодействие PHP и Firebird</title>
 
-        <para>В PHP есть два драйвера для работы с СУБД Firebird:<itemizedlist>
-                <listitem>
-                    <para>Расширение<link xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="http://php.net/ibase">Firebird/Interbase</link> (ibase_
-                        функции);</para>
-                </listitem>
-                <listitem>
-                    <para><link xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="http://php.net/manual/ru/ref.pdo-firebird.php">PDO
-                            драйвер</link> для Firebird.</para>
-                </listitem>
-            </itemizedlist>
-        </para>
+        <para>Для возможности подключения к СУБД Firebird необходимо установить драйвер.</para>
 
         <section>
-            <title>Обзор расширения Firebird/Interbase</title>
+            <title>Обзор драйверов для работы с Firebird </title>
 
-            <para>Расширение Firebird/Interbase появилось раньше и является наиболее
-                проверенным.</para>
+            <para>В PHP есть два драйвера для работы с СУБД Firebird:<itemizedlist>
+                    <listitem>
+                        <para>Расширение<link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/ibase">Firebird/Interbase</link> (ibase_
+                            функции);</para>
+                    </listitem>
+                    <listitem>
+                        <para><link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/ref.pdo-firebird.php">PDO
+                                драйвер</link> для Firebird.</para>
+                    </listitem>
+                </itemizedlist>
+            </para>
 
-            <para>Для установки расширения Firebird/Interbase в конфигурационном файле
-                    <filename>php.ini</filename> необходимо раскомментировать строку
-                <programlisting language="ini">
+            <section>
+                <title>Клиентская библиотека Firebird</title>
+
+                <para>Оба драйвера требуют, чтобы у вас была установлена клиентская библиотека
+                        <filename>fbclient.dll</filename> (для UNIX подобных систем
+                        <filename>fbclient.so</filename>) соответствующей разрядности. Т.е. если у
+                    вас установлен 64-x разрядный PHP, то его расширениям требуется 64-х разрядная
+                    библиотека, для 32-х разрядного PHP — 32-х разрядная библиотека.</para>
+
+                <note>
+                    <title>Замечание для пользователей Win32/Win64</title>
+
+                    <para>Для работы этих драйверов в системной переменной Windows PATH должны быть
+                        доступен DLL-файл <filename>fbclient.dll</filename>. Хотя копирование
+                        DLL-файлов из директории PHP в системную папку Windows также решает проблему
+                        (потому что системная директория по умолчанию находится в переменной PATH),
+                        это не рекомендуется.</para>
+                </note>
+            </section>
+
+            <section>
+                <title>Обзор расширения Firebird/Interbase</title>
+
+                <para>Расширение Firebird/Interbase появилось раньше и является наиболее
+                    проверенным.</para>
+
+                <para>Для установки расширения Firebird/Interbase в конфигурационном файле
+                        <filename>php.ini</filename> необходимо раскомментировать строку
+                    <programlisting language="ini">
 extension=php_interbase.dll                    
                 </programlisting>
-                или для UNIX подобных систем строку
-                <programlisting language="ini">
+                    или для UNIX подобных систем строку
+                    <programlisting language="ini">
 extension=php_interbase.so                    
                 </programlisting>
-            </para>
-            <para>Это расширение требует, чтобы у вас была установлена клиентская библиотека
-                    <filename>fbclient.dll</filename>/<filename>gds32.dll</filename> (для UNIX
-                подобных систем <filename>fbclient.so</filename>) соответствующей разрядности. </para>
+                </para>
 
-            <note>
-                <title>Замечание для пользователей Win32/Win64</title>
+                <section>
+                    <title>Установка Fb/IB Extension в Linux</title>
 
-                <para>Для работы этого расширения системной переменной Windows PATH должны быть
-                    доступны DLL-файлы <filename>fbclient.dll</filename> или
-                        <filename>gds32.dll</filename>. Хотя копирование DLL-файлов из директории
-                    PHP в системную папку Windows также решает проблему (потому что системная
-                    директория по умолчанию находится в переменной PATH), это не рекомендуется.
-                    Этому расширению требуются следующие файлы в переменной PATH:
-                        <filename>fbclient.dll</filename> или <filename>gds32.dll</filename>.</para>
-            </note>
 
-            <para>В Linux это расширение в зависимости от дистрибутива можно установить одной из
-                следующих команд (необходимо уточнить поддерживаемые версии, возможно, необходимо
-                подключить сторонний репозиторий):
-                <screen>
+                    <para>В Linux это расширение в зависимости от дистрибутива можно установить
+                        одной из следующих команд (необходимо уточнить поддерживаемые версии,
+                        возможно, необходимо подключить сторонний репозиторий):
+                        <screen>
 apt-get install php5-firebird
 
 rpm –ihv php5-firebird
@@ -68,18 +83,29 @@ yum install php70w-interbase
 
 zypper install php5-firebird                    
                 </screen>
-            </para>
-            <para>Это расширение использует процедурный подход к написанию программ. Функции с
-                префиксом <function>ibase_</function> могут возвращать или принимать в качестве
-                одного из параметров идентификатор соединения, транзакции, подготовленного запроса
-                или курсора (результат SELECT запроса). Этот идентификатор имеет тип
-                    <type>resource</type>. Все выделенные ресурсы необходимо освобождать, как только
-                они больше не требуются. Я не буду описывать каждую из функций подробно, вы можете
-                посмотреть их описание по адресу <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/ibase">http://php.net/ibase</link>, вместо этого
-                приведу несколько небольших примеров с комментариями. </para>
-            <para>
-                <programlisting language="php">
+                    </para>
+
+                    <tip>
+                        <para>В некоторых случаях вам может потребоваться подключить дополнительные
+                            репозитарии для разрешения зависимсотей.</para>
+                    </tip>
+                </section>
+
+                <section>
+                    <title>Стиль программирования</title>
+
+                    <para>Это расширение использует процедурный подход к написанию программ. Функции
+                        с префиксом <function>ibase_</function> могут возвращать или принимать в
+                        качестве одного из параметров идентификатор соединения, транзакции,
+                        подготовленного запроса или курсора (результат SELECT запроса). Этот
+                        идентификатор имеет тип <type>resource</type>. Все выделенные ресурсы
+                        необходимо освобождать, как только они больше не требуются. Я не буду
+                        описывать каждую из функций подробно, вы можете посмотреть их описание по
+                        адресу <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/ibase">http://php.net/ibase</link>, вместо
+                        этого приведу несколько небольших примеров с комментариями. </para>
+                    <para>
+                        <programlisting language="php">
 <![CDATA[
 <?php
 
@@ -102,35 +128,48 @@ ibase_free_result($rc);
 ibase_close($dbh);
 ]]>                        
                     </programlisting>
-            </para>
-            <para>Вместо функции <function>ibase_connect</function> вы можете применять функцию
-                    <function>ibase_pconnect</function>, которая создаёт так называемые постоянные
-                соединения. В этом случае при вызове <function>ibase_close</function> соединение не
-                закрывается, все связанные с ней ресурсы освобождаются, транзакция по умолчанию
-                подтверждается, другие виды транзакций откатываются. Такое соединение может быть
-                использовано повторно в другой сессии, если параметры подключения совпадают. В
-                некоторых случаях постоянные соединения могут значительно повысить эффективность
-                вашего веб приложения. Это особенно заметно, если затраты на установку соединения
-                велики. Они позволяют дочернему процессу на протяжении всего жизненного цикла
-                использовать одно и то же соединение вместо того, чтобы создавать его при обработке
-                каждой страницы, которая взаимодействует с SQL-сервером. Этим постоянные соединения
-                напоминают работу с пулом соединений. Подробнее о постоянных соединениях вы может
-                прочитать по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/persistent-connections"
-                    >http://php.net/persistent-connections</link>.</para>
-            <important>
-                <para>Многие ibase функции позволяют не передавать в них идентификатор соединения
-                    (транзакции, подготовленного запроса). В этом случае эти функции используют
-                    идентификатор последнего установленного соединения (начатой транзакции). Я не
-                    рекомендую так делать, в особенности, если ваше веб приложение может
-                    использовать более одного подключения.</para>
-            </important>
+                    </para>
+                </section>
 
-            <para>Функция <function>ibase_query</function> выполняет SQL запрос и возвращает
-                идентификатор результата или <literal>true</literal>, если запрос не возвращает
-                набор данных. Эта функция помимо идентификатора подключения (транзакции) и текста
-                SQL запроса может принимать переменное число аргументов в качестве значений
-                параметров SQL запроса. В этом случае наш пример выглядит следующим образом: <programlisting language="php">
+                <section>
+                    <title>ibase_ для соединения с базой данных</title>
+
+                    <para>Вместо функции <function>ibase_connect</function> вы можете применять
+                        функцию <function>ibase_pconnect</function>, которая создаёт так называемые
+                        постоянные соединения. В этом случае при вызове
+                            <function>ibase_close</function> соединение не закрывается, все
+                        связанные с ней ресурсы освобождаются, транзакция по умолчанию
+                        подтверждается, другие виды транзакций откатываются. Такое соединение может
+                        быть использовано повторно в другой сессии, если параметры подключения
+                        совпадают. В некоторых случаях постоянные соединения могут значительно
+                        повысить эффективность вашего веб приложения. Это особенно заметно, если
+                        затраты на установку соединения велики. Они позволяют дочернему процессу на
+                        протяжении всего жизненного цикла использовать одно и то же соединение
+                        вместо того, чтобы создавать его при обработке каждой страницы, которая
+                        взаимодействует с SQL-сервером. Этим постоянные соединения напоминают работу
+                        с пулом соединений. Подробнее о постоянных соединениях вы может прочитать по
+                        ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/persistent-connections"
+                            >http://php.net/persistent-connections</link>.</para>
+                    <important>
+                        <para>Многие ibase функции позволяют не передавать в них идентификатор
+                            соединения (транзакции, подготовленного запроса). В этом случае эти
+                            функции используют идентификатор последнего установленного соединения
+                            (начатой транзакции). Я не рекомендую так делать, в особенности, если
+                            ваше веб приложение может использовать более одного подключения.</para>
+                    </important>
+
+                </section>
+
+                <section>
+                    <title>ibase_query</title>
+
+                    <para>Функция <function>ibase_query</function> выполняет SQL запрос и возвращает
+                        идентификатор результата или <literal>true</literal>, если запрос не
+                        возвращает набор данных. Эта функция помимо идентификатора подключения
+                        (транзакции) и текста SQL запроса может принимать переменное число
+                        аргументов в качестве значений параметров SQL запроса. В этом случае наш
+                        пример выглядит следующим образом: <programlisting language="php">
 <![CDATA[
 // …
 $sql = 'SELECT login, email FROM users WHERE id=?';
@@ -146,13 +185,13 @@ ibase_free_result($rc);
 // …
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Очень часто параметризованные запросы используются многократно с различным набором
-                значений параметров, в этом случае для повышения производительности рекомендуется
-                использовать подготовленные запросы. В этом случае сначала необходимо сначала
-                получить идентификатор подготовленного запроса с помощью функции
-                    <function>ibase_prepare</function>, а затем выполнять подготовленный запрос с
-                помощью функции <function>ibase_execute</function>. <programlisting language="php">
+                    </para>
+                    <para>Очень часто параметризованные запросы используются многократно с различным
+                        набором значений параметров, в этом случае для повышения производительности
+                        рекомендуется использовать подготовленные запросы. В этом случае сначала
+                        необходимо сначала получить идентификатор подготовленного запроса с помощью
+                        функции <function>ibase_prepare</function>, а затем выполнять подготовленный
+                        запрос с помощью функции <function>ibase_execute</function>. <programlisting language="php">
 <![CDATA[
 // …
 $sql = 'SELECT login, email FROM users WHERE id=?';
@@ -172,9 +211,9 @@ ibase_free_query($sth);
 // …
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Подготовленные запросы гораздо чаще используются, когда необходима массовая
-                заливка данных. <programlisting language="php">
+                    </para>
+                    <para>Подготовленные запросы гораздо чаще используются, когда необходима
+                        массовая заливка данных. <programlisting language="php">
 <![CDATA[
 // …
 $sql = 'INSERT INTO users(login, email) VALUES(?, ?)';
@@ -190,13 +229,13 @@ ibase_free_query($sth);
 // …
 ]]>                    
                 </programlisting>
-            </para>
-            <para>По последнему примеру можно увидеть один из недостатков этого расширения, а
-                именно, функции с переменным числом аргументов не очень удобны для параметризованных
-                запросов. Этот недостаток проявляется особенно ярко, если вы пытаетесь написать
-                универсальный класс для исполнения любых запросов. Гораздо удобнее было бы, если
-                параметры можно было передавать одним массивом. Конечно, существуют обходные пути
-                вроде вот такого: <programlisting language="php">
+                    </para>
+                    <para>По последнему примеру можно увидеть один из недостатков этого расширения,
+                        а именно, функции с переменным числом аргументов не очень удобны для
+                        параметризованных запросов. Этот недостаток проявляется особенно ярко, если
+                        вы пытаетесь написать универсальный класс для исполнения любых запросов.
+                        Гораздо удобнее было бы, если параметры можно было передавать одним
+                        массивом. Конечно, существуют обходные пути вроде вот такого: <programlisting language="php">
 <![CDATA[
 function fb_execute ($stmt, $data)
 {
@@ -208,49 +247,59 @@ function fb_execute ($stmt, $data)
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Расширение Firebird/Interbase не работает с именованными параметрами
-                запроса.</para>
-            <para>По умолчанию расширение Firebird/Interbase автоматически стартует транзакцию по
-                умолчанию после подключения. Транзакцию по умолчанию подтверждается при закрытии
-                соединения функцией <function>ibase_close</function>. Её можно подтвердить или
-                откатить раньше, если вызвать методы <function>ibase_commit</function> или
-                    <function>ibase_rollback</function> передав в них идентификатор соединения, или
-                не передавая ни чего (если вы используете единственное соединение). </para>
+                    </para>
+                    <para>Расширение Firebird/Interbase не работает с именованными параметрами
+                        запроса.</para>
+                </section>
 
-            <para>Если вам необходимо явное управление транзакциями, то необходимо стартовать
-                транзакцию с помощью функции <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/function.ibase-trans.php"
-                    >ibase_trans</link>. Если параметры транзакции не указаны, то транзакция будет
-                начата с параметрами <code>IBASE_WRITE | IBASE_CONCURRENCY | IBASE_WAIT</code>.
-                Описание констант для задания параметров транзакции можно найти по ссылке <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/ibase.constants.php"
-                    >php.net/manual/ru/ibase.constants.php</link>. Транзакцию необходимо завершать с
-                помощью функции <function>ibase_commit</function> или
-                    <function>ibase_rollback</function> передавая в эти функции идентификатор
-                транзакции. Если вместо этих функций использовать функции
-                    <function>ibase_commit_ret</function> или
-                    <function>ibase_rollback_ret</function>, то транзакция будет завершаться как
-                    <literal>COMMIT RETAIN</literal> или <literal>ROLLBACK RETAIN</literal>.</para>
+                <section>
+                    <title>ibase_trans</title>
 
-            <note>
-                <para>Умолчательные параметры транзакции подходят для большинства случаев. Дело в
-                    том что соединение с базой данных, как и все связанные с ним ресурсы существуют
-                    максимум до конца работы PHP скрипта. Даже если вы используете постоянные
-                    соединения, то все связанные ресурсы будут освобождены после вызова функции
-                        <function>ibase_close</function>. Несмотря на сказанное, настоятельно
-                    рекомендую завершать все выделенные ресурсы явно, вызывая соответствующие ibase_
-                    функции.</para>
-                <para>Пользоваться функциями <function>ibase_commit_ret</function> и
-                        <function>ibase_rollback_ret</function> настоятельно не рекомендую, так как
-                    это не имеет смысла. <literal>COMMIT RETAIN</literal> и <literal>ROLLBACK
-                        RETAIN</literal> были введены для того, чтобы в настольных приложениях
-                    сохранять открытыми курсоры при завершении транзакции.</para>
-            </note>
+                    <para>По умолчанию расширение Firebird/Interbase автоматически стартует
+                        транзакцию по умолчанию после подключения. Транзакцию по умолчанию
+                        подтверждается при закрытии соединения функцией
+                            <function>ibase_close</function>. Её можно подтвердить или откатить
+                        раньше, если вызвать методы <function>ibase_commit</function> или
+                            <function>ibase_rollback</function> передав в них идентификатор
+                        соединения, или не передавая ни чего (если вы используете единственное
+                        соединение). </para>
 
-            <para>
-                <programlisting language="php">
+                    <para>Если вам необходимо явное управление транзакциями, то необходимо
+                        стартовать транзакцию с помощью функции <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/function.ibase-trans.php"
+                            >ibase_trans</link>. Если параметры транзакции не указаны, то транзакция
+                        будет начата с параметрами <code>IBASE_WRITE | IBASE_CONCURRENCY |
+                            IBASE_WAIT</code>. Описание констант для задания параметров транзакции
+                        можно найти по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/ibase.constants.php"
+                            >php.net/manual/ru/ibase.constants.php</link>. Транзакцию необходимо
+                        завершать с помощью функции <function>ibase_commit</function> или
+                            <function>ibase_rollback</function> передавая в эти функции
+                        идентификатор транзакции. Если вместо этих функций использовать функции
+                            <function>ibase_commit_ret</function> или
+                            <function>ibase_rollback_ret</function>, то транзакция будет завершаться
+                        как <literal>COMMIT RETAIN</literal> или <literal>ROLLBACK
+                        RETAIN</literal>.</para>
+
+                    <note>
+                        <para>Умолчательные параметры транзакции подходят для большинства случаев.
+                            Дело в том что соединение с базой данных, как и все связанные с ним
+                            ресурсы существуют максимум до конца работы PHP скрипта. Даже если вы
+                            используете постоянные соединения, то все связанные ресурсы будут
+                            освобождены после вызова функции <function>ibase_close</function>.
+                            Несмотря на сказанное, настоятельно рекомендую завершать все выделенные
+                            ресурсы явно, вызывая соответствующие ibase_ функции.</para>
+                        <para>Пользоваться функциями <function>ibase_commit_ret</function> и
+                                <function>ibase_rollback_ret</function> настоятельно не рекомендую,
+                            так как это не имеет смысла. <literal>COMMIT RETAIN</literal> и
+                                <literal>ROLLBACK RETAIN</literal> были введены для того, чтобы в
+                            настольных приложениях сохранять открытыми курсоры при завершении
+                            транзакции.</para>
+                    </note>
+
+                    <para>
+                        <programlisting language="php">
 <![CDATA[
 $sql = 'INSERT INTO users(login, email) VALUES(?, ?)';
 // Подготавливаем запрос
@@ -275,69 +324,79 @@ catch(\Exception $e) {
 ibase_free_query($sth);
 ]]>                        
                     </programlisting>
-            </para>
-            <important>
-                <para>ibase функции не бросают исключение в случае возникновения ошибки. Часть
-                    функций возвращают <literal>false</literal>, если произошла ошибка. Обращаю ваше
-                    внимание, что результат сравнивать с <literal>false</literal> необходимо строгим
-                    оператором сравнения <function>===</function>. Потенциально ошибка может
-                    возникнуть поле вызова любой ibase функции. Текст ошибки можно узнать с помощью
-                    функции <function>ibase_errmsg</function>. Код ошибки можно получить с помощью
-                    функции <function>ibase_errcode</function>.</para>
-            </important>
+                    </para>
+                    <important>
+                        <para>ibase функции не бросают исключение в случае возникновения ошибки.
+                            Часть функций возвращают <literal>false</literal>, если произошла
+                            ошибка. Обращаю ваше внимание, что результат сравнивать с
+                                <literal>false</literal> необходимо строгим оператором сравнения
+                                <function>===</function>. Потенциально ошибка может возникнуть поле
+                            вызова любой ibase функции. Текст ошибки можно узнать с помощью функции
+                                <function>ibase_errmsg</function>. Код ошибки можно получить с
+                            помощью функции <function>ibase_errcode</function>.</para>
+                    </important>
+                </section>
 
-            <para>Расширение Firebird/Interbase позволяет взаимодействовать с сервером Firebird не
-                только посредством SQL запросов, но и используя Service API (см. функции
-                    <function>ibase_service_attach</function>,
-                    <function>ibase_service_detach</function>, ibase_server_info,
-                    <function>ibase_maintain_db</function>, <function>ibase_db_info</function>,
-                    <function>ibase_backup</function>, <function>ibase_restore</function>). Эти
-                функции позволяют получить информацию о сервере Firebird, сделать резервное
-                копирование, восстановление или получить статистику. Эта функциональность требуется
-                в основном для администрирования БД, поэтому мы не будем рассматривать её
-                подробно.</para>
+                <section>
+                    <title>Функции Service API</title>
 
-            <para>Расширение Firebird/Interbase так же поддерживает работу с событиями Firebird (см.
-                функции <function>ibase_set_event_handler</function>,
-                    <function>ibase_free_event_handler</function>,
-                    <function>ibase_wait_event</function>).</para>
-        </section>
-        <section>
-            <title>Обзор расширения PDO (драйвер Firebird)</title>
+                    <para>Расширение Firebird/Interbase позволяет взаимодействовать с сервером
+                        Firebird не только посредством SQL запросов, но и используя Service API (см.
+                        функции <function>ibase_service_attach</function>,
+                            <function>ibase_service_detach</function>, ibase_server_info,
+                            <function>ibase_maintain_db</function>,
+                            <function>ibase_db_info</function>, <function>ibase_backup</function>,
+                            <function>ibase_restore</function>). Эти функции позволяют получить
+                        информацию о сервере Firebird, сделать резервное копирование, восстановление
+                        или получить статистику. Эта функциональность требуется в основном для
+                        администрирования БД, поэтому мы не будем рассматривать её подробно.</para>
+                </section>
 
-            <para>Расширение PDO предоставляет обобщённый интерфейс для доступа к различным типам
-                БД. Каждый драйвер базы данных, в котором реализован этот интерфейс, может
-                представить специфичный для базы данных функционал в виде стандартных функций
-                расширения.</para>
-            <para>PDO и все основные драйверы внедрены в PHP как загружаемые модули. Чтобы их
-                использовать, требуется их просто включить, отредактировав файл
-                    <filename>php.ini</filename> следующим образом:
-                <programlisting language="ini">
+                <section>
+                    <title>Функции для работы с событиями</title>
+
+                    <para>Расширение Firebird/Interbase так же поддерживает работу с событиями
+                        Firebird (см. функции <function>ibase_set_event_handler</function>,
+                            <function>ibase_free_event_handler</function>,
+                            <function>ibase_wait_event</function>).</para>
+                </section>
+            </section>
+            <section>
+                <title>Обзор расширения PDO (драйвер Firebird)</title>
+
+                <para>Расширение PDO предоставляет обобщённый интерфейс для доступа к различным
+                    типам БД. Каждый драйвер базы данных, в котором реализован этот интерфейс, может
+                    представить специфичный для базы данных функционал в виде стандартных функций
+                    расширения.</para>
+                <para>PDO и все основные драйверы внедрены в PHP как загружаемые модули. Чтобы их
+                    использовать, требуется их просто включить, отредактировав файл
+                        <filename>php.ini</filename> следующим образом:
+                    <programlisting language="ini">
 extension=php_pdo.dll                    
                 </programlisting>
-            </para>
+                </para>
 
-            <note>
-                <para>Этот шаг необязателен для версий PHP 5.3 и выше, так как для работы PDO больше
-                    не требуются DLL.</para>
-            </note>
+                <note>
+                    <para>Этот шаг необязателен для версий PHP 5.3 и выше, так как для работы PDO
+                        больше не требуются DLL.</para>
+                </note>
 
-            <para>Далее нужно выбрать DLL конкретных баз данных и либо загружать их во время
-                выполнения функцией <function>dl()</function>, либо включить их в
-                    <filename>php.ini</filename> после <filename>php_pdo.dll</filename>. Например:
-                <programlisting language="ini">
+                <section>
+                    <title>Специфичные для Firebird библиотеки</title>
+
+                    <para>Далее нужно выбрать DLL конкретных баз данных и либо загружать их во время
+                        выполнения функцией <function>dl()</function>, либо включить их в
+                            <filename>php.ini</filename> после <filename>php_pdo.dll</filename>.
+                        Например:
+                        <programlisting language="ini">
 extension=php_pdo.dll
 extension=php_pdo_firebird.dll                   
                 </programlisting>
-                Эти DLL должны лежать в директории <filename>extension_dir</filename>. </para>
-            <para>Драйвер pdo_firebird требует, чтобы у вас была установлена клиентская библиотека
-                    <filename>fbclient.dll</filename>/<filename>gds32.dll</filename> (для UNIX
-                подобных систем <filename>fbclient.so</filename>) соответствующей
-                разрядности.</para>
-            <para>В Linux это расширение в зависимости от дистрибутива можно установить одной из
-                следующих команд (необходимо уточнить поддерживаемые версии, возможно, необходимо
-                подключить сторонний репозиторий):
-                <screen>
+                        Эти DLL должны лежать в директории <filename>extension_dir</filename>. </para>
+                    <para>В Linux это расширение в зависимости от дистрибутива можно установить
+                        одной из следующих команд (необходимо уточнить поддерживаемые версии,
+                        возможно, необходимо подключить сторонний репозиторий):
+                        <screen>
 apt-get install php5-firebird
 
 rpm –ihv php5-firebird
@@ -346,23 +405,35 @@ yum install php70w-firebird
 
 zypper install php5-firebird                    
                 </screen>
-            </para>
-            <para> PDO использует объектно-ориентированный подход к написанию программ. Какой именно
-                драйвер будет использоваться в PDO, зависит от строки подключения, называемой так же
-                DSN (Data Source Name). DSN состоит из префикса, который и определяет тип базы
-                данных, и набора параметров в виде
-                    <replaceable>&lt;ключ&gt;</replaceable>=<replaceable>&lt;значение&gt;</replaceable>,
-                разделённых точкой с запятой «;». Допустимый набор параметров зависит от типа базы
-                данных. Для работы с Firebird строка подключения должна начинаться с префикса
-                    <emphasis role="italic">firebird:</emphasis> и иметь вид, описанный в
-                документации в разделе <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/ref.pdo-firebird.connection.php"
-                    >PDO_FIREBIRD DSN</link>. </para>
-            <para>Соединения устанавливаются автоматически при создании объекта PDO от его базового
-                класса. Конструктор класса принимает аргументы для задания источника данных (DSN), а
-                также необязательные имя пользователя и пароль (если есть). Четвёртым аргументом
-                можно передать массив специфичных для драйвера настроек подключения в формате
-                    <replaceable>ключ</replaceable>=&gt;<replaceable>значение</replaceable>. <programlisting language="php">
+                    </para>
+                </section>
+
+                <section>
+                    <title>Стиль программирования</title>
+
+                    <para> PDO использует объектно-ориентированный подход к написанию программ.
+                        Какой именно драйвер будет использоваться в PDO, зависит от строки
+                        подключения, называемой так же DSN (Data Source Name). DSN состоит из
+                        префикса, который и определяет тип базы данных, и набора параметров в виде
+                            <replaceable>&lt;ключ&gt;</replaceable>=<replaceable>&lt;значение&gt;</replaceable>,
+                        разделённых точкой с запятой «;». Допустимый набор параметров зависит от
+                        типа базы данных. Для работы с Firebird строка подключения должна начинаться
+                        с префикса <emphasis role="italic">firebird:</emphasis> и иметь вид,
+                        описанный в документации в разделе <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/ref.pdo-firebird.connection.php"
+                            >PDO_FIREBIRD DSN</link>. </para>
+                </section>
+
+                <section>
+                    <title>Соединение с базой данных</title>
+
+                    <para>Соединения устанавливаются автоматически при создании объекта PDO от его
+                        базового класса. Конструктор класса принимает аргументы для задания
+                        источника данных (DSN), а также необязательные имя пользователя и пароль
+                        (если есть). Четвёртым аргументом можно передать массив специфичных для
+                        драйвера настроек подключения в формате
+                            <replaceable>ключ</replaceable>=&gt;<replaceable>значение</replaceable>. <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -384,56 +455,83 @@ try {
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Установив свойство <constant>\PDO::ATTR_ERRMODE</constant> в значение
-                    <constant>\PDO::ERRMODE_EXCEPTION</constant>, мы установили режим, при котором
-                любая ошибка, в том числе и ошибка при подключении к БД, будет возбуждать исключение
-                    <classname>\PDOException</classname>. Работать в таком режиме гораздо удобнее,
-                чем проверять наличие ошибки после каждого вызова ibase_ функций.</para>
-            <note>
-                <para> Для того чтобы PDO использовал <link
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                        xlink:href="http://php.net/persistent-connections">постоянные
-                        соединения</link> необходимо в конструктор PDO в массиве свойств передать
-                        <constant>PDO::ATTR_PERSISTENT</constant> =&gt; <literal>true</literal>.
-                </para>
-            </note>
+                    </para>
+                    <note>
+                        <title>Постоянные соедиенения</title>
 
-            <para>Метод <function>query</function> выполняет SQL запрос и возвращает результирующий
-                набор в виде объекта <classname>\PDOStatement</classname>. В этот метод помимо SQL
-                запросы вы можете передать способ возвращения значений при фетче. Это может быть
-                столбец, экземпляр заданного класса, объект. Различные способы вызова вы можете
-                посмотреть по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.query.php"
-                    >http://php.net/manual/ru/pdo.query.php</link>.</para>
-            <para>Если необходимо выполнить SQL запрос, не возвращающий набор данных, то вы можете
-                воспользоваться методом <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.exec.php">exec</link>, который
-                возвращает количество задействованных строк. Этот метод не обеспечивает выполнение
-                подготовленных запросов.</para>
-            <para>Если в запросе используются параметры, то необходимо пользоваться подготовленными
-                запросами. В этом случае вместо метода query необходимо вызвать метод <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.prepare.php">prepare</link>. Этот метод
-                возвращает объект класса <classname>\PDOStatement</classname>, который инкапсулирует
-                в себе методы для работы с подготовленными запросами и их результатами. Для
-                выполнения запроса необходимо вызвать метод <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.execute.php">execute</link>,
-                который может принимать в качестве аргумента массив с именованными или
-                неименованными параметрами. Результат выполнения селективного запроса можно получить
-                с помощью методов <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.fetch.php">fetch</link>, <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.fetchall.php">fetchAll</link>,
-                    <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.fetchcolumn.php"
-                    >fetchColumn</link>, <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.fetchobject.php"
-                    >fetchObject</link>. Методы <methodname>fetch</methodname> и
-                    <methodname>fetchAll</methodname> могут возвращать результаты в различном виде:
-                ассоциативный массив, объект или экземпляр определённого класса. Последнее довольно
-                часто используется в MVC паттерне при работе с моделями. <programlisting language="php">
+                        <para> Для того чтобы PDO использовал <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/persistent-connections">постоянные
+                                соединения</link> необходимо в конструктор PDO в массиве свойств
+                            передать <constant>PDO::ATTR_PERSISTENT</constant> =&gt;
+                                <literal>true</literal>. </para>
+                    </note>
+                </section>
+
+                <section>
+                    <title>Обработка исключений</title>
+
+                    <para>Установив свойство <constant>\PDO::ATTR_ERRMODE</constant> в значение
+                            <constant>\PDO::ERRMODE_EXCEPTION</constant>, мы установили режим, при
+                        котором любая ошибка, в том числе и ошибка при подключении к БД, будет
+                        возбуждать исключение <classname>\PDOException</classname>. Работать в таком
+                        режиме гораздо удобнее, чем проверять наличие ошибки после каждого вызова
+                        ibase_ функций.</para>
+                </section>
+
+                <section>
+                    <title>Запросы</title>
+
+                    <para>Метод <function>query</function> выполняет SQL запрос и возвращает
+                        результирующий набор в виде объекта <classname>\PDOStatement</classname>. В
+                        этот метод помимо SQL запросы вы можете передать способ возвращения значений
+                        при фетче. Это может быть столбец, экземпляр заданного класса, объект.
+                        Различные способы вызова вы можете посмотреть по ссылке <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/pdo.query.php"
+                            >http://php.net/manual/ru/pdo.query.php</link>.</para>
+
+                    <section>
+                        <title>Запросы не возвращающие наборы данных</title>
+
+                        <para>Если необходимо выполнить SQL запрос, не возвращающий набор данных, то
+                            вы можете воспользоваться методом <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdo.exec.php">exec</link>,
+                            который возвращает количество задействованных строк. Этот метод не
+                            обеспечивает выполнение подготовленных запросов.</para>
+                    </section>
+
+                    <section>
+                        <title>Параметризированные запросы</title>
+
+                        <para>Если в запросе используются параметры, то необходимо пользоваться
+                            подготовленными запросами. В этом случае вместо метода query необходимо
+                            вызвать метод <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdo.prepare.php"
+                            >prepare</link>. Этот метод возвращает объект класса
+                                <classname>\PDOStatement</classname>, который инкапсулирует в себе
+                            методы для работы с подготовленными запросами и их результатами. Для
+                            выполнения запроса необходимо вызвать метод <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdostatement.execute.php"
+                                >execute</link>, который может принимать в качестве аргумента массив
+                            с именованными или неименованными параметрами. Результат выполнения
+                            селективного запроса можно получить с помощью методов <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdostatement.fetch.php"
+                                >fetch</link>, <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdostatement.fetchall.php"
+                                >fetchAll</link>, <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdostatement.fetchcolumn.php"
+                                >fetchColumn</link>, <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="http://php.net/manual/ru/pdostatement.fetchobject.php"
+                                >fetchObject</link>. Методы <methodname>fetch</methodname> и
+                                <methodname>fetchAll</methodname> могут возвращать результаты в
+                            различном виде: ассоциативный массив, объект или экземпляр определённого
+                            класса. Последнее довольно часто используется в MVC паттерне при работе
+                            с моделями. <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -459,8 +557,8 @@ try {
 }
 ]]>                 
                 </programlisting>
-            </para>
-            <para>Пример использования именованных параметров. <programlisting language="php">
+                        </para>
+                        <para>Пример использования именованных параметров. <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -485,29 +583,37 @@ try {
 }
 ]]>                 
                 </programlisting>
-            </para>
+                        </para>
 
-            <note>
-                <para>Для поддержки именованных параметров PDO производит предобработку запроса и
-                    заменяет параметры вида :paramname на «?», сохраняя при этом массив соответствия
-                    между именем параметра и номерами его позиций в запросе. По этой причине
-                    оператор <database>EXECUTE BLOCK</database> не будет работать, если внутри него
-                    используются переменные маркированные двоеточием. На данный момент нет никакой
-                    возможности заставить работать PDO с оператором <database>EXECUTE
-                        BLOCK</database> иначе, например, задать альтернативный префикс параметров,
-                    как это сделано в некоторых компонентах доступа.</para>
-            </note>
+                        <note>
+                            <para>Для поддержки именованных параметров PDO производит предобработку
+                                запроса и заменяет параметры вида :paramname на «?», сохраняя при
+                                этом массив соответствия между именем параметра и номерами его
+                                позиций в запросе. По этой причине оператор <database>EXECUTE
+                                    BLOCK</database> не будет работать, если внутри него
+                                используются переменные маркированные двоеточием. На данный момент
+                                нет никакой возможности заставить работать PDO с оператором
+                                    <database>EXECUTE BLOCK</database> иначе, например, задать
+                                альтернативный префикс параметров, как это сделано в некоторых
+                                компонентах доступа.</para>
+                        </note>
 
-            <para>Передать параметры в запрос можно и другим способом, используя так называемое
-                связывание. Метод <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.bindvalue.php"
-                    >bindValue</link> привязывает значение к именованному или неименованному
-                параметру. Метод <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdostatement.bindparam.php"
-                    >bindParam</link> привязывает переменную к именованному или неименованному
-                параметру. Последний метод особенно полезен для хранимых процедур, которые
-                возвращают значение через OUT или IN OUT параметр (в Firebird механизм возврата
-                значений из хранимых процедур другой). <programlisting language="php">
+                        <section>
+                            <title>Связвание</title>
+
+                            <para>Передать параметры в запрос можно и другим способом, используя так
+                                называемое связывание. Метод <link
+                                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                                    xlink:href="http://php.net/manual/ru/pdostatement.bindvalue.php"
+                                    >bindValue</link> привязывает значение к именованному или
+                                неименованному параметру. Метод <link
+                                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                                    xlink:href="http://php.net/manual/ru/pdostatement.bindparam.php"
+                                    >bindParam</link> привязывает переменную к именованному или
+                                неименованному параметру. Последний метод особенно полезен для
+                                хранимых процедур, которые возвращают значение через OUT или IN OUT
+                                параметр (в Firebird механизм возврата значений из хранимых процедур
+                                другой). <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -535,14 +641,14 @@ try {
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <important>
-                <para>Нумерация неименованных параметров в методах
-                        <methodname>bindParam</methodname> и <methodname>bindValue</methodname>
-                    начинается с 1.</para>
-            </important>
-            <para>
-                <programlisting language="php">
+                            </para>
+                            <important>
+                                <para>Нумерация неименованных параметров в методах
+                                        <methodname>bindParam</methodname> и
+                                        <methodname>bindValue</methodname> начинается с 1.</para>
+                            </important>
+                            <para>
+                                <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -570,22 +676,30 @@ try {
 }
 ]]>                        
                     </programlisting>
-            </para>
-            <para>По умолчанию PDO автоматически подтверждает транзакцию после выполнения каждого
-                SQL запроса, если вам необходимо явное управление транзакциями, то необходимо
-                стартовать транзакцию с помощью метода <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.begintransaction.php"
-                        ><methodname>\PDO::beginTransaction</methodname></link>. По умолчанию
-                транзакция стартует с параметрами <code>CONCURRENCY | WAIT | READ_WRITE</code>.
-                Завершить транзакцию можно методом <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.commit.php"
-                        ><methodname>\PDO::commit</methodname></link> или <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://php.net/manual/ru/pdo.commit.php"
-                        ><methodname>\PDO::rollback</methodname></link>.</para>
-            <para>
-                <programlisting language="php">
+                            </para>
+                        </section>
+                    </section>
+                </section>
+
+                <section>
+                    <title>Транзакции</title>
+
+                    <para>По умолчанию PDO автоматически подтверждает транзакцию после выполнения
+                        каждого SQL запроса, если вам необходимо явное управление транзакциями, то
+                        необходимо стартовать транзакцию с помощью метода <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/pdo.begintransaction.php"
+                                ><methodname>\PDO::beginTransaction</methodname></link>. По
+                        умолчанию транзакция стартует с параметрами <code>CONCURRENCY | WAIT |
+                            READ_WRITE</code>. Завершить транзакцию можно методом <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/pdo.commit.php"
+                                ><methodname>\PDO::commit</methodname></link> или <link
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="http://php.net/manual/ru/pdo.commit.php"
+                                ><methodname>\PDO::rollback</methodname></link>.</para>
+                    <para>
+                        <programlisting language="php">
 <![CDATA[
 $dsn = 'firebird:dbname=localhost:example;charset=utf8;';
 $username = 'SYSDBA';
@@ -622,10 +736,10 @@ try {
 }
 ]]>                        
                     </programlisting>
-            </para>
-            <para>К сожалению метод <methodname>beginTransaction</methodname> не предоставляет
-                возможности изменить параметры транзакции, однако вы можете сделать хитрый трюк,
-                задав параметры транзакции оператором SET TRANSACTION. <programlisting language="php">
+                    </para>
+                    <para>К сожалению метод <methodname>beginTransaction</methodname> не
+                        предоставляет возможности изменить параметры транзакции, однако вы можете
+                        сделать хитрый трюк, задав параметры транзакции оператором SET TRANSACTION. <programlisting language="php">
 <![CDATA[
 $dbh = new \PDO($dsn, $username, $password);
 $dbh->setAttribute(\PDO::ATTR_AUTOCOMMIT, false);
@@ -636,7 +750,13 @@ $dbh->exec("COMMIT");
 $dbh->setAttribute(\PDO::ATTR_AUTOCOMMIT, true);
 ]]>                    
                 </programlisting>
-            </para>
+                    </para>
+                </section>
+            </section>
+        </section>
+        <section>
+            <title>Сравнение драйверов</title>
+
             <para>Ниже представлена сводная таблица возможностей различных драйверов для работы с
                 Firebird. <table frame="all">
                     <title>Сравнение расширений для работы с Firebird</title>
@@ -722,7 +842,7 @@ $dbh->setAttribute(\PDO::ATTR_AUTOCOMMIT, true);
             фреймворка.</para>
     </section>
     <section>
-        <title>Установка Laravel и создание проекта </title>
+        <title>Установка Laravel</title>
 
         <para>Прежде чем устанавливать Laravel вам необходимо убедится, что ваше системное окружение
             соответствует требованиям. <itemizedlist>
@@ -745,16 +865,20 @@ $dbh->setAttribute(\PDO::ATTR_AUTOCOMMIT, true);
                     <para>Tokenizer (расширение для PHP)</para>
                 </listitem>
             </itemizedlist></para>
-        <para>Laravel использует <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://getcomposer.org">Composer</link> для управления зависимостями.
-            Поэтому сначала установите Composer, а затем Laravel.</para>
-        <para>Самый простой способ установить composer под Windows — это скачать и запустить
-            инсталлятор <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://getcomposer.org/Composer-Setup.exe">Composer-Setup.exe</link>.
-            Инсталлятор установит Composer и настроит PATH, так что вы можете вызвать Composer из
-            любой директории в командной строке.</para>
-        <para>Если необходимо установить Composer вручную, то необходимо запустить скрипт
-            <programlisting>
+
+        <section>
+            <title>Установка composer</title>
+
+            <para>Laravel использует <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://getcomposer.org">Composer</link> для управления
+                зависимостями. Поэтому сначала установите Composer, а затем Laravel.</para>
+            <para>Самый простой способ установить composer под Windows — это скачать и запустить
+                инсталлятор <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://getcomposer.org/Composer-Setup.exe"
+                    >Composer-Setup.exe</link>. Инсталлятор установит Composer и настроит PATH, так
+                что вы можете вызвать Composer из любой директории в командной строке.</para>
+            <para>Если необходимо установить Composer вручную, то необходимо запустить скрипт
+                <programlisting>
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php -r "if (hash_file('SHA384', 'composer-setup.php') === 
 'aa96f26c2b67226a324c27919f1eb05f21c248b987e6195cad9690d5c1ff713d53020a02
@@ -763,40 +887,51 @@ ac8c217dbf90a7eacc9d141d') { echo 'Installer verified'; } else { echo
 php composer-setup.php
 php -r "unlink('composer-setup.php');"                    
                 </programlisting>
-        </para>
+            </para>
 
-        <para>Этот скрипт осуществляет следующие действия:<itemizedlist>
-                <listitem>
-                    <para>Скачивает инсталлятор в текущую директорию</para>
-                </listitem>
-                <listitem>
-                    <para>Проверяет инсталлятор с помощью SHA-384</para>
-                </listitem>
-                <listitem>
-                    <para>Запускает скрипт инсталляции</para>
-                </listitem>
-                <listitem>
-                    <para>Удаляет скрипт инсталляции</para>
-                </listitem>
-            </itemizedlist></para>
-        <para>После запуска этого скрипта у вас появится файл <filename>composer.phar</filename>
-            (phar – это архив) — по сути это PHP скрипт, который может принимать несколько команд
-            (install, update, ...) и умеет скачивать и распаковывать библиотеки. Если вы работаете
-            под windows, то вы можете облегчить себе задачу, создав файл
-                <filename>composer.bat</filename> и поместив его в PATH. Для этого необходимо
-            выполнить команду
-            <programlisting>
+            <para>Этот скрипт осуществляет следующие действия:<itemizedlist>
+                    <listitem>
+                        <para>Скачивает инсталлятор в текущую директорию</para>
+                    </listitem>
+                    <listitem>
+                        <para>Проверяет инсталлятор с помощью SHA-384</para>
+                    </listitem>
+                    <listitem>
+                        <para>Запускает скрипт инсталляции</para>
+                    </listitem>
+                    <listitem>
+                        <para>Удаляет скрипт инсталляции</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>После запуска этого скрипта у вас появится файл <filename>composer.phar</filename>
+                (phar – это архив) — по сути это PHP скрипт, который может принимать несколько
+                команд (install, update, ...) и умеет скачивать и распаковывать библиотеки. Если вы
+                работаете под windows, то вы можете облегчить себе задачу, создав файл
+                    <filename>composer.bat</filename> и поместив его в PATH. Для этого необходимо
+                выполнить команду
+                <programlisting>
 echo @php "%~dp0composer.phar" %*>composer.bat                    
                 </programlisting>Подробнее
-            об установке composer можно ознакомится по адресу <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://getcomposer.org/doc/00-intro.md"
-                >https://getcomposer.org/doc/00-intro.md</link>.</para>
-        <para>Теперь устанавливаем сам Laravel
-            <programlisting>
+                об установке composer можно ознакомится по адресу <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://getcomposer.org/doc/00-intro.md"
+                    >https://getcomposer.org/doc/00-intro.md</link>.</para>
+        </section>
+
+        <section>
+            <title>Установка Laravel</title>
+
+            <para>Теперь устанавливаем сам Laravel
+                <programlisting>
 composer global require "laravel/installer"                    
                 </programlisting>
-        </para>
+            </para>
+        </section>
+    </section>
+
+    <section>
+        <title>Создание проекта</title>
+
         <para>Если установка прошла успешно, то приступаем к созданию каркаса проекта.
             <programlisting>
 laravel new fbexample
@@ -805,50 +940,55 @@ laravel new fbexample
         <para>Ждём завершения, после чего у нас будет создан каркас проекта. Описание структуры
             каталогов можно ознакомится по адресу <link xmlns:xlink="http://www.w3.org/1999/xlink"
                 xlink:href="http://laravel.su/docs/5.2/structure"
-                >http://laravel.su/docs/5.2/structure</link> по Laravel. Нас будут интересовать
-            следующие каталоги: <itemizedlist>
-                <listitem>
-                    <para><filename>app</filename> – основной каталог нашего приложения. В корне
-                        каталога будут размещены модели. В подкаталоге Http находится все, что
-                        касается работы с браузером. В подкаталоге
-                            <filename>Http/Controllers</filename> — наши контроллеры.</para>
-                </listitem>
-                <listitem>
-                    <para><filename>config</filename> – каталог файлов конфигурации. Подробней о
-                        конфигурировании будет написано ниже.</para>
-                </listitem>
-                <listitem>
-                    <para><filename>public</filename> – корневой каталог web приложения (
-                        DocumentRoot ). Содержит статические файлы - css, js, изображения и
-                        т.п.</para>
-                </listitem>
-                <listitem>
-                    <para><filename>resources</filename> - здесь находятся шаблоны (Views), файлы
-                        локализации и, если таковые имеются, рабочие файлы LESS, SASS и
-                        js-приложения на фреймворках типа ReactJS, AngularJS или Ember, которые
-                        потом собираются внешним инструментом в папку
-                        <filename>public</filename>.</para>
-                    <para>В корне папки нашего приложения есть файл
-                            <filename>composer.json</filename>, который описывает, какие пакеты,
-                        потребуются нашему приложению помимо тех, что уже есть в Laravel. Нам
-                        потребуется два таких пакета: <link
-                            xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="https://github.com/zofe/rapyd-laravel"
-                            >zofe/rapyd-laravel</link> - для быстрого построения интерфейса с
-                        сетками (grids) и диалогами редактирования, и <link
-                            xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="https://github.com/sim1984/laravel-firebird"
-                            >sim1984/laravel-firebird</link> - расширение для работы с СУБД
-                        Firebird. Пакет <package>sim1984/laravel-firebird</package> является форком
-                        пакета «<link xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="https://github.com/jacquestvanzuydam/laravel-firebird"
-                            >jacquestvanzuydam/laravel-firebird</link>» с расширенными возможностями
-                        поэтому его установка несколько отличается. Позже планируется перенос
-                        некоторых возможностей моего пакета в официальный. Не забудьте установить
-                        параметр minimum-stability равный dev, так как пакет не является стабильным,
-                        а так же добавить ссылки на репозиторий.</para>
-                    <para>
-                        <programlisting language="javascript">
+                >http://laravel.su/docs/5.2/structure</link> по Laravel.</para>
+
+        <section>
+            <title>Структура нашего проекта</title>
+
+            <para>Нас будут интересовать следующие каталоги: <itemizedlist>
+                    <listitem>
+                        <para><filename>app</filename> – основной каталог нашего приложения. В корне
+                            каталога будут размещены модели. В подкаталоге Http находится все, что
+                            касается работы с браузером. В подкаталоге
+                                <filename>Http/Controllers</filename> — наши контроллеры.</para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>config</filename> – каталог файлов конфигурации. Подробней о
+                            конфигурировании будет написано ниже.</para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>public</filename> – корневой каталог web приложения (
+                            DocumentRoot ). Содержит статические файлы - css, js, изображения и
+                            т.п.</para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>resources</filename> - здесь находятся шаблоны (Views),
+                            файлы локализации и, если таковые имеются, рабочие файлы LESS, SASS и
+                            js-приложения на фреймворках типа ReactJS, AngularJS или Ember, которые
+                            потом собираются внешним инструментом в папку
+                                <filename>public</filename>.</para>
+                        <para>В корне папки нашего приложения есть файл
+                                <filename>composer.json</filename>, который описывает, какие пакеты,
+                            потребуются нашему приложению помимо тех, что уже есть в Laravel. Нам
+                            потребуется два таких пакета: <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="https://github.com/zofe/rapyd-laravel"
+                                >zofe/rapyd-laravel</link> - для быстрого построения интерфейса с
+                            сетками (grids) и диалогами редактирования, и <link
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="https://github.com/sim1984/laravel-firebird"
+                                >sim1984/laravel-firebird</link> - расширение для работы с СУБД
+                            Firebird. Пакет <package>sim1984/laravel-firebird</package> является
+                            форком пакета «<link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                xlink:href="https://github.com/jacquestvanzuydam/laravel-firebird"
+                                >jacquestvanzuydam/laravel-firebird</link>» с расширенными
+                            возможностями поэтому его установка несколько отличается. Позже
+                            планируется перенос некоторых возможностей моего пакета в официальный.
+                            Не забудьте установить параметр minimum-stability равный dev, так как
+                            пакет не является стабильным, а так же добавить ссылки на
+                            репозиторий.</para>
+                        <para>
+                            <programlisting language="javascript">
    "repositories": [
         {
             "type": "package",
@@ -867,37 +1007,43 @@ laravel new fbexample
         }
     ],                                 
                                 </programlisting>
-                    </para>
-                    <para>В секции require добавьте требуемые пакеты следующим образом:
-                        <programlisting language="javascript">
+                        </para>
+                        <para>В секции require добавьте требуемые пакеты следующим образом:
+                            <programlisting language="javascript">
         "zofe/rapyd": "2.2.*",
         "sim1984/laravel-firebird": "dev-master"                                 
                                 </programlisting>
-                    </para>
-                </listitem>
-            </itemizedlist></para>
-        <para>Теперь можно запустить обновление пакетов командой (запускать надо в корне веб
-            приложения)
-            <programlisting>
+                        </para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Теперь можно запустить обновление пакетов командой (запускать надо в корне веб
+                приложения)
+                <programlisting>
 composer update                    
                 </programlisting>
-        </para>
-        <para>После выполнения этой команды новые пакеты будут установлены в ваше приложение. Теперь
-            можно приступить к настройке. Для начала выполним команду
-            <programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Конфигурация</title>
+
+            <para>После выполнения этой команды новые пакеты будут установлены в ваше приложение.
+                Теперь можно приступить к настройке. Для начала выполним команду
+                <programlisting>
 php artisan vendor:publish                    
                 </programlisting>
-            которая создаст дополнительные файлы конфигурации для пакета
-                <package>zofe/rapyd</package>. </para>
-        <para>В файле <filename>config/app.php</filename> добавим два новых провайдера. Для этого
-            добавим две новых записи в ключ providers
-            <programlisting language="php">
+                которая создаст дополнительные файлы конфигурации для пакета
+                    <package>zofe/rapyd</package>. </para>
+            <para>В файле <filename>config/app.php</filename> добавим два новых провайдера. Для
+                этого добавим две новых записи в ключ providers
+                <programlisting language="php">
         Zofe\Rapyd\RapydServiceProvider::class,
         Firebird\FirebirdServiceProvider::class,                            
                                 </programlisting>
-        </para>
-        <para>Теперь перейдём к файлу <filename>config/databases.conf</filename>, который содержит
-            настройки подключения к базе данных. Добавим в ключ connections следующие строки <programlisting language="php">
+            </para>
+            <para>Теперь перейдём к файлу <filename>config/databases.conf</filename>, который
+                содержит настройки подключения к базе данных. Добавим в ключ connections следующие
+                строки <programlisting language="php">
 <![CDATA[                          
        'firebird' => [
             'driver' => 'firebird',
@@ -911,18 +1057,18 @@ php artisan vendor:publish
         ],  
 ]]>         
                 </programlisting>
-        </para>
-        <para>Поскольку мы будем использовать наше подключение в качестве подключения по умолчанию,
-            установим следующее <programlisting language="php">
+            </para>
+            <para>Поскольку мы будем использовать наше подключение в качестве подключения по
+                умолчанию, установим следующее <programlisting language="php">
 <![CDATA[                        
 'default' => env('DB_CONNECTION', 'firebird'),  
 ]]>   
                 </programlisting>
-        </para>
-        <para>Обратите внимание на функцию env, которая используется для чтения переменных окружения
-            приложения из специального файла <filename>.env</filename>, находящегося в корне
-            проекта. Исправим в этом файле <filename>.env</filename> следующие строки
-            <programlisting>
+            </para>
+            <para>Обратите внимание на функцию env, которая используется для чтения переменных
+                окружения приложения из специального файла <filename>.env</filename>, находящегося в
+                корне проекта. Исправим в этом файле <filename>.env</filename> следующие строки
+                <programlisting>
 DB_CONNECTION=firebird
 DB_HOST=localhost
 DB_PORT=3050
@@ -930,9 +1076,9 @@ DB_DATABASE=examples
 DB_USERNAME=SYSDBA
 DB_PASSWORD=masterkey                    
                 </programlisting>
-        </para>
-        <para>В файле конфигурации <filename>config/rapyd.php</filename> изменим отображение дат
-            так, чтобы они были в формате принятом в России: <programlisting language="php">
+            </para>
+            <para>В файле конфигурации <filename>config/rapyd.php</filename> изменим отображение дат
+                так, чтобы они были в формате принятом в России: <programlisting language="php">
 <![CDATA[                        
 'fields' => [
         'attributes' => ['class' => 'form-control'],
@@ -946,9 +1092,10 @@ DB_PASSWORD=masterkey
     ],  
 ]]>    
                 </programlisting>
-        </para>
-        <para>Первоначальная настройка закончена, теперь мы можем приступить непосредственно к
-            написанию логики web приложения.</para>
+            </para>
+            <para>Первоначальная настройка закончена, теперь мы можем приступить непосредственно к
+                написанию логики web приложения.</para>
+        </section>
     </section>
     <section>
         <title>Создание моделей</title>
@@ -958,14 +1105,17 @@ DB_PASSWORD=masterkey
             соответствующий класс-модель, который используется для работы с этой таблицей. Модели
             позволяют читать данные из таблиц и записывать данные в таблицу.</para>
 
-        <para>Создадим модель заказчиков, для упрощения этого процесса в Laravel есть artisan
-            команда.
-            <programlisting>
+        <section>
+            <title>Инструментарий для создания моделей</title>
+
+            <para>Создадим модель заказчиков, для упрощения этого процесса в Laravel есть artisan
+                команда.
+                <programlisting>
 php artisan make:model Customer                
                 </programlisting>
-        </para>
-        <para>Этой командой мы создаём шаблон модели. Теперь изменим нашу модель так, чтобы она
-            выглядела следующим образом: <programlisting language="php">
+            </para>
+            <para>Этой командой мы создаём шаблон модели. Теперь изменим нашу модель так, чтобы она
+                выглядела следующим образом: <programlisting language="php">
 <![CDATA[
 namespace App;
 
@@ -1003,16 +1153,16 @@ class Customer extends Model
 }
 ]]>                
                 </programlisting>
-        </para>
-        <important>
-            <para>Мы используем модифицированную модель
-                    <classname>Firebird\Eloquent\Model</classname> из пакета
-                    <package>sim1984/laravel-firebird</package> в качестве базовой. Она позволяет
-                воспользоваться последовательностью, указанной в свойстве
-                    <varname>$sequence</varname>, для генерирования значения идентификатора
-                первичного ключа.</para>
-        </important>
-        <para>По аналогии создадим модель товаров – <classname>Product</classname>. <programlisting language="php">
+            </para>
+            <important>
+                <para>Мы используем модифицированную модель
+                        <classname>Firebird\Eloquent\Model</classname> из пакета
+                        <package>sim1984/laravel-firebird</package> в качестве базовой. Она
+                    позволяет воспользоваться последовательностью, указанной в свойстве
+                        <varname>$sequence</varname>, для генерирования значения идентификатора
+                    первичного ключа.</para>
+            </important>
+            <para>По аналогии создадим модель товаров – <classname>Product</classname>. <programlisting language="php">
 <![CDATA[
 namespace App;
 
@@ -1050,8 +1200,8 @@ class Product extends Model
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Теперь создадим модель для шапки счёт-фактуры. <programlisting language="php">
+            </para>
+            <para>Теперь создадим модель для шапки счёт-фактуры. <programlisting language="php">
 <![CDATA[
 namespace App;
 
@@ -1120,26 +1270,34 @@ class Invoice extends Model {
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>В этой модели можно заметить несколько дополнительных функций. Метод
-                <methodname>customer</methodname> возвращает заказчика связанного со счёт фактурой
-            через поле <varname>CUSTOMER_ID</varname>. Для осуществления такой связи используется
-            метод <methodname>belongsTo</methodname>, в который передаются имя класса модели и имя
-            поле связи. Метод <function>lines</function> возвращают позиции счёт-фактуры, которые
-            представлены коллекцией моделей <classname>InvoiceLine</classname> (будет описана
-            далее). Для осуществления связи один ко многим в методе <methodname>lines</methodname>
-            используется метод <methodname>hasMany</methodname>, в который передаётся имя класса
-            модели и поле связи. Подробнее о задании отношений между сущностями вы можете почитать в
-            разделе <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/eloquent-relationships">Отношения</link>
-            документации Laravel.</para>
-        <para>Метод <methodname>pay</methodname> осуществляет оплату счёт фактуры. Для этого
-            вызывается хранимая процедура <function>SP_PAY_FOR_INVOICE</function>. В неё передаётся
-            идентификатор счёт фактуры. Значение любого поля (атрибута модели) можно получить из
-            свойства <varname>attributes</varname>. Вызов хранимой процедуры осуществляется с
-            помощью метода <methodname>executeProcedure</methodname>. Этот метод доступен только при
-            использовании расширения <package>sim1984/laravel-firebird</package>.</para>
-        <para>Теперь создадим модель для позиций счёт фактуры. <programlisting language="php">
+            </para>
+            <para>В этой модели можно заметить несколько дополнительных функций. Метод
+                    <methodname>customer</methodname> возвращает заказчика связанного со счёт
+                фактурой через поле <varname>CUSTOMER_ID</varname>. Для осуществления такой связи
+                используется метод <methodname>belongsTo</methodname>, в который передаются имя
+                класса модели и имя поле связи. Метод <function>lines</function> возвращают позиции
+                счёт-фактуры, которые представлены коллекцией моделей
+                    <classname>InvoiceLine</classname> (будет описана далее). Для осуществления
+                связи один ко многим в методе <methodname>lines</methodname> используется метод
+                    <methodname>hasMany</methodname>, в который передаётся имя класса модели и поле
+                связи. Подробнее о задании отношений между сущностями вы можете почитать в разделе
+                    <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://laravel.com/docs/5.2/eloquent-relationships"
+                    >Отношения</link> документации Laravel.</para>
+            <para>Метод <methodname>pay</methodname> осуществляет оплату счёт фактуры. Для этого
+                вызывается хранимая процедура <function>SP_PAY_FOR_INVOICE</function>. В неё
+                передаётся идентификатор счёт фактуры. Значение любого поля (атрибута модели) можно
+                получить из свойства <varname>attributes</varname>. Вызов хранимой процедуры
+                осуществляется с помощью метода <methodname>executeProcedure</methodname>. Этот
+                метод доступен только при использовании расширения
+                    <package>sim1984/laravel-firebird</package>.</para>
+
+        </section>
+
+        <section>
+            <title>Модель позиций счёт-фактур</title>
+
+            <para>Теперь создадим модель для позиций счёт фактуры. <programlisting language="php">
 <![CDATA[
 namespace App;
 
@@ -1291,35 +1449,46 @@ class InvoiceLine extends Model {
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>В этой модели есть метод <methodname>product</methodname>, которая возвращает продукт
-            (модель <classname>App/Product</classname>), указанный в позиции счёт фактуры. Связь
-            осуществляется по полю <varname>PRODUCT_ID</varname> с помощью метода
-                <methodname>belongsTo</methodname>.</para>
-        <para>Вычисляемое поле SumPrice вычисляется с помощью функции
-                <methodname>getSumPriceAttribute</methodname>. Для того чтобы это вычисляемое поле
-            было доступно в модели, его имя должно быть указано в массиве имён вычисляемых полей
-                <varname>$appends</varname>.</para>
-        <para>В этой модели мы переопределили операции insert, update и delete так, чтобы они
-            выполнялись, используя хранимые процедуры. Эти хранимые процедуры помимо собственно
-            операций вставки, редактирования и удаления пересчитывают сумму в шапке накладной. Этого
-            можно было бы и не делать, но тогда пришлось бы выполнять в одной транзакции модификацию
-            нескольких моделей. Как это сделать будет показано далее.</para>
-        <para>Теперь немного поговорим о том, как работать с моделями в Laravel для выборки,
-            вставки, редактирования и удаления данных. Laravel оперирует данными с помощью
-            конструктора запросов. Полное описание синтаксиса и возможностей этого конструктора вы
-            можете найти по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/queries"
-                >https://laravel.com/docs/5.2/queries</link>. Например, для получения всех строк
-            поставщиков вы можете выполнить следующий запрос <programlisting language="php">
+            </para>
+            <para>В этой модели есть метод <methodname>product</methodname>, которая возвращает
+                продукт (модель <classname>App/Product</classname>), указанный в позиции счёт
+                фактуры. Связь осуществляется по полю <varname>PRODUCT_ID</varname> с помощью метода
+                    <methodname>belongsTo</methodname>.</para>
+            <para>Вычисляемое поле SumPrice вычисляется с помощью функции
+                    <methodname>getSumPriceAttribute</methodname>. Для того чтобы это вычисляемое
+                поле было доступно в модели, его имя должно быть указано в массиве имён вычисляемых
+                полей <varname>$appends</varname>.</para>
+
+            <section>
+                <title>Операции</title>
+
+                <para>В этой модели мы переопределили операции insert, update и delete так, чтобы
+                    они выполнялись, используя хранимые процедуры. Эти хранимые процедуры помимо
+                    собственно операций вставки, редактирования и удаления пересчитывают сумму в
+                    шапке накладной. Этого можно было бы и не делать, но тогда пришлось бы выполнять
+                    в одной транзакции модификацию нескольких моделей. Как это сделать будет
+                    показано далее.</para>
+            </section>
+        </section>
+
+        <section>
+            <title>Как Laravel оперирует данными</title>
+
+            <para>Теперь немного поговорим о том, как работать с моделями в Laravel для выборки,
+                вставки, редактирования и удаления данных. Laravel оперирует данными с помощью
+                конструктора запросов. Полное описание синтаксиса и возможностей этого конструктора
+                вы можете найти по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://laravel.com/docs/5.2/queries"
+                    >https://laravel.com/docs/5.2/queries</link>. Например, для получения всех строк
+                поставщиков вы можете выполнить следующий запрос <programlisting language="php">
 <![CDATA[                    
 $customers = DB::table('CUSTOMER')->get();   
 ]]>
                 </programlisting>
-        </para>
-        <para>Этот конструктор запросов является довольно мощным средством для построения и
-            выполнения SQL запросов. Вы можете выполнять также фильтрация, сортировку и соединения
-            таблиц, например <programlisting language="php">
+            </para>
+            <para>Этот конструктор запросов является довольно мощным средством для построения и
+                выполнения SQL запросов. Вы можете выполнять также фильтрация, сортировку и
+                соединения таблиц, например <programlisting language="php">
 <![CDATA[                    
 DB::table('users')
         ->join('contacts', function ($join) {
@@ -1328,19 +1497,19 @@ DB::table('users')
         ->get()   
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Однако гораздо удобнее работать с использованием моделей. Описание моделей Eloquent
-            ORM и синтаксиса запроса к ним можно найти по ссылке <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/eloquent"
-                >https://laravel.com/docs/5.2/eloquent</link>. Так для получения всех элементов
-            коллекции поставщиков необходимо выполнить следующий запрос <programlisting language="php">
+            </para>
+            <para>Однако гораздо удобнее работать с использованием моделей. Описание моделей
+                Eloquent ORM и синтаксиса запроса к ним можно найти по ссылке <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://laravel.com/docs/5.2/eloquent"
+                    >https://laravel.com/docs/5.2/eloquent</link>. Так для получения всех элементов
+                коллекции поставщиков необходимо выполнить следующий запрос <programlisting language="php">
 <![CDATA[                    
 $customers = Customer::all();  
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Следующий запрос вернёт первые 20 поставщиков отсортированных по алфавиту. <programlisting language="php">
+            </para>
+            <para>Следующий запрос вернёт первые 20 поставщиков отсортированных по алфавиту. <programlisting language="php">
 <![CDATA[                    
 $customers = App\Customer::select()
                ->orderBy('name')
@@ -1348,54 +1517,66 @@ $customers = App\Customer::select()
                ->get();
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Для сложных моделей связанные отношения или коллекции отношений могут быть получены
-            через динамические атрибуты. Например, следующий запрос вернёт позиции счёт-фактуры с
-            идентификатором 1. <programlisting language="php">
+            </para>
+
+            <section>
+                <title>Сложные модели</title>
+
+                <para>Для сложных моделей связанные отношения или коллекции отношений могут быть
+                    получены через динамические атрибуты. Например, следующий запрос вернёт позиции
+                    счёт-фактуры с идентификатором 1. <programlisting language="php">
 <![CDATA[                    
 $lines = Invoice::find(1)->lines; 
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Добавление записей осуществляется через создание экземпляра модели, инициализации его
-            свойств и сохранение модели с помощью метода <methodname>save</methodname>. <programlisting language="php">
+                </para>
+                <para>Добавление записей осуществляется через создание экземпляра модели,
+                    инициализации его свойств и сохранение модели с помощью метода
+                        <methodname>save</methodname>. <programlisting language="php">
 <![CDATA[                    
 $flight = new Flight;
 $flight->name = $request->name;
 $flight->save();
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Для изменения запись её необходимо найти, изменить необходимые атрибуты и сохранить
-            методом <methodname>save</methodname>. <programlisting language="php">
+                </para>
+                <para>Для изменения запись её необходимо найти, изменить необходимые атрибуты и
+                    сохранить методом <methodname>save</methodname>. <programlisting language="php">
 <![CDATA[                    
 $flight = App\Flight::find(1);
 $flight->name = 'New Flight Name';
 $flight->save();
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Для удаления записи её необходимо найти и вызвать метод
-                <methodname>delete</methodname>. <programlisting language="php">
+                </para>
+                <para>Для удаления записи её необходимо найти и вызвать метод
+                        <methodname>delete</methodname>. <programlisting language="php">
 <![CDATA[                    
 $flight = App\Flight::find(1);
 $flight->delete();
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Удалить запись по ключу можно и гораздо быстрее с помощью метода
-                <methodname>destroy</methodname>. В этом случае можно удалить модель не получая её
-            экземпляр. <programlisting language="php">
+                </para>
+                <para>Удалить запись по ключу можно и гораздо быстрее с помощью метода
+                        <methodname>destroy</methodname>. В этом случае можно удалить модель не
+                    получая её экземпляр. <programlisting language="php">
 <![CDATA[                    
 App\Flight::destroy(1);
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Существуют и другие способы удаления записей, например «мягкое» удаление. Подробно о
-            способах удаления вы можете прочитать по ссылке <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/eloquent#deleting-models"
-                >https://laravel.com/docs/5.2/eloquent#deleting-models</link>.</para>
+                </para>
+                <para>Существуют и другие способы удаления записей, например «мягкое» удаление.
+                    Подробно о способах удаления вы можете прочитать по ссылке <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://laravel.com/docs/5.2/eloquent#deleting-models"
+                        >https://laravel.com/docs/5.2/eloquent#deleting-models</link>.</para>
+            </section>
+        </section>
+    </section>
+
+    <section>
+        <title>Транзакции</title>
+
         <para>Теперь поговорим немного о транзакциях. Что это такое я рассказывать не буду, а лишь
             покажу, как их можно использовать совместно с Eloquent ORM. <programlisting language="php">
 <![CDATA[                    
@@ -1457,18 +1638,27 @@ Route::get('posts/{post}/comments/{comment}', function ($postId, $commentId) {
                 xlink:href="https://laravel.com/docs/5.2/routing">Маршрутизация</link>. Маршруты
             настраиваются в файле <filename>app/Http/routes.php</filename> в Laravel 5.2 и
                 <filename>routes/wep.php</filename> в Laravel 5.3.</para>
-        <para>Вместо того чтобы описывать обработку всех запросов в едином файле маршрутизации, мы
-            можем организовать её используя классы контроллеров, которые позволяют группировать
-            связанные обработчики запросов в отдельные классы. Контроллеры хранятся в папке
-                <filename>app/Http/Controllers</filename>.</para>
-        <para>Все Laravel контроллеры должны расширять базовый класс контроллера
-                <classname>App\Http\Controllers\Controller</classname>, присутствующий в Laravel по
-            умолчанию. Подробнее о написании контроллеров вы можете почитать по ссылке <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/controllers"
-                >https://laravel.com/docs/5.2/controllers</link>.</para>
-        <para>Напишем наш первый контроллер, который будет отвечать за вывод списка заказчиков и его
-            редактирование. <programlisting language="php">
+
+        <section>
+            <title>Использование контроллеров для обработки запросов</title>
+
+            <para>Вместо того чтобы описывать обработку всех запросов в едином файле маршрутизации,
+                мы можем организовать её используя классы контроллеров, которые позволяют
+                группировать связанные обработчики запросов в отдельные классы. Контроллеры хранятся
+                в папке <filename>app/Http/Controllers</filename>.</para>
+            <para>Все Laravel контроллеры должны расширять базовый класс контроллера
+                    <classname>App\Http\Controllers\Controller</classname>, присутствующий в Laravel
+                по умолчанию. Подробнее о написании контроллеров вы можете почитать по ссылке <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://laravel.com/docs/5.2/controllers"
+                    >https://laravel.com/docs/5.2/controllers</link>.</para>
+        </section>
+
+        <section>
+            <title>Контроллер заказчиков</title>
+
+            <para>Напишем наш первый контроллер, который будет отвечать за вывод списка заказчиков и
+                его редактирование. <programlisting language="php">
 <![CDATA[
 <?php
 
@@ -1504,23 +1694,23 @@ class CustomerController extends Controller
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Теперь необходимо связать методы контроллера с маршрутом. Для этого в
-                <filename>routes.php</filename> (<filename>web.php</filename>) необходимо внести
-            строку
-            <programlisting language="php">
+            </para>
+            <para>Теперь необходимо связать методы контроллера с маршрутом. Для этого в
+                    <filename>routes.php</filename> (<filename>web.php</filename>) необходимо внести
+                строку
+                <programlisting language="php">
 Route::get('/customers', 'CustomerController@showCustomers');                    
                 </programlisting>
-            Здесь имя контроллера отделено от имени метода символом @. </para>
-        <para>Для быстрого построения интерфейса с сетками и диалогами редактирования будем
-            использовать пакет <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://github.com/zofe/rapyd-laravel">zofe/rapyd</link>. Мы его уже
-            подключили ранее. Классы пакета <package>zofe/rapyd</package> берут на себя построение
-            типичных запросов к моделям Eloquent ORM. Изменим контроллер заказчиков так, чтобы он
-            выводил данные в сетку (grid), позволял производить их фильтрацию, а также добавлять,
-            редактировать и удалять записи через диалоги редактирования.</para>
-        <para>
-            <programlisting language="php">
+                Здесь имя контроллера отделено от имени метода символом @. </para>
+            <para>Для быстрого построения интерфейса с сетками и диалогами редактирования будем
+                использовать пакет <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://github.com/zofe/rapyd-laravel">zofe/rapyd</link>. Мы его уже
+                подключили ранее. Классы пакета <package>zofe/rapyd</package> берут на себя
+                построение типичных запросов к моделям Eloquent ORM. Изменим контроллер заказчиков
+                так, чтобы он выводил данные в сетку (grid), позволял производить их фильтрацию, а
+                также добавлять, редактировать и удалять записи через диалоги редактирования.</para>
+            <para>
+                <programlisting language="php">
 <![CDATA[
 <?php
 
@@ -1617,16 +1807,25 @@ class CustomerController extends Controller {
 }
 ]]>                        
                     </programlisting>
-        </para>
-        <para>Laravel по умолчанию использует шаблонизатор blade. Метод
-                <methodname>view</methodname> находит необходимый шаблон в директории
-                <filename>resources/views</filename>, делает необходимые замены в нём и возвращает
-            текст HTML страницы. Кроме того, она передаёт в него переменные, которые становятся
-            доступными в шаблоне. Описание синтаксиса шаблонов blade вы можете найти по адресу <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://laravel.com/docs/5.2/blade"
-                >https://laravel.com/docs/5.2/blade</link>.</para>
-        <para>Шаблон для отображения заказчиков выглядит следующим образом: <programlisting language="javascript">
+            </para>
+
+            <section>
+                <title>Шаблонизатор blade</title>
+
+                <para>Laravel по умолчанию использует шаблонизатор blade. Метод
+                        <methodname>view</methodname> находит необходимый шаблон в директории
+                        <filename>resources/views</filename>, делает необходимые замены в нём и
+                    возвращает текст HTML страницы. Кроме того, она передаёт в него переменные,
+                    которые становятся доступными в шаблоне. Описание синтаксиса шаблонов blade вы
+                    можете найти по адресу <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://laravel.com/docs/5.2/blade"
+                        >https://laravel.com/docs/5.2/blade</link>.</para>
+            </section>
+
+            <section>
+                <title>Шаблон для отображения заказчиков</title>
+
+                <para>Шаблон для отображения заказчиков выглядит следующим образом: <programlisting language="javascript">
 <![CDATA[                    
 @extends('example')
 
@@ -1642,11 +1841,11 @@ class CustomerController extends Controller {
 @stop       
 ]]>
                 </programlisting>
-        </para>
-        <para>Данный шаблон унаследован от шаблона example и переопределяет его секцию body.
-            Переменные <varname>$filter</varname> и <varname>$grid</varname> содержат HTML код для
-            осуществления фильтрации и отображения данных в сетке. Шаблон example является общим для
-            всех страниц. <programlisting language="javascript">
+                </para>
+                <para>Данный шаблон унаследован от шаблона example и переопределяет его секцию body.
+                    Переменные <varname>$filter</varname> и <varname>$grid</varname> содержат HTML
+                    код для осуществления фильтрации и отображения данных в сетке. Шаблон example
+                    является общим для всех страниц. <programlisting language="javascript">
 <![CDATA[                    
 @extends('master')
 @section('title', 'Пример работы с Firebird')
@@ -1675,10 +1874,11 @@ class CustomerController extends Controller {
 @stop      
 ]]>
                 </programlisting>
-        </para>
-        <para>Этот шаблон сам унаследован от шаблона master, кроме того он подключает шаблон
-            menu.</para>
-        <para>Меню довольно простое, состоит из трёх пунктов Заказчики, Продукты и Счёт фактуры. <programlisting language="javascript">
+                </para>
+                <para>Этот шаблон сам унаследован от шаблона master, кроме того он подключает шаблон
+                    menu.</para>
+                <para>Меню довольно простое, состоит из трёх пунктов Заказчики, Продукты и Счёт
+                    фактуры. <programlisting language="javascript">
 <![CDATA[
 <nav class="navbar main">
     <div class="navbar-header">
@@ -1703,8 +1903,8 @@ class CustomerController extends Controller {
 </nav>
 ]]>                    
                 </programlisting>
-        </para>
-        <para>В шаблоне master подключаются css стили и JavaScript файлы с библиотеками. <programlisting language="javascript">
+                </para>
+                <para>В шаблоне master подключаются css стили и JavaScript файлы с библиотеками. <programlisting language="javascript">
 <![CDATA[
 <!DOCTYPE html>
 <html lang="en">
@@ -1758,8 +1958,8 @@ class CustomerController extends Controller {
 </html>
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Шаблон редактора заказчика customer_edit выглядит следующим образом <programlisting language="javascript">
+                </para>
+                <para>Шаблон редактора заказчика customer_edit выглядит следующим образом <programlisting language="javascript">
 <![CDATA[
 @extends('example')
 
@@ -1772,8 +1972,13 @@ class CustomerController extends Controller {
 @stop
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Контроллер товаров сделан аналогично контроллеру поставщиков. <programlisting language="php">
+                </para>
+            </section>
+
+            <section>
+                <title>Контроллер товаров</title>
+
+                <para>Контроллер товаров сделан аналогично контроллеру поставщиков. <programlisting language="php">
 <![CDATA[
 <?php
 
@@ -1868,12 +2073,18 @@ class ProductController extends Controller {
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Контроллер счёт фактур является более сложным. В него добавлена дополнительная функция
-            оплаты счёта. Оплаченные счёт фактуры подсвечиваются другим цветом. При просмотре счёт
-            фактуры отображаются так же её позиции. Во время редактирования счёт фактуры есть
-            возможность редактировать и её позиции. Далее я приведу текст контроллера с подробными
-            комментариями. <programlisting language="php">
+                </para>
+            </section>
+
+
+            <section>
+                <title>Контроллер счёт-фактур</title>
+
+                <para>Контроллер счёт фактур является более сложным. В него добавлена дополнительная
+                    функция оплаты счёта. Оплаченные счёт фактуры подсвечиваются другим цветом. При
+                    просмотре счёт фактуры отображаются так же её позиции. Во время редактирования
+                    счёт фактуры есть возможность редактировать и её позиции. Далее я приведу текст
+                    контроллера с подробными комментариями. <programlisting language="php">
 <![CDATA[
 <?php
 
@@ -2145,10 +2356,15 @@ class InvoiceController extends Controller {
 }
 ]]>                    
                 </programlisting>
-        </para>
-        <para>Редактор счёт фактур имеет не стандартный для <package>zofe/rapyd</package> вид,
-            поскольку нам необходимо выводить сетку с позициями счёт фактур. Для этого мы изменили
-            шаблон invoice_edit следующим образом. <programlisting language="javascript">
+                </para>
+
+                <section>
+                    <title>Редактор счёт-фактур</title>
+
+                    <para>Редактор счёт фактур имеет не стандартный для
+                            <package>zofe/rapyd</package> вид, поскольку нам необходимо выводить
+                        сетку с позициями счёт фактур. Для этого мы изменили шаблон invoice_edit
+                        следующим образом. <programlisting language="javascript">
 <![CDATA[
 @extends('example')
 
@@ -2187,11 +2403,18 @@ class InvoiceController extends Controller {
 @stop
 ]]>                
             </programlisting>
-        </para>
-        <para>Теперь, когда все контроллеры написаны, изменим маршруты так, чтобы наш сайт на
-            стартовой странице открывал список счёт фактур. Напоминаю, что маршруты настраиваются в
-            файле <filename>app/Http/routes.php</filename> в Laravel 5.2 и
-                <filename>routes/wep.php</filename> в Laravel 5.3. <programlisting language="php">
+                    </para>
+                </section>
+            </section>
+
+
+            <section>
+                <title>Изменение маршрутов</title>
+
+                <para>Теперь, когда все контроллеры написаны, изменим маршруты так, чтобы наш сайт
+                    на стартовой странице открывал список счёт фактур. Напоминаю, что маршруты
+                    настраиваются в файле <filename>app/Http/routes.php</filename> в Laravel 5.2 и
+                        <filename>routes/wep.php</filename> в Laravel 5.3. <programlisting language="php">
 <![CDATA[
 // Корневой маршрут
 Route::get('/', 'InvoiceController@showInvoices');
@@ -2208,9 +2431,16 @@ Route::any('/invoice/pay/{id}', 'InvoiceController@payInvoice');
 Route::any('/invoice/editline', 'InvoiceController@editInvoiceLine');
 ]]>                
             </programlisting></para>
-        <para>Здесь маршрут <uri>/invoice/pay/{id}</uri> выделяет идентификатор счёт фактуры из
-            адреса и передаёт его в метод <methodname>payInvoice</methodname>. Остальные маршруты не
-            требуют отдельного пояснения.</para>
+                <para>Здесь маршрут <uri>/invoice/pay/{id}</uri> выделяет идентификатор счёт фактуры
+                    из адреса и передаёт его в метод <methodname>payInvoice</methodname>. Остальные
+                    маршруты не требуют отдельного пояснения.</para>
+            </section>
+        </section>
+    </section>
+
+    <section>
+        <title>Результат</title>
+
         <para>Напоследок приведу несколько скриншотов получившегося веб приложения. <figure>
                 <title>Страница с гридом счёт-фактуры</title>
                 <mediaobject>
@@ -2236,7 +2466,7 @@ Route::any('/invoice/editline', 'InvoiceController@editInvoiceLine');
         </para>
     </section>
     <section>
-        <title>Заключение</title>
+        <title>Исходный код</title>
 
         <para>На этом мой пример закончен. Исходные коды вы можете скачать по ссылке <link
                 xmlns:xlink="http://www.w3.org/1999/xlink"

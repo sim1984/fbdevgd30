@@ -13,57 +13,60 @@
         приложения (Apache Tomcat или Glass Fish). Создаём проект на основе шаблона Maven проекта
         веб-приложения.</para>
 
-    <para>После создания проекта на основе шаблона необходимо преобразовать его структуру папок так
-        чтобы она была корректной для Spring 4. Если проект создавался в среде NetBeans 8.2, то
-        необходимо выполнить следующие шаги:<orderedlist>
-            <listitem>
-                <para>Удалить файл <filename>index.html</filename></para>
-            </listitem>
-            <listitem>
-                <para>Создать папку <filename>WEB-INF</filename> внутри папки <filename>Web
-                        Pages</filename></para>
-            </listitem>
-            <listitem>
-                <para>Внутри папки <filename>WEB-INF</filename> создать папки
-                        <filename>jsp</filename>, <filename>jspf</filename> и
-                        <filename>resources</filename></para>
-            </listitem>
-            <listitem>
-                <para>Внутри папки <filename>resources</filename> создаём папки
-                        <filename>js</filename> и <filename>CSS</filename></para>
-            </listitem>
-            <listitem>
-                <para>Внутри папки <filename>jsp</filename> создаём файл
-                        <filename>index.jsp</filename></para>
-            </listitem>
-        </orderedlist></para>
-    <para>После наших манипуляций структура папок должна выглядеть следующим образом. <figure>
-            <title>Структура каталогов Spring MVC проекта</title>
-            <mediaobject>
-                <imageobject>
-                    <imagedata fileref="images/java-dir-structure.png"/>
-                </imageobject>
-                <textobject>
-                    <phrase>Структура каталогов Spring MVC проект</phrase>
-                </textobject>
-            </mediaobject>
-        </figure>
-    </para>
-    <para>В папке <filename>WEB-INF/jsp</filename> будут размещаться jsp странице, а в папке
-            <filename>WEB-INF/jspf</filename> части страниц, которые будут подключены в другие
-        странице с помощью инструкции
-        <programlisting>
+    <section>
+        <title>Организация структуры папок</title>
+
+        <para>После создания проекта на основе шаблона необходимо преобразовать его структуру папок
+            так чтобы она была корректной для Spring 4. Если проект создавался в среде NetBeans 8.2,
+            то необходимо выполнить следующие шаги:<orderedlist>
+                <listitem>
+                    <para>Удалить файл <filename>index.html</filename></para>
+                </listitem>
+                <listitem>
+                    <para>Создать папку <filename>WEB-INF</filename> внутри папки <filename>Web
+                            Pages</filename></para>
+                </listitem>
+                <listitem>
+                    <para>Внутри папки <filename>WEB-INF</filename> создать папки
+                            <filename>jsp</filename>, <filename>jspf</filename> и
+                            <filename>resources</filename></para>
+                </listitem>
+                <listitem>
+                    <para>Внутри папки <filename>resources</filename> создаём папки
+                            <filename>js</filename> и <filename>CSS</filename></para>
+                </listitem>
+                <listitem>
+                    <para>Внутри папки <filename>jsp</filename> создаём файл
+                            <filename>index.jsp</filename></para>
+                </listitem>
+            </orderedlist></para>
+        <para>После наших манипуляций структура папок должна выглядеть следующим образом. <figure>
+                <title>Структура каталогов Spring MVC проекта</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-dir-structure.png"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Структура каталогов Spring MVC проект</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+        <para>В папке <filename>WEB-INF/jsp</filename> будут размещаться jsp странице, а в папке
+                <filename>WEB-INF/jspf</filename> части страниц, которые будут подключены в другие
+            странице с помощью инструкции
+            <programlisting>
 &lt;%@ include file ="<replaceable>&lt;имя файла&gt;</replaceable>" %&gt;
             </programlisting>
-    </para>
-    <para>Папка <filename>resource</filename> предназначена для размещения статических веб ресурсов.
-        В папке <filename>WEB-INF/resources/css</filename> будут размещаться файлы каскадных таблиц
-        стилей, в папке <filename>WEB-INF/resources/fonts</filename> – файлы шрифтов, в папке
-            <filename>WEB-INF/resources/js</filename> – файлы JavaScript и сторонние JavaScript
-        библиотеки.</para>
-    <para>Теперь поправим файл <filename>pom.xml</filename> и пропишем в него общие свойства
-        приложения, зависимости от пакетов библиотек (Spring MVC, Jaybird, JDBC пул, JOOQ) и
-        свойства JDBC подключения. <programlisting language="javascript">
+        </para>
+        <para>Папка <filename>resource</filename> предназначена для размещения статических веб
+            ресурсов. В папке <filename>WEB-INF/resources/css</filename> будут размещаться файлы
+            каскадных таблиц стилей, в папке <filename>WEB-INF/resources/fonts</filename> – файлы
+            шрифтов, в папке <filename>WEB-INF/resources/js</filename> – файлы JavaScript и
+            сторонние JavaScript библиотеки.</para>
+        <para>Теперь поправим файл <filename>pom.xml</filename> и пропишем в него общие свойства
+            приложения, зависимости от пакетов библиотек (Spring MVC, Jaybird, JDBC пул, JOOQ) и
+            свойства JDBC подключения. <programlisting language="javascript">
 <![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
@@ -273,23 +276,28 @@
 </project>
 ]]>            
         </programlisting>
-    </para>
-    <para>После того как вы прописали все необходимые зависимости, желательно перезагрузить POM,
-        чтобы загрузить все необходимые библиотеки. Если этого не сделать, то в процессе работы с
-        проектом могут возникать ошибки. В NetBeans это делается следующим образом <figure>
-            <title>Перезагрузка POM</title>
-            <mediaobject>
-                <imageobject>
-                    <imagedata fileref="images/java-reload-pom.png"/>
-                </imageobject>
-                <textobject>
-                    <phrase>Перезагрузка POM</phrase>
-                </textobject>
-            </mediaobject>
-        </figure>
-    </para>
-    <para>Мне не очень нравится конфигурирование через xml, поэтому я буду работать через классы
-        конфигурации Java. <programlisting language="java">
+        </para>
+        <para>После того как вы прописали все необходимые зависимости, желательно перезагрузить POM,
+            чтобы загрузить все необходимые библиотеки. Если этого не сделать, то в процессе работы
+            с проектом могут возникать ошибки. В NetBeans это делается следующим образом <figure>
+                <title>Перезагрузка POM</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-reload-pom.png"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Перезагрузка POM</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+    </section>
+
+    <section>
+        <title>Кодирование конфигурации</title>
+
+        <para>Мне не очень нравится конфигурирование через xml, поэтому я буду работать через классы
+            конфигурации Java. <programlisting language="java">
 <![CDATA[
 package ru.ibase.fbjavaex.config;
 
@@ -341,13 +349,18 @@ public class WebAppConfig extends WebMvcConfigurerAdapter {
 }
 ]]>            
         </programlisting>
-    </para>
-    <para>В данном конфигурационном классе мы задаём место поиска веб ресурсов и JSP представлений.
-        Метод <methodname>configureMessageConverters</methodname> устанавливает, что дата должна
-        сериализоваться в строковое представление (по умолчанию сериализуется в числовом
-        представлении как timestamp).</para>
-    <para>Теперь избавимся от файла <filename>Web.xml</filename> вместо него создадим файл
-            <filename>WebInitializer.java</filename>. <programlisting language="javascript">
+        </para>
+        <para>В данном конфигурационном классе мы задаём место поиска веб ресурсов и JSP
+            представлений. Метод <methodname>configureMessageConverters</methodname> устанавливает,
+            что дата должна сериализоваться в строковое представление (по умолчанию сериализуется в
+            числовом представлении как timestamp).</para>
+    </section>
+
+    <section>
+        <title>Написание кода WebInitializer</title>
+
+        <para>Теперь избавимся от файла <filename>Web.xml</filename> вместо него создадим файл
+                <filename>WebInitializer.java</filename>. <programlisting language="javascript">
 <![CDATA[
 package ru.ibase.fbjavaex.config;
 
@@ -376,10 +389,11 @@ public class WebInitializer implements WebApplicationInitializer {
 }
 ]]>            
         </programlisting>
-    </para>
-    <para>Осталось сконфигурировать IoC контейнеры для внедрения зависимостей. К этому шагу мы
-        вернёмся позже, а сейчас перейдём к генерации классов для работы с базой данных через
-        jOOQ.</para>
+        </para>
+        <para>Осталось сконфигурировать IoC контейнеры для внедрения зависимостей. К этому шагу мы
+            вернёмся позже, а сейчас перейдём к генерации классов для работы с базой данных через
+            jOOQ.</para>
+    </section>
 
     <section>
         <title>Генерации классов для работы с базой данных через jOOQ</title>
@@ -396,33 +410,40 @@ public class WebInitializer implements WebApplicationInitializer {
                 xlink:href="http://www.jooq.org/doc/3.9/manual-single-page/"
                 >http://www.jooq.org/doc/3.9/manual-single-page/</link></para>
 
-        <para>Классы jOOQ для работы с базой данных генерируются на основе схемы базы данных,
-            описанной в главе <link linkend="app-db">Создание базы данных для примеров</link>. </para>
+        <section>
+            <title>Классы jOOQ</title>
 
-        <para>Для генерации классов jOOQ, работающих с нашей БД, необходимо скачать следующие
-            бинарные файлы по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="http://www.jooq.org/download">http://www.jooq.org/download</link> или
-            через maven репозиторий: <itemizedlist>
-                <listitem>
-                    <para><filename>jooq-3.9.2.jar</filename> — главная библиотека, которая
-                        включается в наше приложение для работы с jOOQ.</para>
-                </listitem>
-                <listitem>
-                    <para><filename>jooq-meta-3.9.2.jar</filename> — утилита, которая включается в
-                        вашу сборку для навигации по схеме базы данных через сгенерированные
-                        объекты;</para>
-                </listitem>
-                <listitem>
-                    <para><filename>jooq-codegen-3.9.2.jar</filename> — утилита, которая включается
-                        в вашу сборку для генерации схемы базы данных.</para>
-                </listitem>
-            </itemizedlist></para>
-        <para>Кроме того для подключения к БД Firebird через JDBC вам потребуется скачать драйвер
-                <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://github.com/FirebirdSQL/jaybird/releases/download/v3.0.0/Jaybird-3.0.0-JDK_1.8.zip"
-                >jaybird-full-3.0.0.jar</link>.</para>
-        <para>Теперь надо создать файл конфигурации <filename>example.xml</filename>, который будет
-            использован для генерации классов схемы БД. <programlisting language="javascript">
+            <para>Классы jOOQ для работы с базой данных генерируются на основе схемы базы данных,
+                описанной в главе <link linkend="app-db">Создание базы данных для примеров</link>. </para>
+
+            <para>Для генерации классов jOOQ, работающих с нашей БД, необходимо скачать следующие
+                бинарные файлы по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.jooq.org/download">http://www.jooq.org/download</link>
+                или через maven репозиторий: <itemizedlist>
+                    <listitem>
+                        <para><filename>jooq-3.9.2.jar</filename> — главная библиотека, которая
+                            включается в наше приложение для работы с jOOQ.</para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>jooq-meta-3.9.2.jar</filename> — утилита, которая включается
+                            в вашу сборку для навигации по схеме базы данных через сгенерированные
+                            объекты;</para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>jooq-codegen-3.9.2.jar</filename> — утилита, которая
+                            включается в вашу сборку для генерации схемы базы данных.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Кроме того для подключения к БД Firebird через JDBC вам потребуется скачать
+                драйвер <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://github.com/FirebirdSQL/jaybird/releases/download/v3.0.0/Jaybird-3.0.0-JDK_1.8.zip"
+                    >jaybird-full-3.0.0.jar</link>.</para>
+
+            <section>
+                <title>Конфигурация для генерации классов схемы базы данных</title>
+
+                <para>Теперь надо создать файл конфигурации <filename>example.xml</filename>,
+                    который будет использован для генерации классов схемы БД. <programlisting language="javascript">
 <![CDATA[
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.8.0.xsd">
@@ -480,21 +501,29 @@ public class WebInitializer implements WebApplicationInitializer {
 </configuration>
 ]]>                
             </programlisting>
-        </para>
-        <para>Теперь переходим в командную строку и выполняем следующую команду:
-            <programlisting>
+                </para>
+            </section>
+
+            <section>
+                <title>Генерация классов схемы</title>
+
+                <para>Теперь переходим в командную строку и выполняем следующую команду:
+                    <programlisting>
 java -cp jooq-3.9.2.jar;jooq-meta-3.9.2.jar;jooq-codegen-3.9.2.jar;
 jaybird-full-3.0.0.jar;. org.jooq.util.GenerationTool example.xml                
             </programlisting>
-        </para>
-        <para>Данная команда создаст необходимые классы и позволит писать на языке Java запросы к
-            объектам БД. Подробнее с процессом генерации классов вы можете ознакомиться по ссылке
-                <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/%23code-generation"
-                >https://www.jooq.org/doc/3.9/manual-single-page/#code-generation</link>. </para>
+                </para>
+                <para>Данная команда создаст необходимые классы и позволит писать на языке Java
+                    запросы к объектам БД. Подробнее с процессом генерации классов вы можете
+                    ознакомиться по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/%23code-generation"
+                        >https://www.jooq.org/doc/3.9/manual-single-page/#code-generation</link>.
+                </para>
+            </section>
+        </section>
     </section>
     <section>
-        <title>Конфигурация IoC контейнеров</title>
+        <title>Внедрение зависимостей</title>
 
         <para>В Spring внедрение зависимостей (Dependency Injection (DI)) осуществляется через
             Spring IoC (Inversion of Control) контейнер. Внедрение зависимостей, является процессом,
@@ -505,18 +534,27 @@ jaybird-full-3.0.0.jar;. org.jooq.util.GenerationTool example.xml
             по ссылке <link xmlns:xlink="http://www.w3.org/1999/xlink"
                 xlink:href="http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#beans"
                 >http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#beans</link>.</para>
-        <para>Я не сторонник xml конфигурации, поэтому мы будем использовать подход на основе
-            аннотаций и Java-конфигурации. Основными признаками и частями Java-конфигурации IoC
-            контейнера являются классы с аннотацией <parameter>@Configuration</parameter> и методы с
-            аннотацией <parameter>@Bean</parameter>. Аннотация <parameter>@Bean</parameter>
-            используется для указания того, что метод создает, настраивает и инициализирует новый
-            объект, управляемый Spring IoC контейнером. Такие методы можно использовать как в
-            классах с аннотацией <parameter>@Configuration</parameter>. Наш IoC контейнер будет
-            возвращать пул подключений, менеджер транзакций, транслятор исключений (преобразует
-            исключения <exceptionname>SQLException</exceptionname> в специфичные для Spring
-            исключения <exceptionname>DataAccessException</exceptionname>), DSL контекст (стартовая
-            точка, для построения всех запросов используя Fluent API), а также менеджеры для
-            реализации бизнес логики и гриды для отображения данных. <programlisting language="java">
+
+        <section>
+            <title>Конфигурация IoC контейнеров</title>
+
+            <para>Я не сторонник xml конфигурации, поэтому мы будем использовать подход на основе
+                аннотаций и Java-конфигурации. Основными признаками и частями Java-конфигурации IoC
+                контейнера являются классы с аннотацией <parameter>@Configuration</parameter> и
+                методы с аннотацией <parameter>@Bean</parameter>. </para>
+
+            <section>
+                <title>Анотация @Bean</title>
+
+                <para> Аннотация <parameter>@Bean</parameter> используется для указания того, что
+                    метод создает, настраивает и инициализирует новый объект, управляемый Spring IoC
+                    контейнером. Такие методы можно использовать как в классах с аннотацией
+                        <parameter>@Configuration</parameter>. Наш IoC контейнер будет возвращать
+                    пул подключений, менеджер транзакций, транслятор исключений (преобразует
+                    исключения <exceptionname>SQLException</exceptionname> в специфичные для Spring
+                    исключения <exceptionname>DataAccessException</exceptionname>), DSL контекст
+                    (стартовая точка, для построения всех запросов используя Fluent API), а также
+                    менеджеры для реализации бизнес логики и гриды для отображения данных. <programlisting language="java">
 <![CDATA[
 /**
  * Конфигурация IoC контейнера
@@ -714,7 +752,9 @@ public class JooqConfig {
 }
 ]]>                
             </programlisting>
-        </para>
+                </para>
+            </section>
+        </section>
     </section>
     <section>
         <title>Построение SQL запросов используя jOOQ</title>
@@ -740,15 +780,19 @@ public class JooqConfig {
             возвращается методом <methodname>getDslConfig</methodname>. В этом методе мы указали,
             что будем использовать диалект SQL СУБД Firebird, провайдер подключений (определяет, как
             мы получаем подключение через JDBC) и слушатель выполнения SQL запросов. </para>
-        <para>jOOQ поставляется с собственным DSL (или Domain Specific Language), который эмулирует
-            SQL в Java. Это означает, что вы можете писать SQL-операторы почти так, как если бы Java
-            изначально поддерживал их, примерно так же, как .NET в C# делает это с помощью LINQ к
-            SQL.</para>
-        <para>jOOQ использует неформальную BNF нотацию, которая моделирует унифицированный SQL
-            диалект, подходящий для большинства СУБД. В отличие от других, более простых
-            фреймворков, которые используют "Fluent API" или "метод цепочек", иерархия интерфейса
-            BNF на основе jOOQ не позволяет плохой синтаксис запросов.</para>
-        <para>Давайте рассмотрим простой запрос на языке SQL <programlisting language="sql">
+
+        <section>
+            <title>jOOQ DSL</title>
+
+            <para>jOOQ поставляется с собственным DSL (или Domain Specific Language), который
+                эмулирует SQL в Java. Это означает, что вы можете писать SQL-операторы почти так,
+                как если бы Java изначально поддерживал их, примерно так же, как .NET в C# делает
+                это с помощью LINQ к SQL.</para>
+            <para>jOOQ использует неформальную BNF нотацию, которая моделирует унифицированный SQL
+                диалект, подходящий для большинства СУБД. В отличие от других, более простых
+                фреймворков, которые используют "Fluent API" или "метод цепочек", иерархия
+                интерфейса BNF на основе jOOQ не позволяет плохой синтаксис запросов.</para>
+            <para>Давайте рассмотрим простой запрос на языке SQL <programlisting language="sql">
  <![CDATA[
  SELECT *
   FROM author a
@@ -758,8 +802,8 @@ public class JooqConfig {
  ORDER BY b.title
  ]]>               
             </programlisting>
-        </para>
-        <para>В jOOQ он будет выглядеть следующим образом: <programlisting language="java">
+            </para>
+            <para>В jOOQ он будет выглядеть следующим образом: <programlisting language="java">
  <![CDATA[
 Result<Record> result =
 dsl.select()
@@ -771,13 +815,13 @@ dsl.select()
    .fetch();
  ]]>               
             </programlisting>
-        </para>
-        <para>Классы <classname>AUTHOR</classname> и <classname>BOOK</classname>, описывающие
-            соответствующие таблицы должны быть сгенерированы заранее. Процесс генерации классов
-            jOOQ по заданной схеме БД был описан выше.</para>
-        <para>В данном случае мы задали таблицам <classname>AUTHOR</classname> и
-                <classname>BOOK</classname> алиас с помощью конструкции <function>as</function>. Без
-            использования алиасов этот запрос выглядел бы следующим образом <programlisting language="java">
+            </para>
+            <para>Классы <classname>AUTHOR</classname> и <classname>BOOK</classname>, описывающие
+                соответствующие таблицы должны быть сгенерированы заранее. Процесс генерации классов
+                jOOQ по заданной схеме БД был описан выше.</para>
+            <para>В данном случае мы задали таблицам <classname>AUTHOR</classname> и
+                    <classname>BOOK</classname> алиас с помощью конструкции <function>as</function>.
+                Без использования алиасов этот запрос выглядел бы следующим образом <programlisting language="java">
 <![CDATA[
 Result<Record> result =
 dsl.select()
@@ -789,9 +833,9 @@ dsl.select()
    .fetch();
 ]]>               
             </programlisting>
-        </para>
-        <para>Теперь посмотрим более сложный запрос с использованием агрегатных функций и
-            группировки. <programlisting language="sql">
+            </para>
+            <para>Теперь посмотрим более сложный запрос с использованием агрегатных функций и
+                группировки. <programlisting language="sql">
  <![CDATA[
 SELECT AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME, COUNT(*)
 FROM AUTHOR
@@ -805,8 +849,8 @@ ORDER BY AUTHOR.LAST_NAME ASC NULLS FIRST
   FETCH FIRST 2 ROWS ONLY
  ]]>               
             </programlisting>
-        </para>
-        <para>В jOOQ он будет выглядеть так: <programlisting language="java">
+            </para>
+            <para>В jOOQ он будет выглядеть так: <programlisting language="java">
 <![CDATA[
 dsl.select(AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME, count())
    .from(AUTHOR)
@@ -821,15 +865,15 @@ dsl.select(AUTHOR.FIRST_NAME, AUTHOR.LAST_NAME, count())
    .fetch();
 ]]>               
             </programlisting>
-        </para>
-        <para>Заметьте ограничение на количество возвращаемых записей, будет сгенерировано в
-            соответствии с указанным диалектом SQL. В примере выше использовался диалект
-                <literal>FIREIRD_3_0</literal>. Если бы был указан диалект
-                <literal>FIREBIRD_2_5</literal> или просто <literal>FIREBIRD</literal>, то
-            использовалось бы предложение ROWS вместо OFFSET … FETCH.</para>
-        <para>Вы можете собирать запрос по частям. Это позволяет менять его динамически, что можно
-            использовать для изменения порядка сортировки или добавления дополнительных параметров
-            фильтрации. <programlisting language="java">
+            </para>
+            <para>Заметьте ограничение на количество возвращаемых записей, будет сгенерировано в
+                соответствии с указанным диалектом SQL. В примере выше использовался диалект
+                    <literal>FIREIRD_3_0</literal>. Если бы был указан диалект
+                    <literal>FIREBIRD_2_5</literal> или просто <literal>FIREBIRD</literal>, то
+                использовалось бы предложение ROWS вместо OFFSET … FETCH.</para>
+            <para>Вы можете собирать запрос по частям. Это позволяет менять его динамически, что
+                можно использовать для изменения порядка сортировки или добавления дополнительных
+                параметров фильтрации. <programlisting language="java">
 <![CDATA[
 SelectFinalStep<?> select
     = dsl.select()
@@ -858,7 +902,9 @@ switch (sOrd) {
 return query.fetchMaps();
 ]]>               
             </programlisting>
-        </para>
+            </para>
+        </section>
+
         <section>
             <title>Именованные и неименованные параметры</title>
 
@@ -1017,6 +1063,11 @@ dsl.delete(AUTHOR)
                     <link xmlns:xlink="http://www.w3.org/1999/xlink"
                     xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/#merge-statement"
                     >MERGE</link>.</para>
+        </section>
+
+        <section>
+            <title>Хранимые процедуры в jOOQ</title>
+
             <para>Большим преимуществом jOOQ является поддержка работы с хранимыми процедурами.
                 Хранимые процедуры извлекаются в пакет <package>*.Routines.*</package> после чего с
                 ними можно удобно работать, например следующий код на Java <programlisting language="java">
@@ -1042,18 +1093,23 @@ EXECUTE PROCEDURE SP_ADD_INVOICE(:INVOICE_ID, :CUSTOMER_ID, :INVOICE_DATE);
             <para>jOOQ также предоставляет вам средства для построения простых DDL запросов, но мы
                 не будет их рассматривать здесь.</para>
         </section>
-        <section>
-            <title>Работа с транзакциями</title>
+    </section>
+    <section>
+        <title>Работа с транзакциями</title>
 
-            <para>По умолчанию jOOQ работает в режиме авто подтверждения транзакции, т.е. на каждый
-                SQL оператор стартует новая транзакция, и если в процессе выполнения SQL оператора
-                не было ошибок транзакция подтверждается, в противном случае откатывается. По
-                умолчанию используется транзакция с параметрами <code>READ_WRITE READ_COMMITED
-                    REC_VERSION WAIT</code>. То есть те же самые что используются JDBC драйвером.
-                Изменить режим изолированности по умолчанию можно через параметры пула соединений
-                (см. <methodname>BasicDataSource.setDefaultTransactionIsolation</methodname> в
-                методе <methodname>getDataSource</methodname> класса конфигурации
-                    <classname>JooqConfig</classname>).</para>
+        <para>По умолчанию jOOQ работает в режиме авто подтверждения транзакции, т.е. на каждый SQL
+            оператор стартует новая транзакция, и если в процессе выполнения SQL оператора не было
+            ошибок транзакция подтверждается, в противном случае откатывается. По умолчанию
+            используется транзакция с параметрами <code>READ_WRITE READ_COMMITED REC_VERSION
+                WAIT</code>. То есть те же самые что используются JDBC драйвером. Изменить режим
+            изолированности по умолчанию можно через параметры пула соединений (см.
+                <methodname>BasicDataSource.setDefaultTransactionIsolation</methodname> в методе
+                <methodname>getDataSource</methodname> класса конфигурации
+                <classname>JooqConfig</classname>).</para>
+
+        <section>
+            <title>Явные транзакции</title>
+
             <para>В jOOQ существует несколько способов явного управления транзакциями. Поскольку мы
                 разрабатываем приложение с использованием Spring Framework, будем использовать
                 менеджер транзакций заданный в конфигурации (JooqConfig). Получить менеджер
@@ -1104,72 +1160,81 @@ catch (DataAccessException e) {
 ]]>                  
                 </programlisting>
             </para>
-            <para>Параметр <parameter>propagation</parameter> задаёт, каким образом будет вестись
-                работа с транзакциями, если наш метод вызывается из внешней транзакции.<itemizedlist>
-                    <listitem>
-                        <para><constant>Propagation.REQUIRED</constant> — выполняться в существующей
-                            транзакции, если она есть, иначе создавать новую;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.MANDATORY</constant> — выполняться в
-                            существующей транзакции, если она есть, иначе генерировать
-                            исключение;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.SUPPORTS</constant> — выполняться в существующей
-                            транзакции, если она есть, иначе выполняться вне транзакции;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.NOT_SUPPORTED</constant> — всегда выполняться
-                            вне транзакции. Если есть существующая, то она будет остановлена;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.REQUIRES_NEW</constant> — всегда выполняться в
-                            новой независимой транзакции. Если есть существующая, то она будет
-                            остановлена до окончания выполнения новой транзакции;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.NESTED</constant> — если есть текущая
-                            транзакция, выполняться в новой, так называемой, вложенной транзакции.
-                            Если вложенная транзакция будет отменена, то это не повлияет на внешнюю
-                            транзакцию; если будет отменена внешняя транзакция, то будет отменена и
-                            вложенная. Если текущей транзакции нет, то просто создаётся
-                            новая;</para>
-                    </listitem>
-                    <listitem>
-                        <para><constant>Propagation.NEVER</constant> — всегда выполнять вне
-                            транзакции, при наличии существующей генерировать исключение.</para>
-                    </listitem>
-                </itemizedlist></para>
-            <para>Параметр <parameter>isolation</parameter> указывает режим изолированности
-                транзакции. Поддерживается 5 значений: <constant>DEFAULT</constant>,
-                    <constant>READ_UNCOMMITTED</constant>, <constant>READ_COMMITTED</constant>,
-                    <constant>REPEATABLE_READ</constant>, <constant>SERIALIZABLE</constant>. Если
-                указано значение параметра <constant>DEFAULT</constant>, то будет использоваться
-                умолчательный режим изолированности транзакции. Остальные режимы изолированности
-                взяты из SQL стандарта. В Firebird несколько другие режимы изолированности и
-                полностью соответствует всем критериям лишь режим READ_COMMITED. Таким образом,
-                режим в JDBC <constant>READ_COMMITTED</constant> отображает на
-                    <literal>read_committed</literal> в Firebird,
-                    <constant>REPEATABLE_READ</constant> — <literal>concurrency</literal>
-                (Snapshot), а <constant>SERIALIZABLE</constant> — <literal>consistency</literal>.
-                Кроме того, помимо режима изолированности, Firebird поддерживает дополнительные
-                параметры транзакции (<literal>NO RECORD_VERSION</literal> и
-                    <literal>RECORD_VERSION</literal>, <literal>WAIT</literal> и <literal>NO
-                    WAIT</literal>). Вы можете настроить отображение стандартных уровней
-                изолированности на параметры транзакции Firebird с помощью задания свойств JDBC
-                соединения (подробнее см. в <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="https://www.firebirdsql.org/file/Jaybird_2_1_JDBC_driver_manual.pdf"
-                    >Jaybird 2.1 JDBC driver Java Programmer's Manual</link> в главе Using
-                transactions). Если ваша транзакция работает более чем с 1 запросом, то
-                рекомендуется режим изолированности <literal>REPEATABLE_READ</literal> для
-                обеспечения согласованности данных.</para>
-            <para>В аннотации <option>@Transactional</option> вы можете задать, является ли
-                транзакция только для чтения с помощью свойства <varname>readOnly</varname>. По
-                умолчанию транзакция находится в режиме read-write.</para>
 
+            <section>
+                <title>Параметры транзакции</title>
+
+                <para>Параметр <parameter>propagation</parameter> задаёт, каким образом будет
+                    вестись работа с транзакциями, если наш метод вызывается из внешней транзакции.<itemizedlist>
+                        <listitem>
+                            <para><constant>Propagation.REQUIRED</constant> — выполняться в
+                                существующей транзакции, если она есть, иначе создавать
+                                новую;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.MANDATORY</constant> — выполняться в
+                                существующей транзакции, если она есть, иначе генерировать
+                                исключение;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.SUPPORTS</constant> — выполняться в
+                                существующей транзакции, если она есть, иначе выполняться вне
+                                транзакции;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.NOT_SUPPORTED</constant> — всегда
+                                выполняться вне транзакции. Если есть существующая, то она будет
+                                остановлена;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.REQUIRES_NEW</constant> — всегда выполняться
+                                в новой независимой транзакции. Если есть существующая, то она будет
+                                остановлена до окончания выполнения новой транзакции;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.NESTED</constant> — если есть текущая
+                                транзакция, выполняться в новой, так называемой, вложенной
+                                транзакции. Если вложенная транзакция будет отменена, то это не
+                                повлияет на внешнюю транзакцию; если будет отменена внешняя
+                                транзакция, то будет отменена и вложенная. Если текущей транзакции
+                                нет, то просто создаётся новая;</para>
+                        </listitem>
+                        <listitem>
+                            <para><constant>Propagation.NEVER</constant> — всегда выполнять вне
+                                транзакции, при наличии существующей генерировать исключение.</para>
+                        </listitem>
+                    </itemizedlist></para>
+                <para>Параметр <parameter>isolation</parameter> указывает режим изолированности
+                    транзакции. Поддерживается 5 значений: <constant>DEFAULT</constant>,
+                        <constant>READ_UNCOMMITTED</constant>, <constant>READ_COMMITTED</constant>,
+                        <constant>REPEATABLE_READ</constant>, <constant>SERIALIZABLE</constant>.
+                    Если указано значение параметра <constant>DEFAULT</constant>, то будет
+                    использоваться умолчательный режим изолированности транзакции. Остальные режимы
+                    изолированности взяты из SQL стандарта. В Firebird несколько другие режимы
+                    изолированности и полностью соответствует всем критериям лишь режим
+                    READ_COMMITED. Таким образом, режим в JDBC <constant>READ_COMMITTED</constant>
+                    отображает на <literal>read_committed</literal> в Firebird,
+                        <constant>REPEATABLE_READ</constant> — <literal>concurrency</literal>
+                    (Snapshot), а <constant>SERIALIZABLE</constant> —
+                    <literal>consistency</literal>. Кроме того, помимо режима изолированности,
+                    Firebird поддерживает дополнительные параметры транзакции (<literal>NO
+                        RECORD_VERSION</literal> и <literal>RECORD_VERSION</literal>,
+                        <literal>WAIT</literal> и <literal>NO WAIT</literal>). Вы можете настроить
+                    отображение стандартных уровней изолированности на параметры транзакции Firebird
+                    с помощью задания свойств JDBC соединения (подробнее см. в <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="https://www.firebirdsql.org/file/Jaybird_2_1_JDBC_driver_manual.pdf"
+                        >Jaybird 2.1 JDBC driver Java Programmer's Manual</link> в главе Using
+                    transactions). Если ваша транзакция работает более чем с 1 запросом, то
+                    рекомендуется режим изолированности <literal>REPEATABLE_READ</literal> для
+                    обеспечения согласованности данных.</para>
+                <para>В аннотации <option>@Transactional</option> вы можете задать, является ли
+                    транзакция только для чтения с помощью свойства <varname>readOnly</varname>. По
+                    умолчанию транзакция находится в режиме read-write.</para>
+            </section>
         </section>
     </section>
+
     <section>
         <title>Написание кода приложения</title>
 
@@ -1506,17 +1571,19 @@ public abstract class JqGrid {
                 построения запросов на выборку данных с помощью jOOQ.</para>
         </important>
 
-        <section>
-            <title>Создание справочников</title>
+    </section>
 
-            <para>Теперь мы можем приступить к созданию справочников. Мы опишем процесс создания
-                справочников на примере справочника заказчиков. Справочник продуктов создаётся
-                схожим образом, и при желании вы можете просмотреть его исходный код по ссылке,
-                приведённой в конце этой главы.</para>
-            <para>Сначала реализуем класс для работы с jqGrid, он будет наследоваться от нашего
-                абстрактного класса <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname>
-                описанного выше. В нём имеется возможность поиска и разнонаправленной сортировки по
-                полю NAME. В листинге исходного кода будут приведены поясняющие комментарии. <programlisting language="java">
+    <section>
+        <title>Создание справочников</title>
+
+        <para>Теперь мы можем приступить к созданию справочников. Мы опишем процесс создания
+            справочников на примере справочника заказчиков. Справочник продуктов создаётся схожим
+            образом, и при желании вы можете просмотреть его исходный код по ссылке, приведённой в
+            конце этой главы.</para>
+        <para>Сначала реализуем класс для работы с jqGrid, он будет наследоваться от нашего
+            абстрактного класса <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname> описанного
+            выше. В нём имеется возможность поиска и разнонаправленной сортировки по полю NAME. В
+            листинге исходного кода будут приведены поясняющие комментарии. <programlisting language="java">
 <![CDATA[
 package ru.ibase.fbjavaex.jqgrid;
 
@@ -1617,7 +1684,11 @@ public class JqGridCustomer extends JqGrid {
 }
 ]]>                
             </programlisting>
-            </para>
+        </para>
+
+        <section>
+            <title>Класс CustomerManager</title>
+
             <para>Добавление, редактирование и удаление заказчика мы будем осуществлять через класс
                     <classname>CustomerManager</classname>, который является своеобразным
                 бизнес-слоем между соответствующим контроллером и базой данных. Все операции в этом
@@ -1725,6 +1796,11 @@ public class CustomerManager {
 ]]>                    
                 </programlisting>
             </para>
+        </section>
+
+        <section>
+            <title>Класс контроллера заказчиков</title>
+
             <para>Теперь перейдём к написанию контроллера. Классы контроллеров начинаются с
                 аннотации <option>@Controller</option>. Для определения действий контроллера
                 необходимо добавить аннотацию <option>@RequestMapping</option> перед методом и
@@ -1737,30 +1813,40 @@ public class CustomerManager {
                 инструментов и навигации.</para>
             <para>Данные для отображения загружаются асинхронно компонентом jqGrid (маршрут
                     <uri>/customer/getdata</uri>). С данным маршрутом связан метод
-                    <methodname>getData</methodname>. Метод содержит дополнительную аннотацию
-                    <option>@ResponseBody</option>, которая говорит о том, что наш метод возвращает
-                объект для сериализации в один из форматов. В аннотации
-                    <option>@RequestMapping</option> задан параметр <code>produces =
-                    MediaType.APPLICATION_JSON</code>, что обозначает, что возвращаемый объект будет
-                сериализован в формат JSON. Именно в этом методе мы работаем с классом
-                    <classname>JqGridCustomer</classname> описанном выше. Аннотация
-                    <option>@RequestParam</option> позволяет извлечь значение параметра из HTTP
-                запроса. Данный метод класса работает с GET запросами. Параметр
-                    <parameter>value</parameter> в аннотации <option>@RequestParam</option> задаёт
-                имя параметра HTTP запроса для извлечения. Параметр <parameter>required</parameter>
-                задаёт, является ли параметр HTTP запроса обязательным. Параметр
-                    <parameter>defaultValue</parameter> задаёт значение по умолчанию, которое будет
-                подставлено в случае отсутствия HTTP параметра.</para>
-            <para>Метод <methodname>addCustomer</methodname> предназначен для добавления нового
-                заказчика. Он связан с маршрутом <uri>/customer/create</uri>, и в отличие от
-                предыдущего метода работает с POST запросом. Метод возвращает <code
-                    language="javascript">{success: true}</code> в случае успешного добавления, и
-                объект с текстом ошибки в случае ошибки. Данный метод работает с классом бизнес слоя
-                    <classname>CustomerManager</classname>.</para>
-            <para>Метод <methodname>editCustomer</methodname> связан с маршрутом
-                    <uri>/customer/edit</uri> и предназначен для редактирования заказчика. Метод
-                    <methodname>deleteCustomer</methodname> связан с маршрутом
-                    <uri>/customer/delete</uri> и предназначен для удаления заказчика. <programlisting language="java">
+                    <methodname>getData</methodname>. </para>
+
+            <section>
+                <title>Метод getData</title>
+
+                <para>Метод <methodname>getData</methodname> содержит дополнительную аннотацию
+                        <option>@ResponseBody</option>, которая говорит о том, что наш метод
+                    возвращает объект для сериализации в один из форматов. В аннотации
+                        <option>@RequestMapping</option> задан параметр <code>produces =
+                        MediaType.APPLICATION_JSON</code>, что обозначает, что возвращаемый объект
+                    будет сериализован в формат JSON. Именно в этом методе мы работаем с классом
+                        <classname>JqGridCustomer</classname> описанном выше. Аннотация
+                        <option>@RequestParam</option> позволяет извлечь значение параметра из HTTP
+                    запроса. Данный метод класса работает с GET запросами. Параметр
+                        <parameter>value</parameter> в аннотации <option>@RequestParam</option>
+                    задаёт имя параметра HTTP запроса для извлечения. Параметр
+                        <parameter>required</parameter> задаёт, является ли параметр HTTP запроса
+                    обязательным. Параметр <parameter>defaultValue</parameter> задаёт значение по
+                    умолчанию, которое будет подставлено в случае отсутствия HTTP параметра.</para>
+            </section>
+
+            <section>
+                <title>Методы действий контроллера Заказчиков</title>
+
+                <para>Метод <methodname>addCustomer</methodname> предназначен для добавления нового
+                    заказчика. Он связан с маршрутом <uri>/customer/create</uri>, и в отличие от
+                    предыдущего метода работает с POST запросом. Метод возвращает <code
+                        language="javascript">{success: true}</code> в случае успешного добавления,
+                    и объект с текстом ошибки в случае ошибки. Данный метод работает с классом
+                    бизнес слоя <classname>CustomerManager</classname>.</para>
+                <para>Метод <methodname>editCustomer</methodname> связан с маршрутом
+                        <uri>/customer/edit</uri> и предназначен для редактирования заказчика. Метод
+                        <methodname>deleteCustomer</methodname> связан с маршрутом
+                        <uri>/customer/delete</uri> и предназначен для удаления заказчика. <programlisting language="java">
 <![CDATA[
 package ru.ibase.fbjavaex.controllers;
 
@@ -1932,15 +2018,21 @@ public class CustomerController {
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <para>JSP страница для отображения справочника заказчиков не содержит ничего особенного:
-                разметку с основными частями страницы, таблицу для отображения грида и блок для
-                отображения панели навигации. JSP шаблоны не очень продвинутое средство, при желании
-                вы можете заменить их на другие системы шаблонов, которые поддерживают наследование.
-                В файле <filename>../jspf/head.jspf</filename> содержатся общие скрипты и стили для
-                всех страниц сайта, а файл <filename>../jspf/menu.jspf</filename> главное меню
-                сайта. Мы не будем приводить их код, он довольно простой и при желании вы можете
-                посмотреть его в исходных кодах проекта. <programlisting language="javascript">
+                </para>
+            </section>
+
+            <section>
+                <title>Отображение заказчиков</title>
+
+                <para>JSP страница для отображения справочника заказчиков не содержит ничего
+                    особенного: разметку с основными частями страницы, таблицу для отображения грида
+                    и блок для отображения панели навигации. JSP шаблоны не очень продвинутое
+                    средство, при желании вы можете заменить их на другие системы шаблонов, которые
+                    поддерживают наследование. В файле <filename>../jspf/head.jspf</filename>
+                    содержатся общие скрипты и стили для всех страниц сайта, а файл
+                        <filename>../jspf/menu.jspf</filename> главное меню сайта. Мы не будем
+                    приводить их код, он довольно простой и при желании вы можете посмотреть его в
+                    исходных кодах проекта. <programlisting language="javascript">
 <![CDATA[
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -1988,10 +2080,10 @@ public class CustomerController {
 </html>
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Основная логика на стороне клиента сосредоточена в JavaScript модуле
-                    <filename>/resources/js/jqGridCustomer.js</filename>
-                <programlisting language="javascript">
+                </para>
+                <para>Основная логика на стороне клиента сосредоточена в JavaScript модуле
+                        <filename>/resources/js/jqGridCustomer.js</filename>
+                    <programlisting language="javascript">
 <![CDATA[
 var JqGridCustomer = (function ($) {
 
@@ -2222,49 +2314,59 @@ var JqGridCustomer = (function ($) {
 })(jQuery);
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Сетка jqGrid создаётся в методе <methodname>initGrid</methodname> и привязывается
-                к html элементу с идентификатором jqGridCustomer. Описание столбцов (колонок) грида
-                возвращается методом <methodname>getColModel</methodname>. Каждый столбец в jqGrid
-                имеет достаточно много возможных свойств. В исходном коде присутствуют комментарии,
-                объясняющие свойства столбцов. Подробнее о конфигурировании модели столбцов jqGrid
-                вы можете прочитать в документации проекта jqGrid в разделе <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Acolmodel_options"
-                    >ColModel API</link>.</para>
-            <para>Панель навигации может быть создана с кнопками редактирования или без них (методы
-                    <methodname>initPagerWithEditors</methodname> и
-                    <methodname>initPagerWithoutEditors</methodname> соответственно). Конструктор
-                панели прикрепляет её к элементу с идентификатором jqPagerCustomer. Опции создания
-                панели навигации описаны в разделе <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Anavigator"
-                    >Navigator</link> документации jqGrid.</para>
-            <para>Функции <methodname>getEditOptions</methodname>,
-                    <methodname>getAddOptions</methodname>,
-                    <methodname>getDeleteOptions</methodname> возвращают опции диалогов
-                редактирования, добавления и удаления соответственно. Свойство
-                    <varname>url</varname> указывает, по какому адресу будут отправлены данные после
-                нажатия кнопки OK в диалоге. Свойство <methodname>afterSubmit</methodname> —
-                событие, происходящее после отправки данных на сервер и получения ответа от него. В
-                методе <methodname>afterSubmit</methodname> проверяется, не вернул ли наш контроллер
-                ошибку. Если ошибки не было, то производится обновление грида, в противном случае
-                ошибка сообщается пользователю. Обратите внимание на свойство
-                    <varname>editData</varname>. Оно позволяет задать значения дополнительных полей,
-                которые не участвуют в диалоге редактирования. Дело в том, что диалоги
-                редактирования не включают в себя значение скрытых полей, а отображать автоматически
-                генерируемые ключи не сильно хочется.</para>
-        </section>
-        <section>
-            <title>Создание журналов</title>
+                </para>
+            </section>
 
-            <para>В отличие от справочников журналы содержат довольно большое количество записей и
-                являются часто пополняемыми. Большинство журналов содержат поле с датой создания
-                документа. Чтобы уменьшить количество выбираемых данных обычно принято вводить такое
-                понятие как рабочий период для того, чтобы уменьшить объём данных передаваемый на
-                клиента. Рабочий период — это диапазон дат, внутри которого требуются рабочие
-                документы. Рабочий период описывается классом <classname>WorkingPeriod</classname>.
-                Этот класс создаётся через бин workingPeriod в классе конфигурации
-                    <classname>ru.ibase.fbjavaex.config.JooqConfig</classname>. <programlisting language="java">
+            <section>
+                <title>Визуальные элементы</title>
+
+                <para>Сетка jqGrid создаётся в методе <methodname>initGrid</methodname> и
+                    привязывается к html элементу с идентификатором jqGridCustomer. Описание
+                    столбцов (колонок) грида возвращается методом
+                        <methodname>getColModel</methodname>. Каждый столбец в jqGrid имеет
+                    достаточно много возможных свойств. В исходном коде присутствуют комментарии,
+                    объясняющие свойства столбцов. Подробнее о конфигурировании модели столбцов
+                    jqGrid вы можете прочитать в документации проекта jqGrid в разделе <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Acolmodel_options"
+                        >ColModel API</link>.</para>
+                <para>Панель навигации может быть создана с кнопками редактирования или без них
+                    (методы <methodname>initPagerWithEditors</methodname> и
+                        <methodname>initPagerWithoutEditors</methodname> соответственно).
+                    Конструктор панели прикрепляет её к элементу с идентификатором jqPagerCustomer.
+                    Опции создания панели навигации описаны в разделе <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="http://www.trirand.com/jqgridwiki/doku.php?id=wiki%3Anavigator"
+                        >Navigator</link> документации jqGrid.</para>
+                <para>Функции <methodname>getEditOptions</methodname>,
+                        <methodname>getAddOptions</methodname>,
+                        <methodname>getDeleteOptions</methodname> возвращают опции диалогов
+                    редактирования, добавления и удаления соответственно. Свойство
+                        <varname>url</varname> указывает, по какому адресу будут отправлены данные
+                    после нажатия кнопки OK в диалоге. Свойство <methodname>afterSubmit</methodname>
+                    — событие, происходящее после отправки данных на сервер и получения ответа от
+                    него. В методе <methodname>afterSubmit</methodname> проверяется, не вернул ли
+                    наш контроллер ошибку. Если ошибки не было, то производится обновление грида, в
+                    противном случае ошибка сообщается пользователю. Обратите внимание на свойство
+                        <varname>editData</varname>. Оно позволяет задать значения дополнительных
+                    полей, которые не участвуют в диалоге редактирования. Дело в том, что диалоги
+                    редактирования не включают в себя значение скрытых полей, а отображать
+                    автоматически генерируемые ключи не сильно хочется.</para>
+            </section>
+        </section>
+    </section>
+
+    <section>
+        <title>Создание журналов</title>
+
+        <para>В отличие от справочников журналы содержат довольно большое количество записей и
+            являются часто пополняемыми. Большинство журналов содержат поле с датой создания
+            документа. Чтобы уменьшить количество выбираемых данных обычно принято вводить такое
+            понятие как рабочий период для того, чтобы уменьшить объём данных передаваемый на
+            клиента. Рабочий период — это диапазон дат, внутри которого требуются рабочие документы.
+            Рабочий период описывается классом <classname>WorkingPeriod</classname>. Этот класс
+            создаётся через бин workingPeriod в классе конфигурации
+                <classname>ru.ibase.fbjavaex.config.JooqConfig</classname>. <programlisting language="java">
 <![CDATA[
 package ru.ibase.fbjavaex.config;
 
@@ -2339,18 +2441,16 @@ public class WorkingPeriod {
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <para>В нашем приложении будет один журнал «Счёт-фактуры». Счёт-фактура – состоит из
-                заголовка, где описываются общие атрибуты (номер, дата, заказчик …), и позиций
-                счёт-фактуры (наименование товара, количество, стоимостью и т.д.). Шапка
-                счёт-фактуру отображается в основной сетке, а позиции могут быть просмотрены в
-                детализирующей сетке, которая раскрывается по щелчку по значку «+» на нужном
-                документе. </para>
-            <para>Реализуем класс для просмотра шапок счёт-фактуры через jqGrid, он будет
-                наследоваться от нашего абстрактного класса
-                    <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname>, описанного выше. В нём
-                имеется возможность поиска наименованию заказчика и дате счёта. Кроме того данный
-                класс поддерживает сортировку по дате в обоих направлениях. <programlisting language="java">
+        </para>
+        <para>В нашем приложении будет один журнал «Счёт-фактуры». Счёт-фактура – состоит из
+            заголовка, где описываются общие атрибуты (номер, дата, заказчик …), и позиций
+            счёт-фактуры (наименование товара, количество, стоимостью и т.д.). Шапка счёт-фактуру
+            отображается в основной сетке, а позиции могут быть просмотрены в детализирующей сетке,
+            которая раскрывается по щелчку по значку «+» на нужном документе. </para>
+        <para>Реализуем класс для просмотра шапок счёт-фактуры через jqGrid, он будет наследоваться
+            от нашего абстрактного класса <classname>ru.ibase.fbjavaex.jqgrid.JqGrid</classname>,
+            описанного выше. В нём имеется возможность поиска наименованию заказчика и дате счёта.
+            Кроме того данный класс поддерживает сортировку по дате в обоих направлениях. <programlisting language="java">
 <![CDATA[
 package ru.ibase.fbjavaex.jqgrid;
 
@@ -2498,7 +2598,11 @@ public class JqGridInvoice extends JqGrid {
 }
 ]]>                    
                 </programlisting>
-            </para>
+        </para>
+
+        <section>
+            <title>Позиции счёт-фактур</title>
+
             <para>Класс для просмотра позиций счёт-фактуры через jqGrid несколько проще. Во-первых,
                 его записи отфильтрованы по коду шапки счёт фактуры, а во-вторых в нём мы не будем
                 реализовывать поиск и пользовательскую сортировку. <programlisting language="java">
@@ -2575,6 +2679,11 @@ public class JqGridInvoiceLine extends JqGrid {
 ]]>                    
                 </programlisting>
             </para>
+        </section>
+
+        <section>
+            <title>Класс InvoiceManager</title>
+
             <para>Добавлять, редактировать, удалять счёт фактуры (и их позиции), а также оплачивать
                 их, мы будем через класс
                     <classname>ru.ibase.fbjavaex.managers.InvoiceManager</classname>, который
@@ -2720,6 +2829,12 @@ public class InvoiceManager {
 ]]>                    
                 </programlisting>
             </para>
+        </section>
+
+
+        <section>
+            <title>Контроллер счёт-фактур</title>
+
             <para>Теперь перейдём к написанию контроллера. Входной точкой нашего контроллера будет
                 метод <methodname>index</methodname>, он отвечает за отображение JSP страницы
                 (представления). Эта страница содержит разметку для отображения грида, панель
@@ -3082,29 +3197,34 @@ public class InvoiceController {
                             только те счёт фактуры, которые входят в рабочий период.</para>
                     </listitem>
                 </orderedlist></para>
-            <para>При работе с датами в Java существует много особенностей. </para>
-            <para>Тип <classname>java.sql.Timestamp</classname> в Java поддерживает точность до
-                наносекунд, в то время как в Firebird максимальная точность типа TIMESTAMP
-                составляет десятитысячную долю секунды. На самом деле это не является большой
-                проблемой.</para>
-            <para>Типы даты и времени в Java поддерживают работу временными зонами. С другой
-                стороны, в настоящее время Firebird не поддерживает тип TIMESTAMP WITH TIMEZONE. В
-                этом случае Java считает, что даты в базе данных хранятся в часовом поясе сервера (а
-                не в UTC как вы могли бы подумать). Однако при сериализации в JSON время будет
-                преобразовано в UTC. Это надо учитывать при обработке времени в JavaScript.</para>
-            <important>
-                <para>Java берёт смещение времени из собственной базы временных зон, а не из
-                    операционной системы. Это обстоятельство существенно повышает требования к
-                    актуальности версии JDK. Если у вас установлена древняя JDK, то работа с датой и
-                    временем может вестись не верно.</para>
-            </important>
-            <para>По умолчанию дата сериализуется в JSON в числовом представлении (как число
-                наносекунд прошедших с 1 января 1970). Это не всегда удобно. Для того чтобы дата
-                сериализовалась в текстовом представлении в классе
-                    <classname>WebAppConfig</classname>, описанном выше, в методе
-                    <methodname>configureMessageConverters</methodname> свойству конфигурации
-                    <constant>SerializationFeature.WRITE_DATES_AS_TIMESTAMPS</constant>
-                преобразования даты указать значение <literal>false</literal>. <programlisting language="java">
+
+            <section>
+                <title>Работа с датами в Java</title>
+
+                <para>При работе с датами в Java существует много особенностей. </para>
+                <para>Тип <classname>java.sql.Timestamp</classname> в Java поддерживает точность до
+                    наносекунд, в то время как в Firebird максимальная точность типа TIMESTAMP
+                    составляет десятитысячную долю секунды. На самом деле это не является большой
+                    проблемой.</para>
+                <para>Типы даты и времени в Java поддерживают работу временными зонами. С другой
+                    стороны, в настоящее время Firebird не поддерживает тип TIMESTAMP WITH TIMEZONE.
+                    В этом случае Java считает, что даты в базе данных хранятся в часовом поясе
+                    сервера (а не в UTC как вы могли бы подумать). Однако при сериализации в JSON
+                    время будет преобразовано в UTC. Это надо учитывать при обработке времени в
+                    JavaScript.</para>
+                <important>
+                    <para>Java берёт смещение времени из собственной базы временных зон, а не из
+                        операционной системы. Это обстоятельство существенно повышает требования к
+                        актуальности версии JDK. Если у вас установлена древняя JDK, то работа с
+                        датой и временем может вестись не верно.</para>
+                </important>
+                <para>По умолчанию дата сериализуется в JSON в числовом представлении (как число
+                    наносекунд прошедших с 1 января 1970). Это не всегда удобно. Для того чтобы дата
+                    сериализовалась в текстовом представлении в классе
+                        <classname>WebAppConfig</classname>, описанном выше, в методе
+                        <methodname>configureMessageConverters</methodname> свойству конфигурации
+                        <constant>SerializationFeature.WRITE_DATES_AS_TIMESTAMPS</constant>
+                    преобразования даты указать значение <literal>false</literal>. <programlisting language="java">
 <![CDATA[
 @Configuration
 @ComponentScan("ru.ibase.fbjavaex")
@@ -3126,11 +3246,17 @@ public class WebAppConfig extends WebMvcConfigurerAdapter {
 }
 ]]>                    
                 </programlisting>
-            </para>
-            <para>Метод <methodname>initBinder</methodname> контроллера
-                    <classname>InvoiceController</classname> описывает, каким образом текстовое
-                представление даты, присылаемое браузером, преобразуется в значение типа
-                Timestamp.</para>
+                </para>
+                <para>Метод <methodname>initBinder</methodname> контроллера
+                        <classname>InvoiceController</classname> описывает, каким образом текстовое
+                    представление даты, присылаемое браузером, преобразуется в значение типа
+                    Timestamp.</para>
+            </section>
+        </section>
+
+        <section>
+            <title>Отображение счёт-фактур</title>
+
             <para>JSP страница содержит разметку для отображения сетки с шапками счёт-фактур и
                 панель навигации. Позиции счёт фактур отображаются при раскрытии счёт шапки фактуры,
                 как выпадающий грид. <programlisting language="javascript">
@@ -4034,96 +4160,123 @@ var JqGridInvoice = (function ($, jqGridProductFactory, jqGridCustomerFactory) {
 ]]>                    
                 </programlisting>
             </para>
-            <para>В журнале счёт фактур, основная сетка используется для отображения шапок, а
-                раскрывающаяся по клику для отображения позиций. Для отображения дочернего грида
-                свойству <varname>subGrid</varname> присвоено значение <literal>true</literal>.
-                Дочерняя сетка отображается, используя событие
-                    <function>subGridRowExpanded</function>, которое связано с методом
-                    <function>showChildGrid</function>. Позиции фильтруются по первичному ключу счёт
-                фактуры. Помимо основных кнопок панель навигации для шапки счёт фактуры добавлена
-                пользовательская кнопка для оплаты счёт фактуры с помощью функции
-                    <function>jqGridInvoice.dbGrid.navButtonAdd</function> (см. метод
-                    <function>initPager</function>).</para>
-            <para>В отличие от справочников диалоги редактирования для журналов намного сложнее.
-                Зачастую они используют выбор из других справочников. Поэтому такие диалоги
-                редактирования не получится построить автоматически с помощью jqGrid, однако в этой
-                библиотеки существует возможность построение диалогов по шаблону, которой мы и
-                воспользуемся. Шаблон диалога возвращает функцией <function>getTemplate</function>.
-                Открытие справочника заказчиков для выбора заказчика осуществляется функцией
-                    <function>invoiceGrid.showCustomerWindow()</function>. Она использует функции
-                уже описанного ранее модуля JqGridCustomer. После выбора заказчика из модального
-                окна его код подставляется в поле CUSTOMER_ID. В свойстве
-                    <varname>editData</varname> опций редактирования и добавления описаны поля,
-                которые надо будет передать на сервер, используя предварительную обработку или из
-                невидимых полей.</para>
-            <para>Теперь вернёмся к обработке дат. Как я уже говорил, контроллер
-                    <classname>InvoiceController</classname> возвращает дату в UTC, нам же
-                необходимо отобразить её в текущей часовой зоне. Для этого зададим функцию
-                форматирования даты <function>jqGridInvoice.dateTimeFormatter</function> через
-                свойство <varname>formatter</varname>, соответствующего поля INVOICE_DATE. При
-                отправке данных на сервер нам необходимо сделать обратную операцию – перевести время
-                из текущей временной зоны в UTC. За это отвечает функция
-                    <function>convertToUTC</function>.</para>
-            <para>Для редактора позиций счёт фактуры, так же используется пользовательский шаблон,
-                который возвращается функцией <function>getTemplateDetail</function>. Открытие окна
-                для выбора из справочника товаров осуществляется функцией
-                    <function>invoiceGrid.showProductWindow()</function>. Эта функция использует
-                функции модуля JqGridProduct.</para>
-            <para>Код модуля JqGridInvoice подробно прокомментирован так, чтобы вы могли понять
-                логику его работы. Дополнительные пояснения вы можете найти в нём.</para>
-            <para>Напоследок приведу несколько скриншотов получившегося веб приложения.</para>
-            <para>
-                <figure>
-                    <title>Журнал счёт-фактур</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/java-invoice-screen.png" width="680"/>
-                        </imageobject>
-                        <textobject>
-                            <phrase>Журнал счёт-фактур</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-                <figure>
-                    <title>Редактирование счёт-фактуры</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/java-invoice-editor-screen.png" width="680"/>
-                        </imageobject>
-                        <textobject>
-                            <phrase>Редактирование счёт-фактуры</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-                <figure>
-                    <title>Редактирование позиции счёт-фактуры</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/java-invoice-editor2-screen.png" width="680"
-                            />
-                        </imageobject>
-                        <textobject>
-                            <phrase>Редактирование позиции счёт-фактуры</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-                <figure>
-                    <title>Выбор из справочника в диалоге счёт-фактуры</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/java-invoice-editor3-screen.png" width="680"
-                            />
-                        </imageobject>
-                        <textobject>
-                            <phrase>Выбор из справочника в диалоге счёт-фактуры</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-            </para>
+
+            <section>
+                <title>Отображение и редактирование позиций счёт-фактур</title>
+
+                <para>В журнале счёт фактур, основная сетка используется для отображения шапок, а
+                    раскрывающаяся по клику для отображения позиций. Для отображения дочернего грида
+                    свойству <varname>subGrid</varname> присвоено значение <literal>true</literal>.
+                    Дочерняя сетка отображается, используя событие
+                        <function>subGridRowExpanded</function>, которое связано с методом
+                        <function>showChildGrid</function>. </para>
+
+                <para>Позиции фильтруются по первичному ключу счёт фактуры. Помимо основных кнопок
+                    панель навигации для шапки счёт фактуры добавлена пользовательская кнопка для
+                    оплаты счёт фактуры с помощью функции
+                        <function>jqGridInvoice.dbGrid.navButtonAdd</function> (см. метод
+                        <function>initPager</function>).</para>
+            </section>
+
+            <section>
+                <title>Диалоги</title>
+
+                <para>В отличие от справочников диалоги редактирования для журналов намного сложнее.
+                    Зачастую они используют выбор из других справочников. Поэтому такие диалоги
+                    редактирования не получится построить автоматически с помощью jqGrid, однако в
+                    этой библиотеки существует возможность построение диалогов по шаблону, которой
+                    мы и воспользуемся.</para>
+                
+                <para>Шаблон диалога возвращает функцией <function>getTemplate</function>. Открытие
+                    справочника заказчиков для выбора заказчика осуществляется функцией
+                        <function>invoiceGrid.showCustomerWindow()</function>. Она использует
+                    функции уже описанного ранее модуля JqGridCustomer. После выбора заказчика из
+                    модального окна его код подставляется в поле CUSTOMER_ID. В свойстве
+                        <varname>editData</varname> опций редактирования и добавления описаны поля,
+                    которые надо будет передать на сервер, используя предварительную обработку или
+                    из невидимых полей.</para>
+            </section>
+
+            <section>
+                <title>Обработка дат</title>
+
+                <para>Теперь вернёмся к обработке дат. Как я уже говорил, контроллер
+                        <classname>InvoiceController</classname> возвращает дату в UTC, нам же
+                    необходимо отобразить её в текущей часовой зоне. Для этого зададим функцию
+                    форматирования даты <function>jqGridInvoice.dateTimeFormatter</function> через
+                    свойство <varname>formatter</varname>, соответствующего поля
+                    INVOICE_DATE.</para>
+
+                <para>При отправке данных на сервер нам необходимо сделать обратную операцию –
+                    перевести время из текущей временной зоны в UTC. За это отвечает функция
+                        <function>convertToUTC</function>.</para>
+                
+                <para>Для редактора позиций счёт фактуры, так же используется пользовательский
+                    шаблон, который возвращается функцией <function>getTemplateDetail</function>.
+                    Открытие окна для выбора из справочника товаров осуществляется функцией
+                        <function>invoiceGrid.showProductWindow()</function>. Эта функция использует
+                    функции модуля JqGridProduct.</para>
+                
+                <para>Код модуля JqGridInvoice подробно прокомментирован так, чтобы вы могли понять
+                    логику его работы. Дополнительные пояснения вы можете найти в нём.</para>
+            </section>
         </section>
     </section>
+
     <section>
-        <title>Заключение</title>
+        <title>Результат</title>
+
+        <para>Напоследок приведу несколько скриншотов получившегося веб приложения.</para>
+        <para>
+            <figure>
+                <title>Журнал счёт-фактур</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-invoice-screen.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Журнал счёт-фактур</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+            <figure>
+                <title>Редактирование счёт-фактуры</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-invoice-editor-screen.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Редактирование счёт-фактуры</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+            <figure>
+                <title>Редактирование позиции счёт-фактуры</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-invoice-editor2-screen.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Редактирование позиции счёт-фактуры</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+            <figure>
+                <title>Выбор из справочника в диалоге счёт-фактуры</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/java-invoice-editor3-screen.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Выбор из справочника в диалоге счёт-фактуры</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+    </section>
+
+    <section>
+        <title>Исходный код</title>
         <para>На этом мой пример закончен. Исходные коды вы можете скачать по ссылке <link
                 xmlns:xlink="http://www.w3.org/1999/xlink"
                 xlink:href="https://github.com/sim1984/fbjavaex"
