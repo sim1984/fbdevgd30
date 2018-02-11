@@ -1,6 +1,5 @@
 <!DOCTYPE chapter>
-<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-dotnet-winform"
-    xml:lang="ru">
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="fbdevgd-efw" xml:lang="ru">
     <info>
         <title>Создание Windows Forms приложений с использованием Entity Framework</title>
     </info>
@@ -13,7 +12,7 @@
         Framework от Microsoft. Предоставляет возможность взаимодействия с объектами как посредством
         LINQ в виде LINQ to Entities, так и с использованием Entity SQL.</para>
 
-    <section>
+    <section xml:id="fbdevgd-efw-methods">
         <title>Способы взаимодействия с базой данных</title>
 
         <para>Entity Framework предполагает три возможных способа взаимодействия с базой данных:<itemizedlist>
@@ -40,7 +39,7 @@
         </note>
     </section>
 
-    <section xml:id="app-dotnet-vsprepare">
+    <section xml:id="fbdevgd-efw-vs-prepare">
         <title>Подготовка Visual Studio 2015 для работы с Firebird</title>
 
         <para>Для работы с Firebird вам необходимо установить:<itemizedlist>
@@ -95,10 +94,15 @@
                 </listitem>
             </itemizedlist></para>
 
-        <section>
+        <section xml:id="fbdevgd-efw-vs-install">
             <title>Процесс установки</title>
 
-            <section>
+            <important>
+                <para>Поскольку процесс установки требует манипуляций с защищёнными директориями,
+                    вам потребуются права администратора.</para>
+            </important>
+
+            <section xml:id="fbdevgd-efw-vs-install-steps">
                 <title>Шаги</title>
 
                 <para><orderedlist>
@@ -112,10 +116,6 @@
                                 в папку с установленным клиентом Firebird. У меня это папка
                                     <filename>c:\Program Files (x86)\FirebirdClient\</filename>
                             </para>
-                            <important>
-                                <para>Это необходимо делать с правами администратора. Как и другие
-                                    действия с защищёнными директориями.</para>
-                            </important>
                         </listitem>
                         <listitem>
                             <para>Необходимо установить сборки Firebird в GAC. Для удобство
@@ -227,7 +227,7 @@ gacutil /i EntityFramework.Firebird.dll
                     </orderedlist></para>
             </section>
 
-            <section>
+            <section xml:id="fbdevgd-efw-vs-install-testit">
                 <title>Проверка установки</title>
 
                 <para>Для проверки, что всё успешно установилось, запускаем Visual Studio 2015.
@@ -286,14 +286,14 @@ gacutil /i EntityFramework.Firebird.dll
 
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-efw-vs-crtproject">
         <title>Создание проекта</title>
 
         <para>В данной главе мы рассмотрим пример создания Windows Forms приложения. Остальные типы
             приложений хоть и отличаются, но принципы работы с Firebird через Entity Framework
             остаются те же.</para>
 
-        <section>
+        <section xml:id="fbdevgd-efw-vs-crtproj-add-pkgs">
             <title>Добавление пакетов в проект</title>
 
             <para>Прежде всего, после создания Windows Forms проекта нам необходимо добавить с
@@ -338,7 +338,7 @@ gacutil /i EntityFramework.Firebird.dll
         </section>
     </section>
 
-    <section xml:id="app-dotnet-createedm">
+    <section xml:id="fbdevgd-efw-vs-crt-edm">
         <title>Создание EDM модели</title>
 
         <para>В своём приложении мы будем использовать подход Code First.</para>
@@ -494,13 +494,13 @@ WireCrypt = Disabled
 
         <para>Базовая EDM готова.</para>
 
-        <section>
+        <section xml:id="fbdevgd-efw-vs-crt-edm-files">
             <title>EDM файлы</title>
 
             <para>После работы этого мастера у вас должно появиться 5 новых файлов. Один файл модели
                 и четыре файла описывающих каждую из сущностей модели.</para>
 
-            <section>
+            <section xml:id="fbdevgd-efw-vs-crt-edm-entityfile">
                 <title>Файл сущности</title>
 
                 <para>Давайте посмотрим один из сгенерированных файлов описывающих сущность INVOICE. <programlisting language="csharp">
@@ -543,7 +543,7 @@ public partial class INVOICE
                         xlink:href="https://msdn.microsoft.com/en-us/data/jj591583">Code First Data
                         Annotations</link>.</para>
 
-                <section>
+                <section xml:id="fbdevgd-efw-vs-edm-files-navig">
                     <title>Навигационные свойства и "Ленивая загрузка"</title>
                     <para>Кроме того, было сгенерировано ещё два навигационных свойства
                             <varname>CUSTOMER</varname> и <varname>INVOICE_LINES</varname>. Первое
@@ -563,7 +563,7 @@ public partial class INVOICE
                             >public</emphasis> и <emphasis role="bold">virtual</emphasis>.</para>
                 </section>
             </section>
-            <section>
+            <section xml:id="fbdevgd-efw-vs-crt-edm-dbmodelfile">
                 <title>Файл DbModel</title>
 
                 <para>Теперь откроем файл <filename>DbModel.cs</filename> описывающий модель в
@@ -638,7 +638,7 @@ public partial class DbModel : DbContext
         </section>
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-efw-vs-crt-gui">
         <title>Создание пользовательского интерфейса</title>
 
         <para>В нашем приложении мы создадим два справочника: справочник товаров и справочник
@@ -660,7 +660,7 @@ public partial class DbModel : DbContext
         <para>Поскольку по функционалу оба справочника похожи и реализованы схожим образом описывать
             мы будем только один.</para>
 
-        <section xml:id="app-dotnet-getcontext">
+        <section xml:id="fbdevgd-efw-vs-context">
             <title>Получение контекста</title>
 
             <para>Для работы с нашей моделью нам потребуется метод для получения контекста (или
@@ -745,7 +745,7 @@ var dbContext = AppVariables.getDbContext();
             </para>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-efw-work-with-data">
             <title>Работа с данными</title>
 
             <para>Сами по себе сущности модели не содержат никаких данных. Самым простым способом
@@ -796,7 +796,7 @@ private void CustomerForm_Load(object sender, EventArgs e)
                     xlink:href="https://msdn.microsoft.com/ru-ru/library/bb386964(v=vs.110).aspx"
                     >LINQ to Entities</link>.</para>
 
-            <section>
+            <section xml:id="fbdevgd-efw-linq">
                 <title>Методы расшрений LINQ</title>
 
                 <para>Методы расширений LINQ могут возвращать два объекта:
@@ -851,7 +851,7 @@ private void LoadCustomersData()
                     предварительный вызов <code>dbContext.CUSTOMERS.Load();</code> для загрузки
                     коллекции в память.</para>
 
-                <section>
+                <section xml:id="fbdevgd-efw-linq-bindinglist">
                     <title>IQueryable и BindingList</title>
 
                     <para>Однако тут нас подстерегает одна маленькая засада. Объекты
@@ -916,38 +916,55 @@ public static class DbExtensions
     }
 }                
 ]]>
-                </programlisting> В этом же классе присутствует ещё несколько расширений. </para>
+                </programlisting>
+                    </para>
 
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-efw-linq-other-extensions">
                     <title>Другие расширения</title>
 
-                    <para>Метод <methodname>NextValueFor</methodname> предназначен для получения
-                        следующего значения генератора. Метод
-                            <methodname>dbContext.Database.SqlQuery</methodname> позволяет выполнять
-                        SQL запросы напрямую и отображать их результаты на некоторую сущность
-                        (проекцию). Вы можете воспользоваться им, если вам потребуется выполнить SQL
-                        запрос напрямую.</para>
-                    <para>Метод <methodname>DetachAll</methodname> предназначен для отсоединения
-                        всех объектов коллекции DBSet от контекста. Это необходимо для обновления
-                        внутреннего кеша. Дело в том, что в рамках контекста все извлекаемые
-                        кешируются и не извлекаются из базы данных снова. Однако это не всегда
-                        полезно, поскольку затрудняет получение изменённых записей сделанных в
-                        другом контексте. </para>
-
-                    <note>
-                        <para>В Web приложениях контекст обычно живёт очень короткое время, а новый
-                            контекст имеет не заполненный кеш.</para>
-                    </note>
-
-                    <para>Метод <methodname>Refresh</methodname> предназначен для обновления свойств
-                        объекта-сущности. Он полезен для обновления свойств объекта после его
-                        редактирования или добавления.</para>
-
+                    <para>В этом же классе присутствует ещё несколько расширений: <variablelist>
+                            <varlistentry>
+                                <term>NextValueFor</term>
+                                <listitem>
+                                    <para>предназначен для получения следующего значения генератора.
+                                        Метод <methodname>dbContext.Database.SqlQuery</methodname>
+                                        позволяет выполнять SQL запросы напрямую и отображать их
+                                        результаты на некоторую сущность (проекцию). Вы можете
+                                        воспользоваться им, если вам потребуется выполнить SQL
+                                        запрос напрямую.</para>
+                                </listitem>
+                            </varlistentry>
+                            <varlistentry>
+                                <term>DetachAll</term>
+                                <listitem>
+                                    <para>предназначен для отсоединения всех объектов коллекции
+                                        DBSet от контекста. Это необходимо для обновления
+                                        внутреннего кеша. Дело в том, что в рамках контекста все
+                                        извлекаемые кешируются и не извлекаются из базы данных
+                                        снова. Однако это не всегда полезно, поскольку затрудняет
+                                        получение изменённых записей сделанных в другом
+                                        контексте.</para>
+                                    <note>
+                                        <para>В Web приложениях контекст обычно живёт очень короткое
+                                            время, а новый контекст имеет не заполненный кеш.</para>
+                                    </note>
+                                </listitem>
+                            </varlistentry>
+                            <varlistentry>
+                                <term>Refresh</term>
+                                <listitem>
+                                    <para>предназначен для обновления свойств объекта-сущности. Он
+                                        полезен для обновления свойств объекта после его
+                                        редактирования или добавления.</para>
+                                </listitem>
+                            </varlistentry>
+                        </variablelist>
+                    </para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-efw-linq-load-code">
                     <title>Код для загрузки данных</title>
 
                     <para>Таким образом, наш код загрузки данных будет выглядеть так <programlisting language="csharp">
@@ -986,7 +1003,7 @@ private void CustomerForm_Load(object sender, EventArgs e)
                     </para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-efw-addcustomer">
                     <title>Добавление заказчика</title>
 
                     <para>Код обработчика события на нажатие кнопки добавления выглядит следующим
@@ -1039,7 +1056,7 @@ private void btnAdd_Click(object sender, EventArgs e) {
                         не смогли бы обновить вновь добавленную запись.</para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-efw-editcustomer">
                     <title>Редактирование заказчика</title>
 
                     <para>Код обработчика события на нажатие кнопки редактирования выглядит
@@ -1110,7 +1127,7 @@ private void CustomerEditorForm_Load(object sender, EventArgs e)
                     </para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-efw-dltcustomer">
                     <title>Удаление заказчика</title>
 
                     <para>Код обработчика события на нажатие кнопки удаления выглядит следующим
@@ -1145,57 +1162,57 @@ private void btnDelete_Click(object sender, EventArgs e) {
             </section>
         </section>
 
-        <section>
-            <title>Журналы</title>
+    </section>
 
-            <para>В нашем приложении будет один журнал «Счёт-фактуры». В отличие от справочников
-                журналы содержат довольно большое количество записей и являются часто
-                пополняемыми.</para>
-            <para>Счёт-фактура — состоит из заголовка, где описываются общие атрибуты (номер, дата,
-                заказчик …), и строк счёт-фактуры со списком товаром, их количеством, стоимостью и
-                т.д. Для таких документов удобно иметь два грида: в главном отображаются данные о
-                шапке документа, а в детализирующем — список товаров. Таким образом, на форму
-                документа нам потребуется поместить два компонента
-                    <classname>DataGridView</classname>, к каждому из которых привязать свой
-                    <classname>BindingSource</classname>
-                <figure>
-                    <title>Форма журнала счёт-фактур</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/dotnet-invoice-form.png" width="680"/>
-                        </imageobject>
-                        <textobject>
-                            <phrase>Форма журнала счёт-фактур.</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-            </para>
 
-            <section>
-                <title>Фильтрация данных</title>
+    <section xml:id="fbdevgd-efw-secondary-modules">
+        <title>Журналы</title>
 
-                <para>Большинство журналов содержат поле с датой создания документа. Чтобы уменьшить
-                    количество выбираемых данных обычно принято вводить такое понятие как рабочий
-                    период для того, чтобы уменьшить объём данных передаваемый на клиента. Рабочий
-                    период — это диапазон дат, внутри которого требуются рабочие документы.
-                    Поскольку приложение может содержать более одного журнала, то имеет смысл
-                    разместить переменные, содержащие дату начала и окончания рабочего периода, в
-                    глобальном модуле AppVariables (см. <link linkend="app-dotnet-getcontext"
-                        >Получение контекста</link>), который, так или иначе, используется всеми
-                    модулями, работающими с БД. При старте приложения рабочий период обычно
-                    инициализируется датой начала и окончания текущего квартала (могут быть другие
-                    варианты). В ходе работы приложения можно изменить рабочий период по желанию
-                    пользователя.</para>
-                <para>Поскольку чаще всего требуются именно последние введённые документы, то имеет
-                    смысл сортировать их по дате в обратном порядке. Извлекать данные, как и в
-                    случае со справочниками будем при помощи LINQ.</para>
-            </section>
+        <para>В нашем приложении будет один журнал «Счёт-фактуры». В отличие от справочников журналы
+            содержат довольно большое количество записей и являются часто пополняемыми.</para>
+        <para>Счёт-фактура — состоит из заголовка, где описываются общие атрибуты (номер, дата,
+            заказчик …), и строк счёт-фактуры со списком товаром, их количеством, стоимостью и т.д.
+            Для таких документов удобно иметь два грида: в главном отображаются данные о шапке
+            документа, а в детализирующем — список товаров. Таким образом, на форму документа нам
+            потребуется поместить два компонента <classname>DataGridView</classname>, к каждому из
+            которых привязать свой <classname>BindingSource</classname>
+            <figure>
+                <title>Форма журнала счёт-фактур</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-invoice-form.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Форма журнала счёт-фактур.</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
 
-            <section>
-                <title>Загрузка данных счёт-фактур</title>
+        <section xml:id="fbdevgd-efw-filtering-data">
+            <title>Фильтрация данных</title>
 
-                <para> С учётом вышесказанного, метод для загрузки данных шапок счёт-фактур будет
-                    выглядеть следующим образом: <programlisting language="csharp">
+            <para>Большинство журналов содержат поле с датой создания документа. Чтобы уменьшить
+                количество выбираемых данных обычно принято вводить такое понятие как рабочий период
+                для того, чтобы уменьшить объём данных передаваемый на клиента. Рабочий период — это
+                диапазон дат, внутри которого требуются рабочие документы. Поскольку приложение
+                может содержать более одного журнала, то имеет смысл разместить переменные,
+                содержащие дату начала и окончания рабочего периода, в глобальном модуле
+                AppVariables (см. <link linkend="fbdevgd-efw-vs-context">Получение
+                контекста</link>), который, так или иначе, используется всеми модулями, работающими
+                с БД. При старте приложения рабочий период обычно инициализируется датой начала и
+                окончания текущего квартала (могут быть другие варианты). В ходе работы приложения
+                можно изменить рабочий период по желанию пользователя.</para>
+            <para>Поскольку чаще всего требуются именно последние введённые документы, то имеет
+                смысл сортировать их по дате в обратном порядке. Извлекать данные, как и в случае со
+                справочниками будем при помощи LINQ.</para>
+        </section>
+
+        <section xml:id="fbdevgd-efw-loading-inv-data">
+            <title>Загрузка данных счёт-фактур</title>
+
+            <para> С учётом вышесказанного, метод для загрузки данных шапок счёт-фактур будет
+                выглядеть следующим образом: <programlisting language="csharp">
 <![CDATA[                        
 public void LoadInvoicesData() {
     var dbContext = AppVariables.getDbContext();
@@ -1220,11 +1237,10 @@ public void LoadInvoicesData() {
 }          
 ]]>
                 </programlisting>
-                </para>
-                <para>В качестве проекции мы использовали не анонимный тип, а класс
-                        <classname>InvoiceView</classname>. Это упрощает приведение типа.
-                    Определение класса <classname>InvoiceView</classname> выглядит следующим
-                    образом: <programlisting language="csharp">
+            </para>
+            <para>В качестве проекции мы использовали не анонимный тип, а класс
+                    <classname>InvoiceView</classname>. Это упрощает приведение типа. Определение
+                класса <classname>InvoiceView</classname> выглядит следующим образом: <programlisting language="csharp">
 <![CDATA[                        
 public class InvoiceView {
     public int Id { get; set; }
@@ -1261,11 +1277,10 @@ public class InvoiceView {
 }         
 ]]>
                 </programlisting> Метод <methodname>Load</methodname> позволяет нам быстро
-                    обновить 1 добавленную или обновлённую запись в гриде, вместо того чтобы
-                    полностью перезагружать все записи. </para>
+                обновить 1 добавленную или обновлённую запись в гриде, вместо того чтобы полностью
+                перезагружать все записи. </para>
 
-                <para>Код обработчика события на нажатие кнопки добавления выглядит следующим
-                    образом. <programlisting language="csharp">
+            <para>Код обработчика события на нажатие кнопки добавления выглядит следующим образом. <programlisting language="csharp">
 <![CDATA[                        
 private void btnAddInvoice_Click(object sender, EventArgs e) {
     var dbContext = AppVariables.getDbContext();
@@ -1301,17 +1316,16 @@ private void btnAddInvoice_Click(object sender, EventArgs e) {
 }      
 ]]>
                 </programlisting>
-                </para>
-                <para>В отличие от аналогичного метода справочника здесь обновление записи
-                    происходит не с помощью вызова <methodname>dbContext.Refresh</methodname>, а с
-                    помощью метода <methodname>Load</methodname> проекции
-                        <classname>InvoiceView</classname>. Дело в том, что
-                        <methodname>dbContext.Refresh</methodname> предназначен для обновления
-                    объектов сущностей, а не произвольных проекций, которые могут получаться
-                    сложными LINQ запросами.</para>
+            </para>
+            <para>В отличие от аналогичного метода справочника здесь обновление записи происходит не
+                с помощью вызова <methodname>dbContext.Refresh</methodname>, а с помощью метода
+                    <methodname>Load</methodname> проекции <classname>InvoiceView</classname>. Дело
+                в том, что <methodname>dbContext.Refresh</methodname> предназначен для обновления
+                объектов сущностей, а не произвольных проекций, которые могут получаться сложными
+                LINQ запросами.</para>
 
-                <para>Код обработчика события на нажатие кнопки редактирования выглядит следующим
-                    образом. <programlisting language="csharp">
+            <para>Код обработчика события на нажатие кнопки редактирования выглядит следующим
+                образом. <programlisting language="csharp">
 <![CDATA[                        
 private void btnEditInvoice_Click(object sender, EventArgs e) {
     // получение контекста
@@ -1351,10 +1365,10 @@ private void btnEditInvoice_Click(object sender, EventArgs e) {
 }    
 ]]>
                 </programlisting>
-                </para>
-                <para>Здесь нам потребовалось найти сущность по её идентификатору доступному в
-                    текущей записи. Свойство CurrentInvoice предназначено для получения выделенной в
-                    гриде счёт-фактуры. Оно реализовано так: <programlisting language="csharp">
+            </para>
+            <para>Здесь нам потребовалось найти сущность по её идентификатору доступному в текущей
+                записи. Свойство CurrentInvoice предназначено для получения выделенной в гриде
+                счёт-фактуры. Оно реализовано так: <programlisting language="csharp">
 <![CDATA[                        
 public InvoiceView CurrentInvoice {
     get {
@@ -1363,15 +1377,15 @@ public InvoiceView CurrentInvoice {
 }  
 ]]>
                 </programlisting>
-                </para>
-                <para>Удаление шапки счёт фактуры вы можете сделать самостоятельно.</para>
+            </para>
+            <para>Удаление шапки счёт фактуры вы можете сделать самостоятельно.</para>
 
-                <section>
-                    <title>Оплата счёт-фактуры</title>
+            <section xml:id="fbdevgd-efw-invoicepay">
+                <title>Оплата счёт-фактуры</title>
 
-                    <para>Помимо добавления, редактирования и удаления для счёт-фактур мы ввели ещё
-                        одну операцию оплаты, код метода реализующего эту операцию выглядит
-                        следующим образом: <programlisting language="csharp">
+                <para>Помимо добавления, редактирования и удаления для счёт-фактур мы ввели ещё одну
+                    операцию оплаты, код метода реализующего эту операцию выглядит следующим
+                    образом: <programlisting language="csharp">
 <![CDATA[                        
 private void btnInvoicePay_Click(object sender, EventArgs e) {
     var dbContext = AppVariables.getDbContext();
@@ -1394,41 +1408,40 @@ private void btnInvoicePay_Click(object sender, EventArgs e) {
 } 
 ]]>
                 </programlisting>
-                    </para>
-                </section>
+                </para>
             </section>
+        </section>
 
-            <section>
-                <title>Отображение позиций счёт-фактур</title>
+        <section xml:id="fbdevgd-efw-showinvoicelines">
+            <title>Отображение позиций счёт-фактур</title>
 
-                <para>Для отображения позиций счёт-фактуры существует два метода:<orderedlist>
-                        <listitem>
-                            <para>Получать данные по каждой счёт-фактуре из навигационного свойства
-                                INVOICE_LINE и отображать содержимое этого сложного свойства
-                                (возможно с преобразованиями LINQ ) в детейл гриде.</para>
-                        </listitem>
-                        <listitem>
-                            <para>Получать данные по каждой счёт-фактуре отдельным LINQ запросом,
-                                который будет перевыполняться при перемещении в указателя в мастер
-                                гриде.</para>
-                        </listitem>
-                    </orderedlist> Каждый из методов имеет свои преимущества и недостатки. </para>
+            <para>Для отображения позиций счёт-фактуры существует два метода:<orderedlist>
+                    <listitem>
+                        <para>Получать данные по каждой счёт-фактуре из навигационного свойства
+                            INVOICE_LINE и отображать содержимое этого сложного свойства (возможно с
+                            преобразованиями LINQ ) в детейл гриде.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Получать данные по каждой счёт-фактуре отдельным LINQ запросом,
+                            который будет перевыполняться при перемещении в указателя в мастер
+                            гриде.</para>
+                    </listitem>
+                </orderedlist> Каждый из методов имеет свои преимущества и недостатки. </para>
 
-                <para>Первый метод предполагает, что при открытии формы счёт-фактуры мы должны сразу
-                    извлечь все счёт-фактуры за указанный период и связанные данные по их позициям.
-                    Это хоть и выполняется одним SQL запросом, но может занять довольно много
-                    времени, и требует значительного объёма оперативной памяти. Этот метод лучше
-                    подходит для WEB приложений где вывод записей обычно происходит
-                    постранично.</para>
+            <para>Первый метод предполагает, что при открытии формы счёт-фактуры мы должны сразу
+                извлечь все счёт-фактуры за указанный период и связанные данные по их позициям. Это
+                хоть и выполняется одним SQL запросом, но может занять довольно много времени, и
+                требует значительного объёма оперативной памяти. Этот метод лучше подходит для WEB
+                приложений где вывод записей обычно происходит постранично.</para>
 
-                <para>Второй метод несколько более сложен в реализации, но позволяет быстро
-                    открывать форму счёт-фактуры и менее требователен к ресурсам, однако при каждом
-                    перемещении указателя в мастер гриде будет перевыполняться SQL запрос и
-                    загружать сетевой трафик (хотя объём будет невелик).</para>
+            <para>Второй метод несколько более сложен в реализации, но позволяет быстро открывать
+                форму счёт-фактуры и менее требователен к ресурсам, однако при каждом перемещении
+                указателя в мастер гриде будет перевыполняться SQL запрос и загружать сетевой трафик
+                (хотя объём будет невелик).</para>
 
-                <para>В нашем приложении я буду использовать второй подход. Для этого необходимо
-                    написать обработчик события изменения текущей записи для компонента
-                        <classname>BindingSource</classname>. <programlisting language="csharp">
+            <para>В нашем приложении я буду использовать второй подход. Для этого необходимо
+                написать обработчик события изменения текущей записи для компонента
+                    <classname>BindingSource</classname>. <programlisting language="csharp">
 <![CDATA[                        
 private void masterBinding_CurrentChanged(object sender, EventArgs e) {
    LoadInvoiceLineData(this.CurrentInvoice.Id);
@@ -1436,8 +1449,8 @@ private void masterBinding_CurrentChanged(object sender, EventArgs e) {
 } 
 ]]>
                 </programlisting>
-                </para>
-                <para>Метод для загрузки данных о позициях счёт-фактуры выглядит следующим образом: <programlisting language="csharp">
+            </para>
+            <para>Метод для загрузки данных о позициях счёт-фактуры выглядит следующим образом: <programlisting language="csharp">
 <![CDATA[                        
 private void LoadInvoiceLineData(int? id) {
     var dbContext = AppVariables.getDbContext();
@@ -1460,9 +1473,8 @@ private void LoadInvoiceLineData(int? id) {
 }
 ]]>
                 </programlisting>
-                </para>
-                <para>В качестве проекции мы использовали класс
-                        <classname>InvoiceLineView</classname>. <programlisting language="csharp">
+            </para>
+            <para>В качестве проекции мы использовали класс <classname>InvoiceLineView</classname>. <programlisting language="csharp">
 <![CDATA[                        
 public class InvoiceLineView {
    public int Id { get; set; }
@@ -1475,13 +1487,13 @@ public class InvoiceLineView {
 }
 ]]>
                 </programlisting>
-                </para>
-                <para>Замечу, что в отличие от класса <classname>InvoiceView</classname> здесь
-                    отсутствует метод для загрузки одной текущей записи. Здесь скорость перезагрузки
-                    детейл грида не настолько критична, поскольку один документ не содержит тысячи
-                    позиций, однако при желании вы можете реализовать такой метод. </para>
-                <para>Добавим специальное свойство для получения текущей строки документа выделенной
-                    в детейл гриде. <programlisting language="csharp">
+            </para>
+            <para>Замечу, что в отличие от класса <classname>InvoiceView</classname> здесь
+                отсутствует метод для загрузки одной текущей записи. Здесь скорость перезагрузки
+                детейл грида не настолько критична, поскольку один документ не содержит тысячи
+                позиций, однако при желании вы можете реализовать такой метод. </para>
+            <para>Добавим специальное свойство для получения текущей строки документа выделенной в
+                детейл гриде. <programlisting language="csharp">
 <![CDATA[                        
 public InvoiceLineView CurrentInvoiceLine {
     get {
@@ -1490,15 +1502,15 @@ public InvoiceLineView CurrentInvoiceLine {
 }
 ]]>
                 </programlisting>
-                </para>
-            </section>
+            </para>
+        </section>
 
-            <section>
-                <title>Работа с хранимыми процедурами</title>
+        <section xml:id="fbdevgd-efw-stored-procs">
+            <title>Работа с хранимыми процедурами</title>
 
-                <para>В методах для добавления, редактирования и удаления мы покажем, как работать с
-                    хранимыми процедурами в Entity Framework. Например, метод для добавления новой
-                    записи выглядит так: <programlisting language="csharp">
+            <para>В методах для добавления, редактирования и удаления мы покажем, как работать с
+                хранимыми процедурами в Entity Framework. Например, метод для добавления новой
+                записи выглядит так: <programlisting language="csharp">
 <![CDATA[                        
 private void btnAddInvoiceLine_Click(object sender, EventArgs e) {
     var dbContext = AppVariables.getDbContext();
@@ -1557,10 +1569,10 @@ private void btnAddInvoiceLine_Click(object sender, EventArgs e) {
 }
 ]]>
                 </programlisting>
-                </para>
-                <para>Здесь обновление записи мастер грида требуется потому, что одно из его полей
-                    (TotalSale) содержит агрегированную информацию по строкам документа.</para>
-                <para>Метод для обновления записи реализован так. <programlisting language="csharp">
+            </para>
+            <para>Здесь обновление записи мастер грида требуется потому, что одно из его полей
+                (TotalSale) содержит агрегированную информацию по строкам документа.</para>
+            <para>Метод для обновления записи реализован так. <programlisting language="csharp">
 <![CDATA[                        
 private void btnEditInvoiceLine_Click(object sender, EventArgs e) {
     var dbContext = AppVariables.getDbContext();
@@ -1619,12 +1631,12 @@ private void btnEditInvoiceLine_Click(object sender, EventArgs e) {
 }
 ]]>
                 </programlisting>
-                </para>
+            </para>
 
-                <section>
-                    <title>Удаление позиции счёт-фактуры</title>
+            <section xml:id="fbdevgd-efw-dltinvoice">
+                <title>Удаление позиции счёт-фактуры</title>
 
-                    <para>Метод для удаления записи реализован так. <programlisting language="csharp">
+                <para>Метод для удаления записи реализован так. <programlisting language="csharp">
 <![CDATA[                        
 private void btnDeleteInvoiceLine_Click(object sender, EventArgs e) {
     var result = MessageBox.Show(
@@ -1665,32 +1677,32 @@ private void btnDeleteInvoiceLine_Click(object sender, EventArgs e) {
 }
 ]]>
                 </programlisting>
-                    </para>
-                </section>
-            </section>
-
-            <section>
-                <title>Выбор из спраовчника товаров</title>
-
-                <para>В методах для добавления и редактирования позиций счёт-фактуры мы использовали
-                    форму для редактирования. <figure>
-                        <title>Форма редактора позиций счёт-фактур</title>
-                        <mediaobject>
-                            <imageobject>
-                                <imagedata fileref="images/dotnet-invoiceline-editor-form.png"/>
-                            </imageobject>
-                            <textobject>
-                                <phrase>Форма редактора позиций счёт-фактур.</phrase>
-                            </textobject>
-                        </mediaobject>
-                    </figure>
                 </para>
+            </section>
+        </section>
 
-                <para>Для отображения товара мы будем использовать <classname>TextBox</classname>.
-                    По нажатию кнопки, расположенной рядом, будет вызываться модальная форма с
-                    гридом для выбора товара. В качестве модальной окна для выбора продукта
-                    используем ту же форму, что была создана для их отображения. Код обработчика
-                    нажатия кнопки и инициализации формы будет выглядеть следующим образом: <programlisting language="csharp">
+        <section xml:id="fbdevgd-efw-showing-products">
+            <title>Выбор из справочника товаров</title>
+
+            <para>В методах для добавления и редактирования позиций счёт-фактуры мы использовали
+                форму для редактирования. <figure>
+                    <title>Форма редактора позиций счёт-фактур</title>
+                    <mediaobject>
+                        <imageobject>
+                            <imagedata fileref="images/dotnet-invoiceline-editor-form.png"/>
+                        </imageobject>
+                        <textobject>
+                            <phrase>Форма редактора позиций счёт-фактур.</phrase>
+                        </textobject>
+                    </mediaobject>
+                </figure>
+            </para>
+
+            <para>Для отображения товара мы будем использовать <classname>TextBox</classname>. По
+                нажатию кнопки, расположенной рядом, будет вызываться модальная форма с гридом для
+                выбора товара. В качестве модальной окна для выбора продукта используем ту же форму,
+                что была создана для их отображения. Код обработчика нажатия кнопки и инициализации
+                формы будет выглядеть следующим образом: <programlisting language="csharp">
 <![CDATA[                        
 public partial class InvoiceLineEditorForm : Form {
     public InvoiceLineEditorForm() {
@@ -1722,21 +1734,22 @@ public partial class InvoiceLineEditorForm : Form {
 }
 ]]>
                 </programlisting>
-                </para>
-            </section>
-        </section>
+            </para>
+        </section> <!-- fbdevgd-efw-showing-products -->
+    </section> <!-- fbdevgd-efw-secondary-modules -->
 
-        <section>
-            <title>Работа с транзакциями</title>
 
-            <para>Когда мы вызываем при добавлении, обновлении, удалении метод
-                    <methodname>SaveChanges()</methodname>, то фактически Entity Framework неявно
-                стартует и завершает транзакцию. Поскольку используется отсоединённая модель, то все
-                операции происходят в рамках одной транзакции. Кроме того EF автоматически стартует
-                и завершает транзакцию при каждом извлечении данных. Рассмотрим работу
-                автоматических транзакций на следующем примере. Допустим нам необходимо сделать
-                скидку на товары, выделенные в гриде. Код без явного использования транзакций будет
-                выглядеть следующим образом: <programlisting language="csharp">
+    <section xml:id="fbdevgd-efw-transactions">
+        <title>Работа с транзакциями</title>
+
+        <para>Когда мы вызываем при добавлении, обновлении, удалении метод
+                <methodname>SaveChanges()</methodname>, то фактически Entity Framework неявно
+            стартует и завершает транзакцию. Поскольку используется отсоединённая модель, то все
+            операции происходят в рамках одной транзакции. Кроме того EF автоматически стартует и
+            завершает транзакцию при каждом извлечении данных. Рассмотрим работу автоматических
+            транзакций на следующем примере. Допустим нам необходимо сделать скидку на товары,
+            выделенные в гриде. Код без явного использования транзакций будет выглядеть следующим
+            образом: <programlisting language="csharp">
 <![CDATA[                        
 var dbContext = AppVariables.getDbContext();
 foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
@@ -1752,11 +1765,11 @@ foreach (DataGridViewRow gridRows in dataGridView.SelectedRows) {
 dbContext.SaveChanges();
 ]]>
                 </programlisting>
-            </para>
-            <para>Допустим, мы выбрали 10 товаров. В этом случае будет неявно использовано 10
-                транзакций для поиска товара по идентификатору и одиннадцатая для сохранения
-                изменений. В данном случае можно использовать всего одну транзакцию, если
-                использовать явное управление транзакциями. Например, вот так: <programlisting language="csharp">
+        </para>
+        <para>Допустим, мы выбрали 10 товаров. В этом случае будет неявно использовано 10 транзакций
+            для поиска товара по идентификатору и одиннадцатая для сохранения изменений. В данном
+            случае можно использовать всего одну транзакцию, если использовать явное управление
+            транзакциями. Например, вот так: <programlisting language="csharp">
 <![CDATA[                        
 var dbContext = AppVariables.getDbContext();
 // явный старт транзакции по умолчанию
@@ -1796,10 +1809,10 @@ using (var dbTransaction = dbContext.Database.BeginTransaction()) {
 }
 ]]>
                 </programlisting>
-            </para>
-            <para>В данном случае мы стартовали транзакцию с параметрами по умолчанию. Для того
-                чтобы задавать свои параметры транзакции необходимо использовать метод
-                    <methodname>UseTransaction</methodname>. <programlisting language="csharp">
+        </para>
+        <para>В данном случае мы стартовали транзакцию с параметрами по умолчанию. Для того чтобы
+            задавать свои параметры транзакции необходимо использовать метод
+                <methodname>UseTransaction</methodname>. <programlisting language="csharp">
 <![CDATA[                        
 private void btnDiscount_Click(object sender, EventArgs e) {         
     DiscountEditorForm editor = new DiscountEditorForm();
@@ -1863,32 +1876,40 @@ private void btnDiscount_Click(object sender, EventArgs e) {
 }
 ]]>
                 </programlisting>
-            </para>
-            <para>Ну вот. Теперь у нас для всего набора обновлений используется всего одна
-                транзакция, и нет лишних команд для поиска данных. Осталось только добавить диалог
-                для ввода значения скидки и обновление данных в гриде. Попробуйте сделать это
-                самостоятельно.</para>
-            <para>В заключении приведём скриншот готового приложения. <figure>
-                    <title>Скриншот готового приложения</title>
-                    <mediaobject>
-                        <imageobject>
-                            <imagedata fileref="images/dotnet-winform-app.png" width="680"/>
-                        </imageobject>
-                        <textobject>
-                            <phrase>Скриншот готового приложения</phrase>
-                        </textobject>
-                    </mediaobject>
-                </figure>
-            </para>
-        </section>
+        </para>
+        <para>Ну вот. Теперь у нас для всего набора обновлений используется всего одна транзакция, и
+            нет лишних команд для поиска данных. Осталось только добавить диалог для ввода значения
+            скидки и обновление данных в гриде. Попробуйте сделать это самостоятельно.</para>
+
     </section>
-    <section>
-        <title>Заключение</title>
+    <!-- fbdevgd-efw-transaction -->
+
+    <section xml:id="fbdevgd-efw-result">
+        <title>Результат</title>
+
+        <para>В заключении приведём скриншот готового приложения. <figure>
+                <title>Скриншот готового приложения</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/dotnet-winform-app.png" width="680"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Скриншот готового приложения</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </para>
+    </section>
+    <!-- fbdevgd-efw-result -->
+
+    <section xml:id="fbdevgd-efw-vs-project-sourcecode">
+        <title>Исходный код</title>
 
         <para>Исходные коды примера приложения вы можете скачать по ссылке <link
                 xmlns:xlink="http://www.w3.org/1999/xlink"
                 xlink:href="https://github.com/sim1984/FBFormAppExample"
                 >https://github.com/sim1984/FBFormAppExample</link>.</para>
     </section>
+    <!-- fbdevgd-efw-vs-project-sourcecode -->
 
 </chapter>

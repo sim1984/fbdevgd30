@@ -1,5 +1,5 @@
 <!DOCTYPE chapter>  
-<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="app-dotnet-aspnet"
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="fbdevgd-mvc"
     xml:lang="ru">
     <info>
         <title>Создание Web приложений с использованием Entity Framework</title>
@@ -10,9 +10,10 @@
 
     <para>В данной главе обсуждаются особенности создания именно Web приложений, базовые принципы
         работы с Entity Framework и Firebird описаны в предыдущей главе <link
-            linkend="app-dotnet-winform">Создание приложений с использованием Entity
+            linkend="fbdevgd-efw">Создание приложений с использованием Entity
             Framework</link>.</para>
-    <section>
+    
+    <section xml:id="fbdevgd-mvc-dot-net">
         <title>.NET Frameworks</title>
 
         <para>Платформа .NET предоставляет два основных фреймворка для создания web приложений:
@@ -20,7 +21,7 @@
             дальнейшем будет описываться именно эта технология.</para>
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-dot-net-mvc">
         <title>ASP.NET MVC Platform</title>
 
         <para>Платформа <emphasis role="bold">ASP.NET MVC</emphasis> представляет собой фреймворк
@@ -49,7 +50,7 @@
                 </listitem>
             </itemizedlist></para>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-interactions">
             <title>Взаимодействие Model-View-Controller</title>
 
             <para>Общую схему взаимодействия этих компонентов можно представить следующим образом: <figure>
@@ -79,7 +80,7 @@
         </section>
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-mvc-stack">
         <title>Программный стек</title>
 
         <para>Помимо библиотек для работы с Firebird, Entity Framework и MVC.NET нам потребуется
@@ -87,18 +88,19 @@
             jquery-ui, Bootstrap, jqGrid. В этом примере мы постарались приблизить интерфейс
             веб-приложения к настольным приложениям, активно применяя грибы для отображения и
             модальные окна для ввода данных.</para>
-        <section>
+        
+        <section xml:id="fbdevgd-mvc-vs">
             <title>Подготовка Visual Studio 2015 для работы с Firebird</title>
 
             <para>Для работы Visual Studio с СУБД Firebird вам придётся проделать несколько
                 дополнительных шагов, которые подробно были описаны в предыдущей главе "Создание
                 приложений с использованием Entity Framework" в разделе <link
-                    linkend="app-dotnet-vsprepare">Подготовка Visual Studio 2015 для работы с
+                    linkend="fbdevgd-efw-vs-prepare">Подготовка Visual Studio 2015 для работы с
                     Firebird</link>. </para>
         </section>
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-mvc-crt-project">
         <title>Создание проекта</title>
 
         <para>Посмотрим как создаётся каркас MVC.NET приложения с помощью мастеров Visual
@@ -145,7 +147,7 @@
             </figure>
         </para>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-project-structure">
             <title>Структура проекта</title>
 
             <para>После этого будет создан проект, который практически не обладает никакой
@@ -243,7 +245,7 @@
             </para>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-add-packages">
             <title>Добавление отсутствующих пакетов</title>
 
             <para>Теперь добавим необходимые пакеты с помощью менеджера пакетов NuGet. Нам
@@ -313,14 +315,14 @@
         </section>
     </section>
 
-    <section>
+    <section xml:id="fbdevgd-mvc-crt-edm">
         <title>Создание EDM модели</title>
 
         <para>Если у вас уже есть Windows Forms приложение, которое использует Entity Framework, то
             вы просто можете перенести кассы моделей в папку <filename>Models</filename>. В
             противном случае вам необходимо будет создать их с нуля. Подробно процесс создания EDM
             модели описан в предыдущей главе «Создание приложений с использованием Entity Framework»
-            (см. раздел «<link linkend="app-dotnet-createedm">Создание EDM модели</link>»).</para>
+            (см. раздел «<link linkend="fbdevgd-efw-vs-crt-edm">Создание EDM модели</link>»).</para>
 
         <para>Существует одно небольшое отличие. В процессе работы мастера создания модели у вас
             спросят, как хранить строку подключения. <figure>
@@ -355,10 +357,11 @@
             </programlisting>
         </para>
     </section>
-    <section>
+    
+    <section xml:id="fbdevgd-mvc-crt-ui">
         <title>Создание пользовательского интерфейса справочников</title>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-crt-controller">
             <title>Создание контроллера заказчиков</title>
 
             <para>Итак, создадим наш первый контроллер. Он будет служить для отображения и ввода
@@ -420,14 +423,15 @@
             <para>Поскольку мы будем активно применять технологию Ajax и библиотеку jqGrid, то нам
                 будет достаточно всего одного представления для отображения списка поставщиков в
                 виде таблицы, остальные действия будут выполняться с помощью jqGrid.</para>
-            <section>
+            
+            <section xml:id="fbdevgd-mvc-crt-controller-limiting-overhead">
                 <title>Уменьшение накладных расходов</title>
 
                 <para>При разработке web-приложений необходимо понимать как уменьшить накладные
                     расходы, свзяанные с передачей данных по глобальной сети и подключениями к базе
                     данных. Существуют методы которые могут нам в этом.</para>
 
-                <section>
+                <section xml:id="fbdevgd-mvc-crt-controller-limiting-data">
                     <title>Ограничение объёма возвращаемых данных</title>
 
 
@@ -440,7 +444,7 @@
                         вариантом.</para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-mvc-crt-controller-limiting-connections">
                     <title>Уменьшение количества подключений к базе данных</title>
 
                     <para>Ещё одной особенностью при создании веб приложений является то, что в них
@@ -453,7 +457,7 @@
                         происходило только тогда когда это действительно необходимо. </para>
                 </section>
 
-                <section>
+                <section xml:id="fbdevgd-mvc-crt-controller-browser">
                     <title>Современные браузеры помогут нам</title>
 
                     <para>Одним из способов снижения количества взаимодействий с базой данных
@@ -465,7 +469,7 @@
             </section>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-controller-to-jqgrid">
             <title>Адаптация контроллера для работы с jqGrid</title>
 
             <para>Итак давайте изменим контроллер <classname>CustomerController</classname> для того
@@ -665,7 +669,7 @@ public class CustomerController : Controller
                 </programlisting>
                 Здесь Bind указывает, какие параметры HTTP запроса отображать на свойства модели. </para>
 
-            <section>
+            <section xml:id="fbdevgd-mvc-controller-anti-forgery">
                 <title>Аттрибут ValidateAntiforgeryToken</title>
 
                 <para>Обратите внимание на атрибут <emphasis role="bold"
@@ -780,7 +784,7 @@ public class CustomerController : Controller
             </section>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-controller-bundles">
             <title>Бандлы</title>
 
             <para>Бандлы предназначены для упрощения подключения JavaScript скриптов и файлов
@@ -848,7 +852,7 @@ new ScriptBundle("~/bundles/jquery").Include("~/Scripts/jquery-{version}.js")
                 использоваться минифицированные.</para>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-controller-views">
             <title>Представления</title>
 
             <para>Из всех автоматически созданных представлений для контроллера
@@ -1076,7 +1080,8 @@ new ScriptBundle("~/bundles/jquery").Include("~/Scripts/jquery-{version}.js")
                 исходных кодах, которые прилагаются к данной статье.</para>
         </section>
     </section>
-    <section>
+    
+    <section xml:id="fbdevgd-mvc-secondary-ui">
         <title>Создание пользовательского интерфейса журналов</title>
 
         <para>В нашем приложении будет один журнал «Счёт-фактуры». В отличие от справочников журналы
@@ -1087,7 +1092,7 @@ new ScriptBundle("~/bundles/jquery").Include("~/Scripts/jquery-{version}.js")
             отображён лишь при клике по иконке со знаком «+», таким образом, у нас получается, что
             детализирующий грид вложен в главный. </para>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-secondary-controllers">
             <title>Контроллер для счёт-фактур</title>
 
             <para>Контроллер журнала счёт фактуры должен уметь отдавать данные как по шапкам
@@ -1524,7 +1529,8 @@ public class InvoiceController : Controller
                 однако вы можете выполнить те же действия с помощью Entity Framework. Тексты
                 хранимых процедур вы можете посмотреть в скрипте создания БД.</para>
         </section>
-        <section>
+        
+        <section xml:id="fbdevgd-mvc-secondary-views">
             <title>Представления для счёт-фактур</title>
 
             <para>Как и для контроллера Customer нам потребуется только одно представление
@@ -1770,7 +1776,7 @@ dbGrid.navButtonAdd('#jpager',
             </para>
         </section>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-secondary-dialogs">
             <title>Диалоги редактирования счёт-фактуры</title>
 
             <para>В отличие от справочников диалоги редактирования для журналов намного сложнее.
@@ -2294,7 +2300,8 @@ function showChildGrid(parentRowID, parentRowKey) {
                 самостоятельно.</para>
         </section>
     </section>
-    <section>
+    
+    <section xml:id="fbdevgd-mvc-authentication">
         <title>Аутентификация и авторизация</title>
 
         <para>Технология ASP.NET имеет мощный механизм для организации авторизации и аутентификации
@@ -2369,7 +2376,7 @@ function showChildGrid(parentRowID, parentRowKey) {
             другие данные, поэтому настройка дополнительной строки подключения нам не
             потребуется.</para>
 
-        <section>
+        <section xml:id="fbdevgd-mvc-auth-infrastructure">
             <title>Инфраструктура для аутентификации</title>
 
             <para>Теперь надо создать всю необходимую инфраструктуру для аутентификации — модели,
@@ -2860,7 +2867,7 @@ namespace FBMVCExample.Controllers
                 пользователь с ролью admin. Этот механизм называется фильтрами авторизации. Он нём
                 будет сказано чуть позже.</para>
 
-            <section>
+            <section xml:id="fbdevgd-mvc-auth-add-user">
                 <title>Добавление нового пользователя</title>
 
                 <para>При регистрации мы добавляем нового пользователя в БД, а при логине просто
@@ -2899,7 +2906,7 @@ FormsAuthentication.SetAuthCookie(model.Name, true);
                     универсальных провайдеров.</para>
             </section>
 
-            <section>
+            <section xml:id="fbdevgd-mvc-auth-uni-providers">
                 <title>Универсальные провайдеры</title>
 
                 <para>Универсальные провайдеры предоставляют уже готовый функционал авторизации. Но
@@ -3051,7 +3058,8 @@ namespace FBMVCExample.Providers
                         ли пользователь определённую роль в системе.</para>
 
                 </section>
-                <section>
+                
+                <section xml:id="fbdevgd-mvc-auth-role-provider-config">
                     <title>Конфигурирование провайдера ролей</title>
 
                     <para>Чтобы использовать провайдер ролей в приложении, надо добавить его
@@ -3079,7 +3087,7 @@ namespace FBMVCExample.Providers
                 </section>
             </section>
 
-            <section>
+            <section xml:id="fbdevgd-mvc-authorize">
                 <title>Авторизация доступа к действиям контроллера</title>
 
                 <para>И теперь мы можем разграничить доступ к методам различных контроллеров с
@@ -3119,7 +3127,8 @@ public class InvoiceController : Controller
             </section>
         </section>
     </section>
-    <section>
+    
+    <section xml:id="fbdevgd-mvc-get-source-code">
         <title>Исходные коды</title>
 
         <para>Вы можете скачать исходные тексты по ссылке <link

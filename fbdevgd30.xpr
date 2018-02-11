@@ -157,10 +157,10 @@
         <folder path="xsl/"/>
         <file name="app-db.xml"/>
         <file name="app-delphi.xml"/>
-        <file name="app-dotnet-aspnet.xml"/>
-        <file name="app-dotnet-winform.xml"/>
         <file name="app-java-spring.xml"/>
         <file name="app-php.xml"/>
+        <file name="fbdevgd-efw.xml"/>
+        <file name="fbdevgd-mvc.xml"/>
         <file name="fbdevgd30.xml"/>
         <file name="intro.xml"/>
         <file name="license.xml"/>
