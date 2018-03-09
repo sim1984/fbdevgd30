@@ -88,6 +88,8 @@
         <spring.version>4.3.4.RELEASE</spring.version>
         <jstl.version>1.2</jstl.version>
         <javax.servlet.version>3.0.1</javax.servlet.version>    
+        <jaybird.version>3.0.0</jaybird.version>  
+        <org.jooq.version>3.9.2</org.jooq.version>
         <db.url>jdbc:firebirdsql://localhost:3050/examples</db.url>    
         <db.driver>org.firebirdsql.jdbc.FBDriver</db.driver>
         <db.username>SYSDBA</db.username>
@@ -173,7 +175,7 @@
         <dependency>
             <groupId>org.firebirdsql.jdbc</groupId>
             <artifactId>jaybird-jdk18</artifactId>
-            <version>3.0.0</version>
+            <version>${jaybird.version}</version>
         </dependency>  
         
         <!-- Пул коннектов -->  
@@ -189,19 +191,19 @@
         <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
-            <version>3.9.2</version>
+            <version>${org.jooq.version}</version>
         </dependency>
         
         <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq-meta</artifactId>
-            <version>3.9.2</version>
+            <version>${org.jooq.version}</version>
         </dependency>
         
         <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq-codegen</artifactId>
-            <version>3.9.2</version>
+            <version>${org.jooq.version}</version>
         </dependency>   
         
         <!-- Testing -->
@@ -270,6 +272,78 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Jetty -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.4.8.v20171121</version>
+            </plugin>
+            <!-- The jOOQ code generator plugin -->
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>${org.jooq.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>generate-firebird</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <jdbc>
+                                <driver>${db.driver}</driver>
+                                <url>${db.url}</url>
+                                <user>${db.username}</user>
+                                <password>${db.password}</password>
+                                <properties>
+                                    <property>
+                                        <key>charSet</key>
+                                        <value>utf-8</value>
+                                    </property>
+                                </properties>
+                            </jdbc>
+
+                            <generator>
+                                <name>org.jooq.util.JavaGenerator</name>
+
+                                <database>
+                                    <!-- Тип базы данных. Формат:
+                                    org.util.[database].[database]Database -->
+                                    <name>org.jooq.util.firebird.FirebirdDatabase</name>
+
+                                    <inputSchema></inputSchema>
+
+<!-- Все объекты, которые генерируются из 
+вашей схемы (Регулярное выражение Java. Используйте фильтры, чтобы 
+ограничить количество объектов). Следите за чувствительностью к 
+регистру. В зависимости от вашей базы данных, это может быть важно! -->
+                                    <includes>.*</includes>
+
+<!-- Объекты, которые исключаются при генерации из вашей схемы.
+(Регулярное выражение Java). В данном случае мы исключаем системные 
+таблицы RDB$, таблицы мониторинга MON$ и псевдотаблицы 
+безопасности SEC$. -->
+                                    <excludes>
+                                        RDB\$.*
+                                        | MON\$.*
+                                        | SEC\$.*
+                                    </excludes>
+                                </database>
+
+                                <target>
+                                    <!-- имя пакета -->
+                                    <packageName>ru.ibase.fbjavaex.exampledb</packageName>
+
+                                    <!-- директория для сгенерированых классов -->
+                                    <directory>src/main/java/</directory>
+                                </target>
+                            </generator>
+                        </configuration>
+                    </execution>
+                </executions>   
+            </plugin>  
         </plugins>
     </build>
 
@@ -519,6 +593,14 @@ jaybird-full-3.0.0.jar;. org.jooq.util.GenerationTool example.xml
                         xlink:href="https://www.jooq.org/doc/3.9/manual-single-page/%23code-generation"
                         >https://www.jooq.org/doc/3.9/manual-single-page/#code-generation</link>.
                 </para>
+            </section>
+
+            <section>
+                <title>Генерация классов схемы при сборке приложения</title>
+
+                <para>Для упрощения процесса генерации классов схемы мы включили соотвествующие
+                    разделы в <filename>pom.xml</filename>. Таким образом генерация классов схем
+                    происходит при сборке приложения с помощью Maven.</para>
             </section>
         </section>
     </section>
@@ -4186,7 +4268,7 @@ var JqGridInvoice = (function ($, jqGridProductFactory, jqGridCustomerFactory) {
                     редактирования не получится построить автоматически с помощью jqGrid, однако в
                     этой библиотеки существует возможность построение диалогов по шаблону, которой
                     мы и воспользуемся.</para>
-                
+
                 <para>Шаблон диалога возвращает функцией <function>getTemplate</function>. Открытие
                     справочника заказчиков для выбора заказчика осуществляется функцией
                         <function>invoiceGrid.showCustomerWindow()</function>. Она использует
@@ -4210,13 +4292,13 @@ var JqGridInvoice = (function ($, jqGridProductFactory, jqGridCustomerFactory) {
                 <para>При отправке данных на сервер нам необходимо сделать обратную операцию –
                     перевести время из текущей временной зоны в UTC. За это отвечает функция
                         <function>convertToUTC</function>.</para>
-                
+
                 <para>Для редактора позиций счёт фактуры, так же используется пользовательский
                     шаблон, который возвращается функцией <function>getTemplateDetail</function>.
                     Открытие окна для выбора из справочника товаров осуществляется функцией
                         <function>invoiceGrid.showProductWindow()</function>. Эта функция использует
                     функции модуля JqGridProduct.</para>
-                
+
                 <para>Код модуля JqGridInvoice подробно прокомментирован так, чтобы вы могли понять
                     логику его работы. Дополнительные пояснения вы можете найти в нём.</para>
             </section>
